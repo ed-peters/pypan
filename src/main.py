@@ -6,6 +6,8 @@ from comprador import comprador_loop
 from events import check_location_events
 from captain import sail_to
 
+from config import HOME, G, Goods, C, Cities
+
 # =====================================================================
 # STATUS
 # =====================================================================
@@ -32,14 +34,20 @@ if __name__ == '__main__':
         display = Display(stdscr)
         display.update(hong)
 
-        check_location_events(hong, display)
-        while True:
-            next = comprador_loop(hong, display)
-            sail_to(hong, display, next)
+        g = Goods.prompt("Which do you pick?", display)
+        display.say("You picked %s" % g)
 
-        for i in range(10):
-            check_prices(hong, display)
-            display.say(str(hong.prices))
+        g = Cities.prompt("Which do you pick?", display)
+        display.say("You picked %s" % g)
+
+        # check_location_events(hong, display)
+        # while True:
+        #     next = comprador_loop(hong, display)
+        #     sail_to(hong, display, next)
+
+        # for i in range(10):
+        #     check_prices(hong, display)
+        #     display.say(str(hong.prices))
 
         # check_wu(hong, display)
         # check_li(hong, display)
@@ -50,7 +58,6 @@ if __name__ == '__main__':
 
     finally:
         curses.nocbreak()
-        # stdscr.keypad(False)
         curses.echo()
         curses.endwin()
 

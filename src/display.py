@@ -144,14 +144,16 @@ class Display:
         opts = [ (str(i), opts[i][0], opts[i][1]) for i in range(len(opts)) ]
         return self.ask_opt3(text, opts)
 
-    def ask_opt3(self, text, opts):
+    def ask_opt3(self, text, opts, esc=False):
         l = "\n".join([ "  [%s] %s" % (str(o[0]).upper(), o[1]) for o in opts ])
         self.message.write("%s\n\n%s" % (text, l))
         self.window.refresh()
         while True:
-            c = self.window.getkey()
+            c = self.window.getch()
+            if c == 27 and esc:
+                return None
             for o in opts:
-                if str(o[0]).upper() == c.upper():
+                if c == ord(o[0].lower()):
                     return o[2]
 
     def ask_num(self, text, max_val=0):

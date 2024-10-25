@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 
 from comprador import visit_wu
+from config import Cities, Goods, HOME, P
 from randpan import chance_of, in_range, randint, randfloat
-from world import Goods, GUN_SIZE, HONG_KONG, OPIUM, pure_random_prices
+from world import pure_random_prices
 
 ### Gameplay constants
-SHIP_UPGRADE_INCREMENT = 50
-WAREHOUSE_UPGRADE_INCREMENT = 5000
-THREATEN_DEBT_LIMIT = 20000
-ROBBERY_CASH_LIMIT = 20000
-
+THREATEN_DEBT_LIMIT = P("wu.threaten.limit")
+ROBBERY_CASH_LIMIT = P("robbery.limit")
 SHORT_CIRCUIT = True
 
 # test - reject - nothing happens
@@ -17,11 +15,9 @@ SHORT_CIRCUIT = True
 def check_new_ship(hong, display):
     time = hong.current_time()
     cost = randint() % int(1000.0 * (time + 5.0) / 6.0) * int(hong.ship_size / 50.0) + 1000
-    if display.ask_yn("Would you like to trade in your %s ship for a for one with %s more capacity by paying an additional %s Taipan?" % (
-                    "damaged" if hong.ship_repair < 80 else "fine",
-                    SHIP_UPGRADE_INCREMENT,
-                    cost)):
-        hong.ship_size += SHIP_UPGRADE_INCREMENT
+    delta = P("increment.ship_size")
+    if display.ask_yn(M("upgrade.ship", "damaged" if hong.ship_repair < 80 else "fine", delta, cost)):
+        hong.ship_size += delta
         hong.ship_repair = 100
         hong.cash -= cost
         display.update(hong)
@@ -31,7 +27,7 @@ def check_new_ship(hong, display):
 def check_new_gun(hong, display):
     time = hong.current_time()
     cost = randint() % int(1000.0 * (time + 5.0) / 6.0) + 500
-    if hong.cash > cost and hong.ship_available() < GUN_SIZE and display.ask_yn("Do you wish to purchase a ship's gun for %d, Taipan?" % cost):
+    if hong.cash > cost and hong.ship_available() < P("gun.size") and display.ask_yn(M("upgrade.gun", cost)):
         hong.ship_guns += 1
         hong.cash -= cost
         display.update(hong)
@@ -41,10 +37,9 @@ def check_new_gun(hong, display):
 def check_new_warehouse(hong, display):
     time = hong.current_time()
     cost = randint() % int(1000.0 * (time + 5.0) / 6.0) * (hong.warehouse_size / 500) + 1000;
-    if hong.cash >= cost and display.ask_yn("A larger warehouse with %d more capacity is available by paying an additional %d. Would you like to purchase it, Taipan?" % (
-                        WAREHOUSE_UPGRADE_INCREMENT,
-                        cost)):
-        hong.warehouse_size += WAREHOUSE_UPGRADE_INCREMENT
+    delta = P("increment.warehouse_size")
+    if hong.cash >= cost and display.ask_yn(M("upgrade.warehouse", delta, cost)):
+        hong.warehouse_size += delta
         hong.cash -= cost
         display.update(hong)
 
@@ -62,11 +57,11 @@ def check_upgrade(hong, display):
 # test - outside hong kong, lorcha -> adjust transfer price
 # test - outside hong kong, no lorcha -> transfer unavailable
 def check_transfer(hong, display):
-    if hong.location == HONG_KONG:
+    if hong.location == HOME:
         hong.transfer = 0
     elif hong.current_time() > 6 and chance_of(10):
         hong.transfer = int(hong.warehouse_size / 10000.0) * (randint() % 2000)
-        display.say("Good joss! A lorcha from your fleet is available to take goods to the Hong Kong warehouse for %d, Taipan." % hong.transfer)
+        display.say(M("transfer", hong.transfer))
     else:
         hong.transfer = -1
 
@@ -77,18 +72,18 @@ def check_transfer(hong, display):
 def check_wu(hong, display):
     if hong.location != HONG_KONG:
         return
-    if display.ask_yn("Do you have business with Elder Brother Wu, the moneylender?"):
+    if display.ask_yn(M("wu.prompt.visit")):
         visit_wu(hong, display)
     if hong.debt < THREATEN_DEBT_LIMIT:
         return
     if not hong.threatened:
-        display.say("Elder Brother Wu has sent %d braves to escort you to the Wu mansion, Taipan." % in_range(37, 83))
-        display.say("Elder Brother Wu reminds you of the Confucian ideal of personal worthiness and how this applies to paying one's debts.")
-        display.say("He is reminded of a fabled barbarian who came to a bad end, after not caring for his obligations.")
-        display.say("He hopes no such fate awaits you, his friend, Taipan.")
+        display.say(M("wu.threaten.1", in_range(37, 83)))
+        display.say(M("wu.threaten.2"))
+        display.say(M("wu.threaten.3"))
+        display.say(M("wu.threaten.4"))
         hong.threatened = True
     elif chance_of(5):
-        display.say("Bad joss!! %d of your bodyguards have been killed by cutthroats and you have been robbed of all of your cash, Taipan!!" % in_range(2, 5))
+        display.say(M("wu.rob", in_range(2, 5)))
         hong.cash = 0
         hong.threatened = False
         display.update(hong)

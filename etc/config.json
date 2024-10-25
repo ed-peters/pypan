@@ -12,15 +12,16 @@
     "goods": [
         {
             "name": "jade",
-            "positive": "Taipan! A fire has swept the area! The price of opium has leaped because of hospital use!",
-            "negative": "Taipan, a Yankee captain is selling Turkish opium at below-market prices here!",
+            "positive": "Taipan! Foreign agitators have fomented unrest in the jade mines! Supply is disrupted!",
+            "negative": "Taipan, the local market has been flooded with cheap jade.",
             "multiplier": 100000
         },
         {
             "name": "opium",
             "positive": "Taipan! A fire has swept the area! The price of opium has leaped because of hospital use!",
             "negative": "Taipan, a Yankee captain is selling Turkish opium at below-market prices here!",
-            "multiplier": 10000
+            "multiplier": 10000,
+            "illegal": true
         },
         {
             "name": "silk",
@@ -52,14 +53,13 @@
         "gun.size": 10,
         "start.cash": 400,
         "start.guns": 5,
-        "start.warehouse": 10000,
+        "start.warehouse_size": 10000,
         "start.debt": 5000,
         "start.year": 1860,
         "start.month": 1,
-        "start.ship": 60,
-        "increment.ship": 50,
-        "start.warehouse": 10000,
-        "increment.warehouse": 5000,
+        "start.ship_size": 60,
+        "increment.ship_size": 50,
+        "increment.warehouse_size": 5000,
         "wu.threaten.limit": 20000,
         "robbery.limit": 20000,
         "prices.min": 5,
@@ -69,8 +69,8 @@
     "messages": {
         "wh.prompt.xfer": "What shall I transfer to the warehouse, Taipan?",
         "wh.prompt.load": "What shall I load onto the ship, Taipan?",
-        "wh.err.onboard": "You doun't have that much aboard, Taipan.",
-        "wh.err.stored": "You doun't have that much in the warehouse, Taipan.",
+        "wh.err.onboard": "You doun't have that much %s aboard, Taipan.",
+        "wh.err.stored": "You doun't have that much %s in the warehouse, Taipan.",
         "wh.err.space": "You don't have enough room in the warehouse, Taipan.",
         "bank.prompt.deposit": "How much shall I deposit into the bank, Taipan?",
         "bank.prompt.withdraw": "How much shall I withdraw from the bank, Taipan?",
@@ -85,7 +85,7 @@
         "upgrade.ship": "Would you like to trade in your %s ship for a for one with %s more capacity by paying an additional %s Taipan?",
         "upgrade.gun": "Do you wish to purchase a ship's gun for %d, Taipan?",
         "upgrade.wh": "A larger warehouse with %d more capacity is available by paying an additional %d. Would you like to upgrade, Taipan?",
-        "transfer": "Good joss! A lorcha from your fleet is available to take goods to the Hong Kong warehouse for {}, Taipan.",
+        "transfer": "Good joss! A lorcha from your fleet is available to take goods to the Hong Kong warehouse for %d, Taipan.",
         "wu.prompt.visit": "Do you have business with Elder Brother Wu, the moneylender?",
         "wu.threaten.1": "Elder Brother Wu has sent %d braves to escort you to the Wu mansion, Taipan.",
         "wu.threaten.2": "Elder Brother Wu reminds you of the Confucian ideal of personal worthiness and how this applies to paying one's debts.",
@@ -100,10 +100,10 @@
         "li.noborrow.2": "I would be careful of pirates if I were you, Taipan.",
         "li.borrow": "Very well. Elder Brother Wu will lend you the necessary cash and add it to your debt.",
         "seized": "Bad Joss!! The local authorities have seized your opium cargo, Taipan!",
-        "beaten": "Bad joss!! You have been beaten up and robbed of {} in cash.",
+        "beaten": "Bad joss!! You have been beaten up and robbed of %d in cash.",
         "storm.warn": "Storm, Taipan!!!",
         "storm.damage": "we took some damage",
-        "storm.blown": "we've been blown off course to {}",
+        "storm.blown": "we've been blown off course to %s",
         "storm.madeit": "We made it!!!",
         "storm.join": "%s, but %s!!!"
     }

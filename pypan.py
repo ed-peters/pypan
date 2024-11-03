@@ -523,7 +523,7 @@ def check_cargo(hong, display):
 
     # if you have cargo, it's automatically offloaded
     if hong.ship_cargo and hong.location == hong.ship_cargo.destination:
-        display.say("We have successfully delivered the %s that was intended for the buyer here in %s, Taipan." % (hong.ship_cargo.description, city(hong.location)))
+        display.say("We have successfully delivered the %s that was bound for %s, Taipan." % (hong.ship_cargo.description, city(hong.location)))
         hong.cash += hong.ship_cargo.value
         hong.ship_cargo = None
         display.update(hong)
@@ -531,7 +531,7 @@ def check_cargo(hong, display):
     # if we don't have cargo, we might get offered to carry some
     if not hong.ship_cargo: # and chance_of(20):
         c = random_cargo(hong)
-        if display.ask_yn("Would you like to accept a consignment of a %s to sell in %s for %d, Taipan (it will take up %d space in the ship's hold)?" % (
+        if display.ask_yn("Would you accept a consignment of a %s to transport to %s for %d, Taipan (it will take up %d space in the ship's hold)?" % (
                 c.description,
                 city(c.destination),
                 c.value,
@@ -540,7 +540,12 @@ def check_cargo(hong, display):
             display.update(hong)
 
 def random_cargo(hong):
-    n = "bronze statue"
+    n = random.choice([
+            "bronze statue", 
+            "jade statue", 
+            "iron chest", 
+            "party of 3",
+            "spice packet" ])
     d = random_other_city(hong.location)
     s = in_range(10, int(hong.ship_size * 0.6))
     c = randrange(10000) + 3500

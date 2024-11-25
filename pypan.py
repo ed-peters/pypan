@@ -5,8 +5,12 @@
 
 import calendar
 import curses
+import json
+import os.path as path
 import random
+import sys
 import textwrap
+import time
 
 from math import floor, pow
 
@@ -16,6 +20,7 @@ from math import floor, pow
 # ▐▌   ▐▌ ▐▌▐▌ ▝▜▌▐▛▀▀▘  █  ▐▌▝▜▌
 # ▝▚▄▄▖▝▚▄▞▘▐▌  ▐▌▐▌   ▗▄█▄▖▝▚▄▞▘
                                
+SLEEP_LEVEL = 0.2
 START_CASH = 400
 START_DEBT = 5000
 START_YEAR = 1860
@@ -29,7 +34,7 @@ LOAN_RATE = 0.1
 BANK_RATE = 0.05
 SHIP_SIZE_INCREMENT = 50
 WAREHOUSE_SIZE_INCREMENT = 5000
-DEBT_THREAT_LEVEL = 20000
+DEBT_THREAT_LEVEL = 10000
 DEBT_MULTIPLIER = 2
 ROBBERY_CASH_LIMIT = 20000
 PRICE_SIGMA = 15.0
@@ -141,11 +146,6 @@ def random_prices(city):
 # ▐▛▀▜▌▐▌ ▐▌▐▌ ▝▜▌▐▌▝▜▌
 # ▐▌ ▐▌▝▚▄▞▘▐▌  ▐▌▝▚▄▞▘
 
-class NotEnoughCash(Exception): pass
-class NotEnoughSpace(Exception): pass
-class NotEnoughGoods(Exception): pass
-class TooMuchDebt(Exception): pass
-
 class Hong:
 
     def __init__(self, name: str, guns:bool=False):
@@ -169,7 +169,7 @@ class Hong:
         self.bailout = 1
         self.location = HONG_KONG
         self.transfer = 0
-        self.prices = based_prices(HONG_KONG)
+        self.prices = random_prices(HONG_KONG)
 
     def advance_time(self):
         if self.month == 12:
@@ -296,8 +296,8 @@ def transfer(hong, display):
         display.say("You have no %s to transfer, Taipan." % good(g))
         return
 
-    # if we have any space in the warehouse, we can offload the good
-    if hong.warehouse_available() > 0:
+    # if we have any onboard, and space in the warehouse, we can offload the good
+    if hong.ship_goods[g] > 0 and hong.warehouse_available() > 0:
         n = display.ask_num("How much %s should I send to the warehouse, Taipan?" % good(g), min(hong.ship_goods[g], hong.warehouse_available()))
         if n > hong.ship_goods[g]:
             display.say("You do not have that much in your ship's hold, Taipan.")
@@ -308,14 +308,15 @@ def transfer(hong, display):
             hong.warehouse_goods[g] += n - int(n * (hong.transfer / 100.0))
             display.update(hong)
 
-    # we can always load stuff on the ship
-    n = display.ask_num("How much %s should I bring onto the ship, Taipan?" % good(g), hong.warehouse_goods[g])
-    if n > hong.warehouse_goods[g]:
-        display.say("You do not have that much in your warehouse, Taipan.")
-    elif n > 0:
-        hong.warehouse_goods[g] -= n
-        hong.ship_goods[g] += n - int(n * (hong.transfer / 100.0))
-        display.update(hong)
+    # if we have any in the warehouse, we can always load stuff on the ship
+    if hong.warehouse_goods[g] > 0:
+        n = display.ask_num("How much %s should I bring onto the ship, Taipan?" % good(g), hong.warehouse_goods[g])
+        if n > hong.warehouse_goods[g]:
+            display.say("You do not have that much in your warehouse, Taipan.")
+        elif n > 0:
+            hong.warehouse_goods[g] -= n
+            hong.ship_goods[g] += n - int(n * (hong.transfer / 100.0))
+            display.update(hong)
 
 # =====================================================================================
 # ▗▖  ▗▖ ▗▄▖ ▗▖  ▗▖▗▄▄▄▖▗▖  ▗▖▗▖   ▗▄▄▄▖▗▖  ▗▖▗▄▄▄  ▗▄▄▄▖▗▄▄▖ 
@@ -529,7 +530,7 @@ def check_cargo(hong, display):
         display.update(hong)
     
     # if we don't have cargo, we might get offered to carry some
-    if not hong.ship_cargo: # and chance_of(20):
+    if not hong.ship_cargo and chance_of(20):
         c = random_cargo(hong)
         if display.ask_yn("Would you accept a consignment of a %s to transport to %s for %d, Taipan (it will take up %d space in the ship's hold)?" % (
                 c.description,
@@ -578,7 +579,7 @@ def check_safety(hong, display):
     if hong.location != HONG_KONG and hong.cash > ROBBERY_CASH_LIMIT and chance_of(20):
         cost = int((hong.cash / 1.4) * randfloat())
         if cost > 0:
-            display.say("Bad joss! Your bodyguards were beaten up and you were robbed of %d, Taipan!", cost)
+            display.say("Bad joss! Your bodyguards were beaten up and you were robbed of %d, Taipan!" % cost)
             hong.cash -= cost
             display.update(hong)
 
@@ -623,7 +624,7 @@ def check_extortion(hong, display):
 
     # if you don't have enough, EBW can make up the difference for you
     if hong.cash < cost:
-        if display.ask_yn("You do not have enough cash on hand, Taipan! Do you want Elder Brother Wu to make up the difference for you?"):
+        if not display.ask_yn("You do not have enough cash on hand, Taipan! Do you want Elder Brother Wu to make up the difference for you?"):
             display.say("Very well. Elder Brother Wu will not assist you. I would be wary of pirates if I were you, Taipan.")
             return
         display.say("Elder Brother Wu has given Li Yuen the difference and added the same amount to your debt.")
@@ -744,6 +745,11 @@ def check_pirates(hong, display):
 
 CONDITIONS = "Current market conditions are as follows:\n\n  General - %s\n     Arms - %s\n     Silk - %s\n    Opium - %s\n\nWhat shall I do, Taipan?"
 
+def save_and_exit(hong, display):
+    display.say("Very well. Until we meet again, Taipan!")
+    open("pypan.json", "w").write(json.dumps(hong.__dict__, indent=4))
+    sys.exit(0)
+
 def establish_opts(hong):
     opts = [
         ("Buy goods", buy_goods),
@@ -754,11 +760,13 @@ def establish_opts(hong):
     if hong.location == HONG_KONG:
         opts.append(("Visit Elder Brother Wu", visit_wu))
         opts.append(("Visit the bank", visit_bank))
+        opts.append(("Exit the game", save_and_exit))
     opts.append(("Leave port", sail_away))
     return opts
 
 def compradors_loop(hong, display):
-    check_extortion(hong, display)
+    if hong.cash > 0:
+        check_extortion(hong, display)
     check_lender(hong, display)
     while True:
         text = CONDITIONS % tuple([ i2a(x) for x in hong.prices ])
@@ -901,8 +909,8 @@ class GoodsWindow:
                 self.window.addstr(6 + NUM_GOODS, 5, cargo.description.title())
                 self.window.addstr(7 + NUM_GOODS, 5, "Bound for %s" % city(cargo.destination))
             else:
-                self.window.addstr(6 + NUM_GOODS, 5, "(none)            ")
-                self.window.addstr(7 + NUM_GOODS, 5, "                  ")
+                self.window.addstr(6 + NUM_GOODS, 5, "(none)              ")
+                self.window.addstr(7 + NUM_GOODS, 5, "                    ")
         self.window.refresh()
 
 # =================
@@ -984,6 +992,7 @@ class Display:
         self.message.write("%s%s\n\n[Press any key]" % (self.prefix, text))
         self.window.refresh()
         self.window.getkey()
+        time.sleep(SLEEP_LEVEL)
 
     def ask_yn(self, text):
         self.message.write("%s%s\n\n[Y/N]" % (self.prefix, text))
@@ -991,8 +1000,10 @@ class Display:
         while True:
             c = self.window.getkey()
             if c in 'Yy':
+                time.sleep(SLEEP_LEVEL)
                 return True
             if c in 'Nn':
+                time.sleep(SLEEP_LEVEL)
                 return False
 
     def ask_opt(self, text, opts, esc=False):
@@ -1005,11 +1016,14 @@ class Display:
         while True:
             c = self.window.getch()
             if c == 27 and esc:
+                time.sleep(SLEEP_LEVEL)
                 return None
             if c > 48 and c < 48 + len(opts) + 1:
+                time.sleep(SLEEP_LEVEL)
                 return opts[c-49][1]
             for o in opts:
                 if chr(c).upper() == o[0][0]:
+                    time.sleep(SLEEP_LEVEL)
                     return o[1]
 
     def ask_num(self, text, max_val=0):
@@ -1024,6 +1038,7 @@ class Display:
                 n = max_val
                 # n = n / 10;
             elif c == '\n':
+                time.sleep(SLEEP_LEVEL)
                 return n
             else:
                 try:
@@ -1074,8 +1089,16 @@ def main_loop():
         # curses.curs_set(0)
 
         d = Display(stdscr)
-        h = Hong("Rising Sun", False)
-        h.cash = 10000
+
+        l = [ "Guns (and no debt)", "Debt (and no guns)" ]
+        if path.isfile("./pypan.json"):
+            l.append("Your last game restored")
+
+        o = d.ask_opt("Would you like to start with:", l)
+        h = Hong("Rising Sun", o == 0)
+        if o == 2:
+            h.__dict__.update(json.loads(open("pypan.json", "r").read()))
+            pass
         d.update(h)
 
         compradors_loop(h, d)

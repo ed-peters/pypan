@@ -3,6 +3,19 @@
 # Big font = DiamFont
 # Small font = Cybermedium
 
+# TODO
+# Change art for battle and storm
+# Finish pirate battles
+# Add Li Yuen pirates
+# Add formatting for large fines etc. 
+# Make jade an event
+# Don’t have warehouse fire when empty
+# Keep prices on screen during buy/sell
+# Add “max hold” option on transfer
+# Remove rockets
+# Reduce early value of cargo
+ 
+
 import calendar
 import curses
 import dataclasses
@@ -23,7 +36,7 @@ from math import floor, pow
 # ▝▚▄▄▖▝▚▄▞▘▐▌  ▐▌▐▌   ▗▄█▄▖▝▚▄▞▘
                                
 BASED_PRICES = False
-SLEEP_LEVEL = 0.2
+SLEEP_LEVEL = 0.05
 START_CASH = 400
 START_DEBT = 5000
 START_YEAR = 1860
@@ -598,8 +611,9 @@ def check_safety(hong, display):
     if hong.warehouse_available() < hong.warehouse_size and chance_of(50):
         display.say("Messenger reports a large warehouse fire, Taipan!")
         for g in range(NUM_GOODS):
-            f = int(hong.warehouse_goods[g] * randfloat() / 1.8)
-            hong.warehouse_goods[g] = f
+            f = 1.3 + randfloat()
+            f = int(hong.warehouse_goods[g] / f)
+            hong.warehouse_goods[g] = max(f, 1)
         display.update(hong)
 
 # =====================================================================================

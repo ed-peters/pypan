@@ -7,13 +7,9 @@
 # Change art for battle and storm
 # Finish pirate battles
 # Add Li Yuen pirates
-# Add formatting for large fines etc. 
 # Make jade an event
-# Keep prices on screen during buy/sell
 # Add “max hold” option on transfer
 # Remove rockets
-# Reduce early value of cargo
- 
 
 import calendar
 import curses
@@ -156,6 +152,8 @@ def set_prices(city):
 # ▐▛▀▜▌▐▌ ▐▌▐▌ ▝▜▌▐▌▝▜▌
 # ▐▌ ▐▌▝▚▄▞▘▐▌  ▐▌▝▚▄▞▘
 
+CONDITIONS = "Current market conditions are as follows:\n\n  General - %s\n     Arms - %s\n     Silk - %s\n    Opium - %s\n     Jade - %s"
+
 class Hong:
 
     def __init__(self, name: str, guns:bool=False):
@@ -239,6 +237,9 @@ class Hong:
         if d["ship_cargo"]:
             d["ship_cargo"] = Cargo(**d["ship_cargo"])
         self.__dict__.update(d)
+
+    def get_condition_report(self, message):
+        return "%s\n\n%s" % (CONDITIONS % tuple([ i2a(x) for x in self.prices ]), message)
 
     def __repr__(self):
         return str(vars(self))
@@ -489,7 +490,7 @@ def establish_prices(hong, display):
 
 def buy_goods(hong, display):
 
-    g = display.ask_opt("What shall I buy, Taipan?", GOODS, True)
+    g = display.ask_opt(hong.get_condition_report("What shall I buy, Taipan?"), GOODS, True)
     if g == None:
         return
 
@@ -500,7 +501,7 @@ def buy_goods(hong, display):
         return
     
     # go for it
-    n = display.ask_num("How much %s shall I buy, Taipan?" % good(g).lower(), x)
+    n = display.ask_num(hong.get_condition_report("How much %s shall I buy, Taipan?" % good(g).lower()), x)
     if n > x:
         display.say("You do not have enough cash on hand, Taipan.")
     else:
@@ -510,7 +511,7 @@ def buy_goods(hong, display):
 
 def sell_goods(hong, display):
 
-    g = display.ask_opt("What shall I sell, Taipan?", GOODS, True)
+    g = display.ask_opt(hong.get_condition_report("What shall I sell, Taipan?"), GOODS, True)
     if g == None:
         return
 
@@ -520,7 +521,7 @@ def sell_goods(hong, display):
         display.say("You have no %s in your ship's hold, Taipan." % good(g).lower())
         return
 
-    n = display.ask_num("How much %s should I sell, Taipan?" % good(g).lower(), x)
+    n = display.ask_num(hong.get_condition_report("How much %s shall I sell, Taipan?" % good(g).lower()), x)
     if n > x:
         display.say("You do not have that much in your ship's hold, Taipan.")
     else:
@@ -774,8 +775,6 @@ def check_pirates(hong, display):
 # ▐▌   ▐▌ ▐▌▐▌  ▐▌▐▛▀▘ ▐▛▀▚▖▐▛▀▜▌▐▌  █ ▐▌ ▐▌▐▛▀▚▖
 # ▝▚▄▄▖▝▚▄▞▘▐▌  ▐▌▐▌   ▐▌ ▐▌▐▌ ▐▌▐▙▄▄▀ ▝▚▄▞▘▐▌ ▐▌
 
-CONDITIONS = "Current market conditions are as follows:\n\n  General - %s\n     Arms - %s\n     Silk - %s\n    Opium - %s\n     Jade - %s\n\nWhat shall I do, Taipan?"
-
 def save_and_exit(hong, display):
     display.say("Very well. Until we meet again, Taipan!")
     hong.save()
@@ -801,7 +800,7 @@ def compradors_loop(hong, display):
     check_lender(hong, display)
     while True:
         hong.save()
-        text = CONDITIONS % tuple([ i2a(x) for x in hong.prices ])
+        text = hong.get_condition_report("What shall I do, Taipan?")
         func = display.ask_opt2(text, establish_opts(hong))
         val = func(hong, display)
         if val != None:

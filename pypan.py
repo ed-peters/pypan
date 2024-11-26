@@ -5,12 +5,14 @@
 
 import calendar
 import curses
+import dataclasses
 import json
 import os.path as path
 import random
 import sys
 import textwrap
 import time
+import traceback
 
 from math import floor, pow
 
@@ -20,6 +22,7 @@ from math import floor, pow
 # ▐▌   ▐▌ ▐▌▐▌ ▝▜▌▐▛▀▀▘  █  ▐▌▝▜▌
 # ▝▚▄▄▖▝▚▄▞▘▐▌  ▐▌▐▌   ▗▄█▄▖▝▚▄▞▘
                                
+BASED_PRICES = False
 SLEEP_LEVEL = 0.2
 START_CASH = 400
 START_DEBT = 5000
@@ -38,6 +41,7 @@ DEBT_THREAT_LEVEL = 10000
 DEBT_MULTIPLIER = 2
 ROBBERY_CASH_LIMIT = 20000
 PRICE_SIGMA = 15.0
+SAVE_FILE = "pypan.json"
 
 # =====================================================================================
 # ▗▖ ▗▖▗▄▄▄▖▗▖   ▗▄▄▖ ▗▄▄▄▖▗▄▄▖  ▗▄▄▖
@@ -99,19 +103,14 @@ def random_other_city(n):
 # ▐▌▝▜▌▐▌ ▐▌▐▌ ▐▌▐▌  █  ▝▀▚▖
 # ▝▚▄▞▘▝▚▄▞▘▝▚▄▞▘▐▙▄▄▀ ▗▄▄▞▘
                           
-GOODS = [ "General", "Arms", "Silk", "Opium" ]
+GOODS = [ "General", "Arms", "Silk", "Opium", "Jade" ]
 
 GENERAL = 0
 ARMS = 1
 SILK = 2
 OPIUM = 3
-# JADE = 4
-# COTTON = 5
-# TEA = 6
-# SUGAR = 7
-# SPICES = 8
-# RUBIES = 9
-NUM_GOODS = 4
+JADE = 4
+NUM_GOODS = 5
 
 def good(n: int):
     return GOODS[n]
@@ -123,21 +122,20 @@ BASE_PRICES = [
     [ 1, 11, 16, 15, 14, 12, 10, 13 ],
     [ 10, 11, 14, 15, 16, 10, 13, 12 ],
     [ 100, 12, 16, 10, 11, 13, 14, 15 ],
-    [ 1000, 10, 11, 12, 13, 14, 15, 16 ] ]
+    [ 1000, 10, 11, 12, 13, 14, 15, 16 ],
+    [ 10000, 10, 11, 12, 13, 14, 15, 16 ] ]
 
-def based_prices(city):
+def set_prices(city):
     p = [ 0 ] * NUM_GOODS
-    for g in range(NUM_GOODS):
-        x = 100
-        while x < 0.0 or x > 25.0:
-            x = random.normalvariate(BASE_PRICES[g][city+1], PRICE_SIGMA)
-        p[g] = int(5 + x) * BASE_PRICES[g][0]
-    return p
-
-def random_prices(city):
-    p = [ 0 ] * NUM_GOODS
-    for g in range(NUM_GOODS):
-        p[g] = int(in_range(5, 31) * mult(g))
+    if BASED_PRICES:
+        for g in range(NUM_GOODS):
+            x = 100
+            while x < 0.0 or x > 25.0:
+                x = random.normalvariate(BASE_PRICES[g][city+1], PRICE_SIGMA)
+            p[g] = int(5 + x) * BASE_PRICES[g][0]
+    else:
+        for g in range(NUM_GOODS):
+            p[g] = int(in_range(5, 31) * mult(g))
     return p
 
 # =====================================================================================
@@ -169,7 +167,7 @@ class Hong:
         self.bailout = 1
         self.location = HONG_KONG
         self.transfer = 0
-        self.prices = random_prices(HONG_KONG)
+        self.prices = set_prices(HONG_KONG)
 
     def advance_time(self):
         if self.month == 12:
@@ -185,7 +183,7 @@ class Hong:
         return sum(self.ship_goods)
 
     def total_non_goods(self):
-        return self.ship_cargo.size if self.ship_cargo else 0 \
+        return (self.ship_cargo.size if self.ship_cargo else 0) \
             + self.ship_rockets * ROCKET_SIZE \
             + self.ship_guns * GUN_SIZE
 
@@ -214,6 +212,18 @@ class Hong:
         no_goods = sum(self.ship_goods) == 0 and sum(self.warehouse_goods) == 0
         return no_cash and no_goods
     
+    def save(self):
+        d = dict(self.__dict__)
+        if self.ship_cargo:
+            d["ship_cargo"] = dataclasses.asdict(d["ship_cargo"])
+        open(SAVE_FILE, "w").write(json.dumps(d, indent=4))
+
+    def load(self):
+        d = json.loads(open(SAVE_FILE, "r").read())
+        if d["ship_cargo"]:
+            d["ship_cargo"] = Cargo(**d["ship_cargo"])
+        self.__dict__.update(d)
+
     def __repr__(self):
         return str(vars(self))
     
@@ -433,30 +443,33 @@ MSG_POS_SHOCK = [
     "Famine in South China, Taipan! General cargo prices have risen to the heavens!",
     "An agent for the Moro rebels has been spotted in the area, Taipan! Arms are sky-high here!",
     "Taipan! The wharves here have been burned by rebel samurai! All the silk was destroyed!",
-    "Taipan! A fire has swept the area! The price of opium has leaped because of hospital use!"
+    "Taipan! A fire has swept the area! The price of opium has leaped because of hospital use!",
+    "A British trading company has been buying all the local jade, Taipan! Prices are sky-high!"
 ]
 
 MSG_NEG_SHOCK = [
     "Malay pirates have flooded the area with cheap general cargo from their booty, Taipan!",
     "Taipan! A period of relative peace has resulted in surplus arms being made available on the local market!",
     "A rival hong has dumped surplus silk on the market here, Taipan! Prices have crashed!",
-    "Taipan, a Yankee captain is selling Turkish opium at below-market prices here!"        
+    "Taipan, a Yankee captain is selling Turkish opium at below-market prices here!",
+    "Taipan! Burmese jade from a newly-discovered mine has been flooding the market here!"
 ]
                   
 def establish_prices(hong, display):
 
-    hong.prices = random_prices(hong.location)
+    hong.prices = set_prices(hong.location)
     display.update(hong)
 
     # there's a chance of a price shock (either positive or negative)
     if hong.current_time() > 1 and chance_of(10):
         g = randrange(NUM_GOODS)
+        f = in_range(0, 5) + 5
         if chance_of(2):
             display.say(MSG_POS_SHOCK[g])
-            hong.prices[g] *= (in_range(0, 5) + 5)
+            hong.prices[g] *= f
         else:
             display.say(MSG_NEG_SHOCK[g])
-            hong.prices[g] = int(hong.prices[g] / 5)
+            hong.prices[g] = max(1, int(hong.prices[g] / f))
 
 def buy_goods(hong, display):
 
@@ -506,15 +519,13 @@ def sell_goods(hong, display):
 # ▐▌   ▐▛▀▜▌▐▛▀▚▖▐▌▝▜▌▐▌ ▐▌
 # ▝▚▄▄▖▐▌ ▐▌▐▌ ▐▌▝▚▄▞▘▝▚▄▞▘
 
+@dataclasses.dataclass
 class Cargo:
-    def __init__(self, description: str, destination: int, illegal: bool, size: int, value: int):
-        self.description = description
-        self.destination = destination
-        self.illegal = illegal
-        self.size = size
-        self.value = value
-    def __repr__(self):
-        return str(vars(self))
+    description: str
+    destination: int
+    illegal: bool
+    size: int
+    value: int
 
 def check_cargo(hong, display):
 
@@ -531,7 +542,7 @@ def check_cargo(hong, display):
     
     # if we don't have cargo, we might get offered to carry some
     if not hong.ship_cargo and chance_of(20):
-        c = random_cargo(hong)
+        c = random_cargo(hong, display)
         if display.ask_yn("Would you accept a consignment of a %s to transport to %s for %d, Taipan (it will take up %d space in the ship's hold)?" % (
                 c.description,
                 city(c.destination),
@@ -540,7 +551,7 @@ def check_cargo(hong, display):
             hong.ship_cargo = c
             display.update(hong)
 
-def random_cargo(hong):
+def random_cargo(hong, display):
     n = random.choice([
             "bronze statue", 
             "jade statue", 
@@ -608,8 +619,7 @@ def check_extortion(hong, display):
 
     # if you're not around when he does, he will summon you
     if hong.location != HONG_KONG:
-        if chance_of(4):
-            display.say("Li Yuen has sent a Lieutenant, Taipan.  He says his admiral wishes to see you in Hong Kong, posthaste!")
+        display.say("Li Yuen has sent a Lieutenant, Taipan.  He says his admiral wishes to see you in Hong Kong, posthaste!")
         return
 
     # if you are in Hong Kong, he will hit you up for money
@@ -654,7 +664,7 @@ class PirateBattle:
         self.curr_health = int(self.base_health * randfloat()) + 20
         self.run_ik = 1
         self.run_ok = 3
-        self.booty = (hong.current_time() / 4 * 1000 * self.pirates) + randrange(1000) + 250
+        self.booty = int((hong.current_time() / 4 * 1000 * self.pirates) + randrange(1000) + 250)
         self.fled = False
 
     def execute(self, hong, display):
@@ -716,7 +726,7 @@ class PirateBattle:
             self.pirates = 0
             self.fled = True
         elif self.pirates > 2 and chance_of(5):
-            lost = min(int(randrange(num_ships / 2)) + 1, self.pirates - 1)
+            lost = min(int(randrange(self.pirates / 2)) + 1, self.pirates - 1)
             display.say("Couldn't lose 'em, Taipan, but we escaped from %d of 'em!" % lost)
             self.pirates -= lost
         else:
@@ -725,7 +735,10 @@ class PirateBattle:
     def dump_cargo(self, hong, display):
         g = display.ask_opt("What shall I toss overboard, Taipan?", GOODS)
         if g != None:
-            n = display.ask_opt("How much %s shall I toss overboard, Taipan?" % good(g), hong.ship_goods[g])
+            if hong.ship_goods[g] == 0:
+                display.say("We don't have any, Taipan!")
+                return
+            n = display.ask_num("How much %s shall I toss overboard, Taipan?" % good(g), hong.ship_goods[g])
             if n > hong.ship_goods[g]:
                 display.say("We don't have enough on board, Taipan!")
             else:
@@ -743,12 +756,12 @@ def check_pirates(hong, display):
 # ▐▌   ▐▌ ▐▌▐▌  ▐▌▐▛▀▘ ▐▛▀▚▖▐▛▀▜▌▐▌  █ ▐▌ ▐▌▐▛▀▚▖
 # ▝▚▄▄▖▝▚▄▞▘▐▌  ▐▌▐▌   ▐▌ ▐▌▐▌ ▐▌▐▙▄▄▀ ▝▚▄▞▘▐▌ ▐▌
 
-CONDITIONS = "Current market conditions are as follows:\n\n  General - %s\n     Arms - %s\n     Silk - %s\n    Opium - %s\n\nWhat shall I do, Taipan?"
+CONDITIONS = "Current market conditions are as follows:\n\n  General - %s\n     Arms - %s\n     Silk - %s\n    Opium - %s\n     Jade - %s\n\nWhat shall I do, Taipan?"
 
 def save_and_exit(hong, display):
     display.say("Very well. Until we meet again, Taipan!")
-    open("pypan.json", "w").write(json.dumps(hong.__dict__, indent=4))
-    sys.exit(0)
+    hong.save()
+    return 1
 
 def establish_opts(hong):
     opts = [
@@ -769,9 +782,12 @@ def compradors_loop(hong, display):
         check_extortion(hong, display)
     check_lender(hong, display)
     while True:
+        hong.save()
         text = CONDITIONS % tuple([ i2a(x) for x in hong.prices ])
         func = display.ask_opt2(text, establish_opts(hong))
-        func(hong, display)
+        val = func(hong, display)
+        if val != None:
+            return
 
 # =====================================================================================
 #  ▗▄▄▖ ▗▄▖ ▗▄▄▖▗▄▄▄▖▗▄▖ ▗▄▄▄▖▗▖  ▗▖
@@ -784,8 +800,8 @@ BOAT = """
     |o__| |___| | \\
     |___| |___| |o \\
    _|___| |___| |__o\\
-  /...\_____|___|____\_/
-  \   o * o * * o o  /
+  /...\\_____|___|____\\_/
+  \\   o * o * * o o  /
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 """
@@ -892,7 +908,7 @@ class GoodsWindow:
         self.window = parent.subwin(self.height, 30, top, left)
         self.window.box(0, 0)
         self.window.addstr(1, 2, name, curses.A_BOLD)
-        for g in [ OPIUM, SILK, ARMS, GENERAL ]:
+        for g in [ OPIUM, SILK, ARMS, GENERAL, JADE ]:
             self.window.addstr(3 + g, 3, "%8s: " % good(g))
         self.window.addstr(3 + NUM_GOODS, 3, "Capacity: ")
         if (special):
@@ -901,7 +917,7 @@ class GoodsWindow:
         self.special = special
 
     def update(self, goods, capacity, cargo=None):
-        for g in [ OPIUM, SILK, ARMS, GENERAL ]:
+        for g in [ OPIUM, SILK, ARMS, GENERAL, JADE ]:
             self.window.addstr(3 + g, 13, i2a(goods[g]))
         self.window.addstr(3 + NUM_GOODS, 13, "Overloaded" if capacity < 0 else i2a(capacity))
         if self.special:
@@ -940,7 +956,7 @@ class StatusWindow:
         self.window.addstr(6, 13, i2a(hong.bank))
         self.window.addstr(7, 13, i2a(hong.ship_guns))
         self.window.addstr(8, 13, i2a(hong.ship_rockets))
-        self.window.addstr(9, 13, "%d %%" % hong.ship_repair)
+        self.window.addstr(9, 13, "%d%%" % hong.ship_repair)
         self.window.refresh()
 
 # =================
@@ -1077,60 +1093,45 @@ class Display:
 # ▐▌  ▐▌▐▌ ▐▌▗▄█▄▖▐▌  ▐▌    ▐▙▄▄▖▝▚▄▞▘▝▚▄▞▘▐▌   
 
 def main_loop():
+
     stdscr = curses.initscr()
     curses.noecho()
     curses.cbreak()
+    hong = None
+    error = None
 
     try:
 
         curses.curs_set(0)
         curses.start_color()
         curses.use_default_colors()
-        # curses.curs_set(0)
 
-        d = Display(stdscr)
+        display = Display(stdscr)
 
         l = [ "Guns (and no debt)", "Debt (and no guns)" ]
         if path.isfile("./pypan.json"):
             l.append("Your last game restored")
 
-        o = d.ask_opt("Would you like to start with:", l)
-        h = Hong("Rising Sun", o == 0)
+        o = display.ask_opt("Would you like to start with:", l)
+        hong = Hong("Rising Sun", o == 0)
         if o == 2:
-            h.__dict__.update(json.loads(open("pypan.json", "r").read()))
+            hong.__dict__.update(json.loads(open("pypan.json", "r").read()))
             pass
-        d.update(h)
+        display.update(hong)
 
-        compradors_loop(h, d)
+        compradors_loop(hong, display)
 
-        # hong = Hong("Rising Sun")
-        # display = Display(stdscr)
-        # display.update(hong)
-
-        # check_location_events(hong, display)
-        # while True:
-        #     next = comprador_loop(hong, display)
-        #     sail_to(hong, display, next)
-
-        # for i in range(10):
-        #     check_prices(hong, display)
-        #     display.say(str(hong.prices))
-
-        # check_wu(hong, display)
-        # check_li(hong, display)
-        # check_warehouse_safety(hong, display)
-        # check_personal_safety(hong, display)
-        # check_police(hong, display)
-        display.say("press any key to continue")
+    except Exception as e:
+        error = e
 
     finally:
         curses.nocbreak()
         curses.echo()
         curses.endwin()
 
+    if error:
+        traceback.print_exc()
+        hong.save()
+
 if __name__ == '__main__':
     main_loop()
-    # h = Hong("Rising Sun", False)
-    # print(h.total_goods())
-    # print(h.total_non_goods())
-    # print(h.ship_available())

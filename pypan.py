@@ -8,8 +8,6 @@
 # Finish pirate battles
 # Add Li Yuen pirates
 # Make jade an event
-# Add “max hold” option on transfer
-# Remove rockets
 
 import calendar
 import curses
@@ -40,7 +38,6 @@ START_GUNS = 5
 START_SHIP_SIZE = 60
 START_WAREHOUSE_SIZE = 10000
 GUN_SIZE = 10
-ROCKET_SIZE = 3
 LOAN_RATE = 0.1
 BANK_RATE = 0.05
 SHIP_SIZE_INCREMENT = 50
@@ -166,7 +163,6 @@ class Hong:
         self.ship_size = START_SHIP_SIZE
         self.ship_goods = [ 0 ] * NUM_GOODS
         self.ship_guns = START_GUNS if guns else 0
-        self.ship_rockets = 0
         self.ship_repair = 100
         self.ship_cargo = None
         self.pirate_chance = 7 if guns else 10
@@ -198,7 +194,6 @@ class Hong:
 
     def total_non_goods(self):
         return (self.ship_cargo.size if self.ship_cargo else 0) \
-            + self.ship_rockets * ROCKET_SIZE \
             + self.ship_guns * GUN_SIZE
 
     def ship_available(self):
@@ -276,15 +271,10 @@ def check_upgrades(hong, display):
         else:
             cost = randrange(1000.0 * (time + 5.0) / 6.0) + 500
             if hong.cash > cost:
-                if chance_of(2):
-                    if display.ask_yn("Would you like to buy a ship's gun for %d, Taipan?" % cost):
-                        hong.cash -= cost
-                        hong.ship_guns += 1
-                else:
-                    if display.ask_yn("Would you like to buy a rocket for %d, Taipan?" % cost):
-                        hong.cash -= cost
-                        hong.ship_rockets += 1
-                display.update(hong)
+                if display.ask_yn("Would you like to buy a ship's gun for %d, Taipan?" % cost):
+                    hong.cash -= cost
+                    hong.ship_guns += 1
+                    display.update(hong)
 
 # =====================================================================================
 # ▗▖ ▗▖ ▗▄▖ ▗▄▄▖ ▗▄▄▄▖▗▖ ▗▖ ▗▄▖ ▗▖ ▗▖ ▗▄▄▖▗▄▄▄▖
@@ -699,8 +689,6 @@ class PirateBattle:
 
     def get_opts(self, hong):
         l = [ ]
-        if hong.ship_rockets > 0:
-            l.append(("Launch rockets", self.fire_rockets))
         if hong.ship_guns > 0:
             l.append(("Fire cannons", self.fire_cannons))
         if hong.total_goods() > 0:
@@ -714,15 +702,6 @@ class PirateBattle:
         self.run_ik = 1
         self.run_ok = 3
 
-    def fire_rockets(self, hong, display):
-        display.say("Aye, we'll unload our rockets at 'em, Taipan!")
-        r = min(hong.ship_rockets, self.pirates)
-        self.remove_pirates(r)
-        hong.ship_rockets -= r
-        if self.pirates == 0:
-            r = "all"
-        display.say("We got %s of the buggers, Taipan!" % r)
-    
     def fire_cannons(self, hong, display):
         display.say("Aye, we'll fire our cannons at 'em, Taipan!")
         k = 0
@@ -954,7 +933,7 @@ class GoodsWindow:
 class StatusWindow:
 
     def __init__(self, parent, top, left):
-        self.height = 12
+        self.height = 11
         self.window = parent.subwin(self.height, 30, top, left)
         self.window.box(0, 0)
         self.window.addstr(1, 2, "CURRENT STATUS", curses.A_BOLD)
@@ -963,8 +942,7 @@ class StatusWindow:
         self.window.addstr(5, 3, "    Debt: ")
         self.window.addstr(6, 3, "    Bank: ")
         self.window.addstr(7, 3, "    Guns: ")
-        self.window.addstr(8, 3, " Rockets: ")
-        self.window.addstr(9, 3, "  Repair: ")
+        self.window.addstr(8, 3, "  Repair: ")
 
     def update(self, hong):
         self.window.addstr(3, 13, "%-13s" % city(hong.location))
@@ -972,8 +950,7 @@ class StatusWindow:
         self.window.addstr(5, 13, i2a(hong.debt))
         self.window.addstr(6, 13, i2a(hong.bank))
         self.window.addstr(7, 13, i2a(hong.ship_guns))
-        self.window.addstr(8, 13, i2a(hong.ship_rockets))
-        self.window.addstr(9, 13, "%d%%" % hong.ship_repair)
+        self.window.addstr(8, 13, "%d%%" % hong.ship_repair)
         self.window.refresh()
 
 # =================

@@ -9,7 +9,6 @@
 # Add Li Yuen pirates
 # Add formatting for large fines etc. 
 # Make jade an event
-# Don’t have warehouse fire when empty
 # Keep prices on screen during buy/sell
 # Add “max hold” option on transfer
 # Remove rockets
@@ -191,6 +190,10 @@ class Hong:
 
     def current_time(self):
         return (self.year - START_YEAR) * 12 + self.month
+
+    def net_worth_on_hand(self):
+        h = sum([ self.prices[g] * self.ship_goods[g] for g in range(NUM_GOODS) ])
+        return h + self.cash
 
     def total_goods(self):
         return sum(self.ship_goods)
@@ -543,7 +546,7 @@ class Cargo:
 def check_cargo(hong, display):
 
     # cargo doesn't show up until later in the game
-    if hong.current_time() > 18:
+    if hong.current_time() < 18:
         return
 
     # if you have cargo, it's automatically offloaded
@@ -556,10 +559,10 @@ def check_cargo(hong, display):
     # if we don't have cargo, we might get offered to carry some
     if not hong.ship_cargo and chance_of(20):
         c = random_cargo(hong, display)
-        if display.ask_yn("Would you accept a consignment of a %s to transport to %s for %d, Taipan (it will take up %d space in the ship's hold)?" % (
+        if display.ask_yn("Should I accept a special consignment of a %s to transport to %s for %s, Taipan? (It will take up %d space in the ship's hold.)" % (
                 c.description,
                 city(c.destination),
-                c.value,
+                i2a(c.value).strip(),
                 c.size)):
             hong.ship_cargo = c
             display.update(hong)
@@ -570,11 +573,12 @@ def random_cargo(hong, display):
             "jade statue", 
             "iron chest", 
             "party of 3",
-            "spice packet" ])
+            "secret document",
+            "crate of spices" ])
+    u = int(35 * pow(10, randrange(NUM_GOODS-2)))
     d = random_other_city(hong.location)
-    s = in_range(10, int(hong.ship_size * 0.6))
-    c = randrange(10000) + 3500
-    return Cargo(n, d, False, s, c)
+    s = int(hong.ship_size * in_range(5, 30) / 100.0)
+    return Cargo(n, d, False, s, u * s + randrange(100))
 
 # =====================================================================================
 #  ▗▄▄▖ ▗▄▖ ▗▄▄▄▖▗▄▄▄▖▗▄▄▄▖▗▖  ▗▖
@@ -592,7 +596,7 @@ def check_safety(hong, display):
         fine = 0
         if hong.cash > 0:
             fine = int((hong.cash / 1.8) * randfloat()) + 1
-            display.say("Bad joss! Harbor police have confiscated your opium and fined you an additional %d, Taipan!" % fine)
+            display.say("Bad joss! Harbor police have confiscated your opium and fined you an additional %s, Taipan!" % i2a(fine).strip())
             hong.cash -= fine
         else:
             display.say("Bad joss! Harbor police have confiscated your opium, Taipan!")

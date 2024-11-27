@@ -4,7 +4,6 @@
 # Small font = Cybermedium
 
 # TODO
-# Change art for battle and storm
 # Finish pirate battles
 # Add Li Yuen pirates
 # Make jade an event
@@ -47,6 +46,10 @@ DEBT_MULTIPLIER = 2
 ROBBERY_CASH_LIMIT = 20000
 PRICE_SIGMA = 15.0
 SAVE_FILE = "pypan.json"
+ENEMY_HEALTH_START = 20
+ENEMY_HEALTH_BUMP = 10
+ENEMY_DAMAGE_START = 0.5
+ENEMY_DAMAGE_BUMP = 0.5
 
 # =====================================================================================
 # ▗▖ ▗▖▗▄▄▄▖▗▖   ▗▄▄▖ ▗▄▄▄▖▗▄▄▖  ▗▄▄▖
@@ -163,7 +166,7 @@ class Hong:
         self.ship_size = START_SHIP_SIZE
         self.ship_goods = [ 0 ] * NUM_GOODS
         self.ship_guns = START_GUNS if guns else 0
-        self.ship_repair = 100
+        self.ship_damage = 0
         self.ship_cargo = None
         self.pirate_chance = 7 if guns else 10
         self.warehouse_size = START_WAREHOUSE_SIZE
@@ -248,7 +251,7 @@ class Hong:
 def check_upgrades(hong, display):
 
     # mchenry can repair your ship if you're at home
-    if hong.location == HONG_KONG and hong.ship_repair < 100:
+    if hong.location == HONG_KONG and hong.ship_damage > 0:
         # TODO implement repair logic
         pass
     
@@ -260,11 +263,11 @@ def check_upgrades(hong, display):
         # offer a new ship (but only if they can afford it)
         if chance_of(2):
             cost = randrange(1000.0 * (time + 5.0) / 6.0) * int(hong.ship_size / 50.0) + 1000
-            cond = "damaged" if hong.ship_repair < 80 else "fine"
+            cond = "damaged" if hong.ship_damage > 20 else "fine"
             if hong.cash >= cost and display.ask_yn("Would you like to replace your %s ship with another one that has %d more capacity by paying an additional %d, Taipan?" % (cond, SHIP_SIZE_INCREMENT, cost)):
                 hong.cash -= cost
                 hong.ship_size += SHIP_SIZE_INCREMENT
-                hong.ship_repair = 100
+                hong.ship_damage = 0
                 display.update(hong)
         
         # offer a new gun (but only if they can afford it, and have room)
@@ -669,8 +672,9 @@ class PirateBattle:
     def __init__(self, hong, against):
         self.id = 1 if against == PIRATE_FLEET else 2
         self.pirates = randrange((hong.ship_size / 10) + hong.ship_guns) + 1
-        self.base_health = 20 + (hong.year - START_YEAR) * 10
+        self.base_health = ENEMY_HEALTH_START + (hong.year - START_YEAR) * ENEMY_HEALTH_BUMP
         self.curr_health = int(self.base_health * randfloat()) + 20
+        self.damage = ENEMY_DAMAGE_START + (hong.year - START_YEAR) * ENEMY_DAMAGE_BUMP
         self.run_ik = 1
         self.run_ok = 3
         self.booty = int((hong.current_time() / 4 * 1000 * self.pirates) + randrange(1000) + 250)
@@ -678,14 +682,31 @@ class PirateBattle:
 
     def execute(self, hong, display):
         display.say("%d hostile ships approaching, Taipan!" % self.pirates)
+        display.push_prefix(PIRATES)
         while self.pirates > 0:
-            opts = self.get_opts(hong)
-            func = display.ask_opt2("%s enemies remaining ... What shall we do, Taipan?" % self.pirates, opts)
-            func(hong, display)
+            self.my_turn(hong, display)
+            if self.pirates > 0:
+                self.their_turn(hong, display)
         if not self.fled:
             display.say("We won the battle, Taipan, and we captured some booty worth %d!" % self.booty)
             hong.cash += self.booty
             display.update(hong)
+        display.pop_prefix()
+
+    def my_turn(self, hong, display):
+        opts = self.get_opts(hong)
+        func = display.ask_opt2("%s enemies remaining ... What shall we do, Taipan?" % self.pirates, opts)
+        func(hong, display)
+
+    def their_turn(self, hong, display):
+        text = "THey're firing on us, Taipan!"
+        display.say(text)
+#         if hong.ship_guns > 0:
+#             dc = ((100.0 - hong.ship_repair) / hong.ship_size) * 100
+#             if dc > 80 or dc > randrange(100):
+#                 hong.ship_guns -= 1
+#                 text = "%s\n\nThe buggers hit a gun!" % text
+# damage = damage + ((ed * i * id) * ((float) rand() / RAND_MAX)) + (i / 2);
 
     def get_opts(self, hong):
         l = [ ]
@@ -791,6 +812,28 @@ def compradors_loop(hong, display):
 # ▐▌   ▐▛▀▜▌▐▛▀▘  █ ▐▛▀▜▌  █  ▐▌ ▝▜▌
 # ▝▚▄▄▖▐▌ ▐▌▐▌    █ ▐▌ ▐▌▗▄█▄▖▐▌  ▐▌
 
+STORM = """
+     ,-'-.     _.,  
+      . (    '("'-'  ').  
+   ( ' ((  |.      )\\/( ) 
+    '(  )) | () |" |  | ')
+       ( . ,-. ,-.. __.) 
+         /)  /  ' /         
+        /   /) / /   
+
+"""
+
+PIRATES = """  \_/
+   |'."-._.-""--.-"-.__.-'/
+   |  \       .-.        (
+   |   |     (@.@)        )
+   |   |   '=.|m|.='     /
+   |  /    .='`"``=.    /
+   |.-"-.__.-""-.__.-"-.)
+   |
+
+"""
+
 BOAT = """
     __|__ |___| |\\
     |o__| |___| | \\
@@ -820,7 +863,7 @@ def sail_away(hong, display):
     # make it seem like it's a trip ...
     hong.location = AT_SEA
     hong.advance_time()
-    display.prefix = BOAT
+    display.push_prefix(BOAT)
     display.update(hong)
 
     check_pirates(hong, display)
@@ -828,7 +871,7 @@ def sail_away(hong, display):
 
     # .. and we're there
     display.say("Arriving at %s ... " % city(destination))
-    display.prefix = ""
+    display.pop_prefix()
 
     # set location and accrue interest
     hong.location = destination
@@ -845,16 +888,15 @@ def sail_away(hong, display):
     check_safety(hong, display)
     establish_prices(hong, display)
 
-def check_pirates(hong, display):
-    if chance_of(hong.pirate_chance):
-        PirateBattle(hong, PIRATE_FLEET).execute(hong, display)
-
 def check_storm(hong, display, destination):
     if chance_of(10):
         display.say("Storm, Taipan!")
+        display.push_prefix(STORM)
+        display.update(hong)
+        time.sleep(0.5)
         msg = "We made it"
-        if hong.ship_repair > 20 and chance_of(10):
-            hong.ship_repair -= in_range(5, 20)
+        if hong.ship_damage < 80 and chance_of(10):
+            hong.ship_damage += in_range(5, 20)
             msg = "%s, but we took some damage!" % msg
         elif chance_of(3):
             destination = random_other_city(destination)
@@ -863,6 +905,7 @@ def check_storm(hong, display, destination):
             msg = "%s!" % msg
         display.say(msg)
         display.update(hong)
+        display.pop_prefix()
     return destination
 
 # =====================================================================================
@@ -950,7 +993,7 @@ class StatusWindow:
         self.window.addstr(5, 13, i2a(hong.debt))
         self.window.addstr(6, 13, i2a(hong.bank))
         self.window.addstr(7, 13, i2a(hong.ship_guns))
-        self.window.addstr(8, 13, "%d%%" % hong.ship_repair)
+        self.window.addstr(8, 13, "%d%%" % (100 - hong.ship_damage))
         self.window.refresh()
 
 # =================
@@ -996,16 +1039,22 @@ class Display:
         self.warehouse = GoodsWindow(parent, self.status.height, maxx - 30, "CANTON WAREHOUSE")
         self.hold = GoodsWindow(parent, self.status.height + self.warehouse.height, maxx - 30, "SHIP'S HOLD", True)
         self.window = parent
-        self.prefix = ""
+        self.prefix = [ "" ]
+
+    def push_prefix(self, prefix):
+        self.prefix.append(prefix)
+
+    def pop_prefix(self):
+        self.prefix.pop()
 
     def say(self, text):
-        self.message.write("%s%s\n\n[Press any key]" % (self.prefix, text))
+        self.message.write("%s%s\n\n[Press any key]" % (self.prefix[-1], text))
         self.window.refresh()
         self.window.getkey()
         time.sleep(SLEEP_LEVEL)
 
     def ask_yn(self, text):
-        self.message.write("%s%s\n\n[Y/N]" % (self.prefix, text))
+        self.message.write("%s%s\n\n[Y/N]" % (self.prefix[-1], text))
         self.window.refresh()
         while True:
             c = self.window.getkey()
@@ -1021,7 +1070,7 @@ class Display:
 
     def ask_opt2(self, text, opts, esc=False):
         l = "\n".join([ "  [%d] %s" % (i+1, opts[i][0]) for i in range(len(opts)) ])
-        self.message.write("%s%s\n\n%s" % (self.prefix, text, l))
+        self.message.write("%s%s\n\n%s" % (self.prefix[-1], text, l))
         self.window.refresh()
         while True:
             c = self.window.getch()
@@ -1038,7 +1087,7 @@ class Display:
 
     def ask_num(self, text, max_val=0):
         if max_val > 0:
-            text = "%s%s (max is %s)" % (self.prefix, text, max_val)
+            text = "%s%s (max is %s)" % (self.prefix[-1], text, max_val)
         start = self.message.write(text)
         n = 0
         self.window.addstr(start + 2, 30, "%-15d" % n, curses.A_REVERSE or curses.A_BOLD);
@@ -1059,21 +1108,6 @@ class Display:
             self.window.addstr(start + 2, 30, "%-15d" % n, curses.A_REVERSE or curses.A_BOLD)
         return n
     
-# "                   v  ~.      v"
-# "          v           /|"
-# "                     / |          v"
-# "              v     /__|__"
-# "                  \--------/"
-# "~~~~~~~~~~~~~~~~~~~`~~~~~~'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-
-#     __|__ |___| |\
-#     |o__| |___| | \
-#     |___| |___| |o \
-#    _|___| |___| |__o\
-#   /...\_____|___|____\_/
-#   \   o * o * * o o  /
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~
-
     def update(self, hong):
         self.hold.update(hong.ship_goods, hong.ship_available(), hong.ship_cargo)
         self.warehouse.update(hong.warehouse_goods, hong.warehouse_available())
@@ -1116,7 +1150,7 @@ def main_loop():
         compradors_loop(hong, display)
 
     except Exception as e:
-        error = e
+        error = sys.exc_info()
 
     finally:
         curses.nocbreak()
@@ -1124,8 +1158,9 @@ def main_loop():
         curses.endwin()
 
     if error:
-        traceback.print_exc()
-        hong.save()
+        traceback.print_exception(*error)
+        if hong:
+            hong.save()
 
 if __name__ == '__main__':
     main_loop()

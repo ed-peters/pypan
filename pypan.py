@@ -47,9 +47,9 @@ ROBBERY_CASH_LIMIT = 20000
 PRICE_SIGMA = 15.0
 SAVE_FILE = "pypan.json"
 ENEMY_HEALTH_START = 20
-ENEMY_HEALTH_BUMP = 0
+ENEMY_HEALTH_BUMP = 10
 ENEMY_DAMAGE_START = 0.5
-ENEMY_DAMAGE_BUMP = 0
+ENEMY_DAMAGE_BUMP = 0.5
 
 # =====================================================================================
 # ▗▖ ▗▖▗▄▄▄▖▗▖   ▗▄▄▖ ▗▄▄▄▖▗▄▄▖  ▗▄▄▖
@@ -185,6 +185,9 @@ class Hong:
         else:
             self.month += 1
 
+    def repair_percent(self):
+        return 100 - int((float(self.ship_damage) / float(self.ship_size)) * 100.0)
+
     def current_time(self):
         return (self.year - START_YEAR) * 12 + self.month
 
@@ -259,7 +262,7 @@ def check_upgrades(hong, display):
         # offer a new ship (but only if they can afford it)
         if chance_of(2):
             cost = randrange(1000.0 * (time + 5.0) / 6.0) * int(hong.ship_size / 50.0) + 1000
-            cond = "damaged" if hong.ship_damage > 20 else "fine"
+            cond = "damaged" if hong.repair_percent() < 80 else "fine"
             if hong.cash >= cost and display.ask_yn("Would you like to replace your %s ship with another one that has %d more capacity by paying an additional %s, Taipan?" % (cond, SHIP_SIZE_INCREMENT, i2a(cost).strip())):
                 hong.cash -= cost
                 hong.ship_size += SHIP_SIZE_INCREMENT
@@ -1008,7 +1011,7 @@ class StatusWindow:
         self.window.addstr(5, 13, i2a(hong.debt))
         self.window.addstr(6, 13, i2a(hong.bank))
         self.window.addstr(7, 13, i2a(hong.ship_guns))
-        self.window.addstr(8, 13, "%d%%    " % (100 - hong.ship_damage))
+        self.window.addstr(8, 13, "%d%%    " % hong.repair_percent())
         self.window.refresh()
 
 # =================

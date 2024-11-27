@@ -47,9 +47,9 @@ ROBBERY_CASH_LIMIT = 20000
 PRICE_SIGMA = 15.0
 SAVE_FILE = "pypan.json"
 ENEMY_HEALTH_START = 20
-ENEMY_HEALTH_BUMP = 10
+ENEMY_HEALTH_BUMP = 0
 ENEMY_DAMAGE_START = 0.5
-ENEMY_DAMAGE_BUMP = 0.5
+ENEMY_DAMAGE_BUMP = 0
 
 # =====================================================================================
 # ▗▖ ▗▖▗▄▄▄▖▗▖   ▗▄▄▖ ▗▄▄▄▖▗▄▄▖  ▗▄▄▖
@@ -195,14 +195,10 @@ class Hong:
     def total_goods(self):
         return sum(self.ship_goods)
 
-    def total_non_goods(self):
-        return (self.ship_cargo.size if self.ship_cargo else 0) \
-            + self.ship_guns * GUN_SIZE
-
     def ship_available(self):
         return self.ship_size \
-                - self.total_goods() \
-                - self.total_non_goods()
+                - (self.ship_cargo.size if self.ship_cargo else 0) \
+                - self.total_goods()
 
     def warehouse_has(self, good: int):
         return self.warehouse_goods[good] != 0
@@ -264,7 +260,7 @@ def check_upgrades(hong, display):
         if chance_of(2):
             cost = randrange(1000.0 * (time + 5.0) / 6.0) * int(hong.ship_size / 50.0) + 1000
             cond = "damaged" if hong.ship_damage > 20 else "fine"
-            if hong.cash >= cost and display.ask_yn("Would you like to replace your %s ship with another one that has %d more capacity by paying an additional %d, Taipan?" % (cond, SHIP_SIZE_INCREMENT, cost)):
+            if hong.cash >= cost and display.ask_yn("Would you like to replace your %s ship with another one that has %d more capacity by paying an additional %s, Taipan?" % (cond, SHIP_SIZE_INCREMENT, i2a(cost).strip())):
                 hong.cash -= cost
                 hong.ship_size += SHIP_SIZE_INCREMENT
                 hong.ship_damage = 0
@@ -274,9 +270,10 @@ def check_upgrades(hong, display):
         else:
             cost = randrange(1000.0 * (time + 5.0) / 6.0) + 500
             if hong.cash > cost:
-                if display.ask_yn("Would you like to buy a ship's gun for %d, Taipan?" % cost):
+                if display.ask_yn("Would you like to buy a ship's gun for %s, Taipan?" % i2a(cost).strip()):
                     hong.cash -= cost
                     hong.ship_guns += 1
+                    hong.ship_size -= GUN_SIZE
                     display.update(hong)
 
 # =====================================================================================
@@ -301,7 +298,7 @@ def check_warehouse(hong, display):
         if hong.current_time() > 12 and chance_of(10):
             time = hong.current_time()
             cost = randrange(1000.0 * (time + 5.0) / 6.0) * int(hong.warehouse_size / 500) + 1000;
-            if hong.cash >= cost and display.ask_yn("A new warehouse with an additional %d capacity is available for %d. Would like to upgrade, Taipan?" % (WAREHOUSE_SIZE_INCREMENT, cost)):
+            if hong.cash >= cost and display.ask_yn("A new warehouse with an additional %d capacity is available for %s. Would like to upgrade, Taipan?" % (WAREHOUSE_SIZE_INCREMENT, i2a(cost).strip())):
                 hong.cash -= cost
                 hong.warehouse_size += WAREHOUSE_SIZE_INCREMENT
                 display.update(hong)
@@ -380,7 +377,7 @@ def visit_wu(hong, display):
         if hong.current_time() > 1 and hong.is_broke():
             loan = randrange(1500) + 1500
             cost = randrange(2000) * hong.bailout + 1500
-            if display.ask_yn("Elder Brother is aware of your plight, Taipan. He is willing to loan you an additional %d if you will pay back %d. Are you willing, Taipan?" % (loan, cost)):
+            if display.ask_yn("Elder Brother is aware of your plight, Taipan. He is willing to loan you an additional %s if you will pay back %s. Are you willing, Taipan?" % (i2a(loan).strip(), i2a(cost).strip())):
                 hong.cash += loan
                 hong.debt += cost
                 display.update(hong)
@@ -400,7 +397,7 @@ def visit_wu(hong, display):
             hong.debt -= n
             display.update(hong)
         else:
-            display.say("Taipan, you owe only %d." % hong.debt)
+            display.say("Taipan, you owe only %s." % i2a(hong.debt).strip())
     
     # he's willing to loan you up to 2 x the amount of free cash you have
     x = max(0, hong.cash * 2 - hong.debt)
@@ -601,7 +598,7 @@ def check_safety(hong, display):
     if hong.location != HONG_KONG and hong.cash > ROBBERY_CASH_LIMIT and chance_of(20):
         cost = int((hong.cash / 1.4) * randfloat())
         if cost > 0:
-            display.say("Bad joss! Your bodyguards were beaten up and you were robbed of %d, Taipan!" % cost)
+            display.say("Bad joss! Your bodyguards were beaten up and you were robbed of %s, Taipan!" % i2a(cost).strip())
             hong.cash -= cost
             display.update(hong)
 
@@ -674,7 +671,7 @@ class PirateBattle:
         self.pirates = randrange((hong.ship_size / 10) + hong.ship_guns) + 1
         self.base_health = ENEMY_HEALTH_START + (hong.year - START_YEAR) * ENEMY_HEALTH_BUMP
         self.curr_health = int(self.base_health * randfloat()) + 20
-        self.damage = ENEMY_DAMAGE_START + (hong.year - START_YEAR) * ENEMY_DAMAGE_BUMP
+        self.enemy_damage = ENEMY_DAMAGE_START + (hong.year - START_YEAR) * ENEMY_DAMAGE_BUMP
         self.run_ik = 1
         self.run_ok = 3
         self.booty = int((hong.current_time() / 4 * 1000 * self.pirates) + randrange(1000) + 250)
@@ -688,7 +685,7 @@ class PirateBattle:
             if self.pirates > 0:
                 self.their_turn(hong, display)
         if not self.fled:
-            display.say("We won the battle, Taipan, and we captured some booty worth %d!" % self.booty)
+            display.say("We won the battle, Taipan, and we captured some booty worth %s!" % i2a(self.booty).strip())
             hong.cash += self.booty
             display.update(hong)
         display.pop_prefix()
@@ -699,14 +696,28 @@ class PirateBattle:
         func(hong, display)
 
     def their_turn(self, hong, display):
-        text = "THey're firing on us, Taipan!"
+        text = "They're firing on us, Taipan!"
         display.say(text)
-#         if hong.ship_guns > 0:
-#             dc = ((100.0 - hong.ship_repair) / hong.ship_size) * 100
-#             if dc > 80 or dc > randrange(100):
-#                 hong.ship_guns -= 1
-#                 text = "%s\n\nThe buggers hit a gun!" % text
-# damage = damage + ((ed * i * id) * ((float) rand() / RAND_MAX)) + (i / 2);
+        if self.is_gun_hit(hong):
+            hong.ship_guns -= 1
+            hong.ship_size += GUN_SIZE
+            text = "%s\n\nThe buggers hit a gun!" % text
+        else:
+            text = "%s\n\nThey hit us!" % text
+        hong.ship_damage += self.calculate_damage()
+        display.say(text)
+        display.update(hong)
+
+    def is_gun_hit(self, hong):
+        if hong.ship_guns > 0:
+            dc = (float(hong.ship_damage) / float(hong.ship_size)) * 100
+            return dc > 80 or dc > randrange(100)
+        else:
+            return False
+
+    def calculate_damage(self):
+        capped = min(15, self.pirates)
+        return int(self.enemy_damage * capped * self.id * randfloat() + capped / 2.0)
 
     def get_opts(self, hong):
         l = [ ]
@@ -724,7 +735,8 @@ class PirateBattle:
         self.run_ok = 3
 
     def fire_cannons(self, hong, display):
-        display.say("Aye, we'll fire our cannons at 'em, Taipan!")
+        text = "Aye, we'll fire our cannons at 'em, Taipan!"
+        display.say(text)
         k = 0
         for i in range(hong.ship_guns):
             self.curr_health -= randrange(30) + 10
@@ -734,7 +746,10 @@ class PirateBattle:
         if k > 0:
             if self.pirates == 0:
                 k = "all"
-            display.say("We got %s of the buggers, Taipan!" % k)
+            text = "%s\n\nWe got %s of the buggers!" % (text, k)
+        else:
+            text = "%s\n\nThey're still after us!" % text
+        display.say(text)
 
     def run_away(self, hong, display):
         display.say("Aye, we'll set sails and run, Taipan!")
@@ -766,7 +781,7 @@ class PirateBattle:
                 display.update(hong)
 
 def check_pirates(hong, display):
-    if chance_of(hong.pirate_chance):
+    if True: # chance_of(hong.pirate_chance):
         PirateBattle(hong, PIRATE_FLEET).execute(hong, display)
 
 # =====================================================================================
@@ -993,7 +1008,7 @@ class StatusWindow:
         self.window.addstr(5, 13, i2a(hong.debt))
         self.window.addstr(6, 13, i2a(hong.bank))
         self.window.addstr(7, 13, i2a(hong.ship_guns))
-        self.window.addstr(8, 13, "%d%%" % (100 - hong.ship_damage))
+        self.window.addstr(8, 13, "%d%%    " % (100 - hong.ship_damage))
         self.window.refresh()
 
 # =================

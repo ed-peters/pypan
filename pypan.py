@@ -251,33 +251,50 @@ def check_upgrades(hong, display):
 
     # mchenry can repair your ship if you're at home
     if hong.location == HONG_KONG and hong.ship_damage > 0:
-        # TODO implement repair logic
-        pass
+        offer_repair(hong, display)
     
     # upgrades don't come until you've been playing a while
-    if hong.current_time() > 6 and chance_of(4):
+    if hong.current_time() > 6:
 
-        time = hong.current_time()
-
-        # offer a new ship (but only if they can afford it)
-        if chance_of(2):
-            cost = randrange(1000.0 * (time + 5.0) / 6.0) * int(hong.ship_size / 50.0) + 1000
-            cond = "damaged" if hong.repair_percent() < 80 else "fine"
-            if hong.cash >= cost and display.ask_yn("Would you like to replace your %s ship with another one that has %d more capacity by paying an additional %s, Taipan?" % (cond, SHIP_SIZE_INCREMENT, i2a(cost).strip())):
-                hong.cash -= cost
-                hong.ship_size += SHIP_SIZE_INCREMENT
-                hong.ship_damage = 0
-                display.update(hong)
+        # offer a new ship
+        if chance_of(4):
+            offer_ship(hong, display)
         
-        # offer a new gun (but only if they can afford it, and have room)
-        else:
-            cost = randrange(1000.0 * (time + 5.0) / 6.0) + 500
-            if hong.cash > cost:
-                if display.ask_yn("Would you like to buy a ship's gun for %s, Taipan?" % i2a(cost).strip()):
-                    hong.cash -= cost
-                    hong.ship_guns += 1
-                    hong.ship_size -= GUN_SIZE
-                    display.update(hong)
+        # offer a new gun
+        if chance_of(4):
+            offer_gun(hong, display)
+
+def offer_repair(hong, display):
+    "Taipan, Mc Henry from the Hong Kong shipyards has arrived! He says, \"I see ye've a wee bit of damage to yer ship. Will ye be wanting repairs?"
+    "Och, 'tis a pity to be %d%% damaged. We can fix yer whole ship for %d, or make partial repairs if you wish. How much will ye spend?"
+    "Taipan, you do not have enough cash!"
+    "Do you want Elder Brother Wu to make up the difference for you?"
+    "Elder Brother has given McHenry the difference between what he wanted and your cash on hand and added the same amount to your debt."
+    "Very well. Elder Brother Wu will not assist you. I would be wary of pirates if I were you, Taipan."
+    # time = hong.current_time()
+    # rate = ((((60.0 * (time + 3.0) / 4.0) * randfloat()) + 25.0 * (time + 3.0) / 4.0) * hong.ship_size / 50.0),
+    # cost = rate * hong.ship_damage + 1
+    pass
+
+def offer_ship(hong, display):
+    time = hong.current_time()
+    cost = randrange(1000.0 * (time + 5.0) / 6.0) * int(hong.ship_size / 50.0) + 1000
+    cond = "damaged" if hong.repair_percent() < 80 else "fine"
+    if hong.cash >= cost and display.ask_yn("Would you like to replace your %s ship with another one that has %d more capacity by paying an additional %s, Taipan?" % (cond, SHIP_SIZE_INCREMENT, i2a(cost).strip())):
+        hong.cash -= cost
+        hong.ship_size += SHIP_SIZE_INCREMENT
+        hong.ship_damage = 0
+        display.update(hong)
+
+def offer_gun(hong, display):
+    time = hong.current_time()
+    cost = randrange(1000.0 * (time + 5.0) / 6.0) + 500
+    if hong.cash > cost:
+        if display.ask_yn("Would you like to buy a ship's gun for %s, Taipan?" % i2a(cost).strip()):
+            hong.cash -= cost
+            hong.ship_guns += 1
+            hong.ship_size -= GUN_SIZE
+            display.update(hong)
 
 # =====================================================================================
 # ▗▖ ▗▖ ▗▄▖ ▗▄▄▖ ▗▄▄▄▖▗▖ ▗▖ ▗▄▖ ▗▖ ▗▖ ▗▄▄▖▗▄▄▄▖
@@ -609,9 +626,10 @@ def check_safety(hong, display):
     if hong.warehouse_available() < hong.warehouse_size and chance_of(50):
         display.say("Messenger reports a large warehouse fire, Taipan!")
         for g in range(NUM_GOODS):
-            f = 1.3 + randfloat()
-            f = int(hong.warehouse_goods[g] / f)
-            hong.warehouse_goods[g] = max(f, 1)
+            if hong.warehouse_goods[g] > 0:
+                f = 1.3 + randfloat()
+                f = int(hong.warehouse_goods[g] / f)
+                hong.warehouse_goods[g] = max(f, 1)
         display.update(hong)
 
 # =====================================================================================
@@ -784,7 +802,7 @@ class PirateBattle:
                 display.update(hong)
 
 def check_pirates(hong, display):
-    if True: # chance_of(hong.pirate_chance):
+    if chance_of(hong.pirate_chance):
         PirateBattle(hong, PIRATE_FLEET).execute(hong, display)
 
 # =====================================================================================

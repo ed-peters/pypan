@@ -265,16 +265,37 @@ def check_upgrades(hong, display):
             offer_gun(hong, display)
 
 def offer_repair(hong, display):
-    "Taipan, Mc Henry from the Hong Kong shipyards has arrived! He says, \"I see ye've a wee bit of damage to yer ship. Will ye be wanting repairs?"
-    "Och, 'tis a pity to be %d%% damaged. We can fix yer whole ship for %d, or make partial repairs if you wish. How much will ye spend?"
-    "Taipan, you do not have enough cash!"
-    "Do you want Elder Brother Wu to make up the difference for you?"
-    "Elder Brother has given McHenry the difference between what he wanted and your cash on hand and added the same amount to your debt."
-    "Very well. Elder Brother Wu will not assist you. I would be wary of pirates if I were you, Taipan."
-    # time = hong.current_time()
-    # rate = ((((60.0 * (time + 3.0) / 4.0) * randfloat()) + 25.0 * (time + 3.0) / 4.0) * hong.ship_size / 50.0),
-    # cost = rate * hong.ship_damage + 1
-    pass
+
+    # won't repair if there's no point
+    if hong.cash == 0 or hong.ship_damage == 0:
+        return
+
+    if not display.ask_yn("Taipan, Mc Henry from the Hong Kong shipyards has arrived! He says, \"I see ye've a wee bit of damage to yer ship. Will ye be wanting repairs?"):
+        return
+
+    time = hong.current_time()
+    rate = int((((60.0 * (time + 3.0) / 4.0) * randfloat()) + 25.0 * (time + 3.0) / 4.0) * hong.ship_size / 50.0)
+    cost = rate * hong.ship_damage + 1
+
+    n = display.ask_num("Och, 'tis a pity to be %d%% damaged. We can fix yer whole ship for %s, or make partial repairs if you wish. How much will ye spend?" % (hong.ship_damage, i2a(cost).strip()), min(hong.cash, cost))
+
+    # if you don't have enough, EBW can make up the difference for you
+    if n > hong.cash:
+        if not display.ask_yn("You do not have enough cash on hand, Taipan! Do you want Elder Brother Wu to make up the difference for you?"):
+            display.say("Very well. Elder Brother Wu will not assist you. I would be wary of pirates if I were you, Taipan.")
+            return
+        display.say("Elder Brother Wu has given McHenry the difference and added the same amount to your debt.")
+        hong.debt += cost - hong.cash
+        hong.cash = 0
+        n = cost
+
+    fixed = int(hong.ship_damage * float(n) / float(cost))
+    display.say("fixing %d" % fixed)
+
+    if n == cost:
+        hong.ship_damage = 0
+    else:
+        hong.ship_damage = int(hong.ship_damage * float(n) / float(cost))
 
 def offer_ship(hong, display):
     time = hong.current_time()

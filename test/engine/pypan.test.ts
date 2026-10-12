@@ -1,0 +1,126 @@
+import { describe, expect, it } from "vitest";
+import { GENERAL, HONG_KONG, SHANGHAI } from "../../src/engine/constants";
+import type { Hong } from "../../src/engine/hong";
+import { establishOpts, newGame } from "../../src/engine/pypan";
+import { ScriptedRng } from "../../src/engine/rng";
+import { makeHong } from "../helpers/hong";
+
+const MIN_PRICES = [0, 0, 0, 0, 0];
+
+/** Answer prompts in order, continuing past says; returns the prompt texts seen. */
+function drive(game: ReturnType<typeof newGame>["game"], answers: unknown[]): string[] {
+  const seen: string[] = [];
+  const queue = [...answers];
+  while (game.prompt) {
+    seen.push(game.prompt.text);
+    if (game.prompt.kind === "say") {
+      game.answer();
+    } else if (queue.length > 0) {
+      game.answer(queue.shift());
+    } else {
+      break;
+    }
+  }
+  expect(queue).toEqual([]);
+  return seen;
+}
+
+describe("starting a game", () => {
+  it("offers guns or debt", () => {
+    const { game, session } = newGame({ rng: new ScriptedRng(MIN_PRICES) });
+    expect(game.prompt).toEqual({
+      kind: "choose",
+      text: "Would you like to start with:",
+      options: ["Guns (and no debt)", "Debt (and no guns)"],
+      cancellable: false,
+    });
+    expect(session.hong).toBeNull();
+  });
+
+  it("starts with guns: no extortion (no cash), no Wu (no debt), straight to the menu", () => {
+    const saves: Hong[] = [];
+    const { game, session } = newGame({ rng: new ScriptedRng(MIN_PRICES), onSave: (h) => saves.push(h) });
+    game.answer(0);
+    expect(session.hong).toMatchObject({ shipGuns: 5, cash: 0, debt: 0 });
+    expect(game.prompt?.text).toMatch(/What shall I do, Taipan\?$/);
+    expect(saves).toEqual([session.hong]);
+  });
+
+  it("starts with debt: Li Yuen asks for a donation, then Wu offers business", () => {
+    const { game, session } = newGame({ rng: new ScriptedRng([...MIN_PRICES, 0.5]) });
+    const seen = drive(game, [1, false, false]);
+    expect(seen).toEqual([
+      "Would you like to start with:",
+      "Li Yuen asks 81 in donation to the temple of Tin Hau, the Sea Goddess. Will you pay?",
+      "Very well. I would be wary of pirates if I were you, Taipan.",
+      "Do you have business with Elder Brother Wu, the moneylender, Taipan?",
+      expect.stringMatching(/What shall I do, Taipan\?$/),
+    ]);
+    expect(session.hong).toMatchObject({ cash: 400, debt: 5000 });
+  });
+
+  it("offers to restore a saved game", () => {
+    const saved = makeHong({ cash: 0, debt: 0, location: HONG_KONG });
+    const { game, session } = newGame({ rng: new ScriptedRng(), saved });
+    expect(game.prompt).toMatchObject({ options: expect.arrayContaining(["Your last game restored"]) });
+    game.answer(2);
+    expect(session.hong).toBe(saved);
+  });
+});
+
+describe("the port menu", () => {
+  const labels = (h: Hong) => establishOpts(h, new ScriptedRng()).map(([l]) => l);
+
+  it("offers everything in Hong Kong", () => {
+    expect(labels(makeHong())).toEqual([
+      "Buy goods", "Sell goods", "Transfer goods", "Visit Elder Brother Wu",
+      "Visit the bank", "Exit the game", "Leave port",
+    ]);
+  });
+
+  it("offers only trading and sailing elsewhere, plus transfers with a lorcha", () => {
+    expect(labels(makeHong({ location: SHANGHAI, transfer: -1 }))).toEqual(["Buy goods", "Sell goods", "Leave port"]);
+    expect(labels(makeHong({ location: SHANGHAI, transfer: 5 }))).toEqual([
+      "Buy goods", "Sell goods", "Transfer goods", "Leave port",
+    ]);
+  });
+});
+
+describe("a whole game", () => {
+  it("starts, buys, sails, sells, sails home, pays Li Yuen and exits", () => {
+    const rng = new ScriptedRng([
+      ...MIN_PRICES, //            starting prices: general at 5
+      0.5, //                      Li Yuen asks 81
+      1, 1, //                     to Shanghai: no pirates, no storm
+      1, //                        extortion counter unchanged -> lieutenant
+      24, 0, 0, 0, 0, 1, //        Shanghai prices: general at 29; no shock
+      1, 1, //                     back home: no pirates, no storm
+      1, 0.5, //                   extortion counter unchanged; Li Yuen asks 369
+      ...MIN_PRICES, 1, //         Hong Kong prices; no shock
+    ]);
+    const saves: number[] = [];
+    const { game, session } = newGame({ rng, onSave: (h) => saves.push(h.cash) });
+
+    const seen = drive(game, [
+      1, false, false, //          debt start; refuse Li Yuen; no business with Wu
+      0, GENERAL, 60, //           buy 60 general for 300
+      6, SHANGHAI, //              leave port for Shanghai
+      1, GENERAL, 60, //           sell 60 general for 1740
+      2, HONG_KONG, //             leave port for Hong Kong
+      false, true, //              no business with Wu; pay Li Yuen
+      5, //                        exit the game
+    ]);
+
+    expect(seen).toContain("Li Yuen has sent a Lieutenant, Taipan.  He says his admiral wishes to see you in Hong Kong, posthaste!");
+    expect(seen).toContain("Li Yuen asks 369 in donation to the temple of Tin Hau, the Sea Goddess. Will you pay?");
+    expect(seen.at(-1)).toBe("Very well. Until we meet again, Taipan!");
+    expect(game.done).toBe(true);
+    expect(rng.remaining).toBe(0);
+    expect(session.hong).toMatchObject({
+      location: HONG_KONG, month: 3, cash: 1471, debt: 6050, extorted: 1,
+      shipGoods: [0, 0, 0, 0, 0],
+    });
+    // saved at each menu (HK, HK, Shanghai, Shanghai, HK) and on exit
+    expect(saves).toEqual([400, 100, 100, 1840, 1471, 1471]);
+  });
+});

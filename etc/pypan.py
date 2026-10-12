@@ -426,7 +426,6 @@ def visit_wu(hong, display):
         # otherwise, he's not interested
         else:
             display.say("Elder Brother is aware of your plight, Taipan. He urges you to exercise all the means at your disposal to correct it.")
-        
         return
 
     # he will only accept repayment up to the amount of the loan

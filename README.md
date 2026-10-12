@@ -1,132 +1,29 @@
-# Control Loop
+# PyPan
 
-* Question is "Name your hong"; return type is string
-* Question is "Do you want guns?"; return type is option (1/2)
-* Question is "Will you pay?"; return type is bool
-    * Question is "(nothing)"; return type is nothing
-* Question is "Do you want visit EBW?"; return type is bool
+A *Taipan!*-style trading game set in 1860s East Asia, rebuilt as a mobile-friendly
+web app with a green-screen terminal look. It targets iPad and iPhone Safari and will
+eventually be deployed to Cloudflare as static assets.
 
-# Feature Notes
+- [`SPEC.md`](SPEC.md) — game specification
+- [`etc/`](etc/) — the original Python/curses implementation (`pypan.py`), kept as the reference for the port
 
-## List
+## Development
 
-* Sailing
-    * Storms
-    * Pirate battle (regular fleet)
-        * Running
-        * Shooting
-        * Throwing cargo
-        * Interrupting
-    * Pirate battle (Li Yuen)
-* Bank
-    * Deposit
-    * Withdraw
-* Trading
-    * Buying
-    * Selling
-* Warehouse
-    * Transferring goods
-    * Lorcha for transport
-    * Upgrade warehouse
-* Shipyad
-    * Buy gun
-    * Buy ship
-    * Repair ship
-* Pirates
-    * Extort
-* Lender
-    * Repay
-    * Borrow
+```sh
+npm install
+npm run dev        # Vite dev server (add --host to test on a phone over the LAN)
+npm test           # Vitest
+npm run typecheck
+npm run build      # static output in dist/
+```
 
-## Order of operations
+## Layout
 
-* Startup
-    * Check extortion (see below)
-    * Check lender visit (see below)
-    * Enter comprador's loop
+```
+src/engine/   pure TypeScript game logic (no DOM); generator-based prompt flow
+src/ui/       green-screen terminal UI
+src/storage/  save/load behind a SaveStore interface
+test/         Vitest unit, scenario and property tests
+```
 
-* Comprador
-    * Buy
-    * Sell
-    * Transfer
-        * P: good (option)
-            * P: failure (say)
-            * P: amount (number)
-                * P: failure (say)
-    * Bank
-        * P: failure (say)
-        * P: deposit (number)
-        * P: withdraw (number)
-    * Lender
-        * P: repay (number)
-        * P: borrow (number)
-    * Save & exit
-        * P: result (say)
-    * Sail
-        * P: city (option)
-        * P: failure (say)
-
-* Sailing
-    * Storm
-        * P: announce (say)
-        * P: warning (say)
-        * P: result (say)
-    * Pirates
-        * P: announce (say)
-        * P: all clear (say)
-
-* Fighting
-    * Run
-        * P: result (say)
-    * Fight:
-        * P: announce (say)
-        * P: result (say)
-    * Dump:
-        * See buy/sell/transfer
-    * Interrupt
-        * Announce (say)
-
-* Arriving
-    * Check extortion
-        * P: summons (say)
-        * P: request (y/n)
-            * P: borrow (y/n)
-                * P: result (say)
-    * Check lender
-        * P: summons (say x 4)
-        * P: visit (y/n)
-            * P: borrow (number)
-            * P: repay (number)
-    * Check shipyard
-        * Repair
-            * P: visit (y/n)
-                * P: amount (number)
-        * Ship
-            * P: purchase (y/n)
-        * Gun
-            * P: purchase (y/n)
-    * Check warehouse
-        * Upgrade
-            * P: purchase (y/n)
-        * Fire
-            * P: announce (say)
-        * Lorcha
-            * P: announce (say)
-    * Check personal safety
-        * Harbor cops
-            * P: announce (say)
-        * Muggers
-            * P: announce (say)
-    * Check special offers
-        * Cargo
-            * P: deliver (say)
-            * P: offer (y/n)
-        * Price shocks
-            * P: announce (say)
-
-# Files
-
-* util
-* actions
-* world
-* 
+Work is tracked in Beads (`bd ready` to see what's next).

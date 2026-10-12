@@ -1,0 +1,40 @@
+{
+    "name": "Rising Sun",
+    "year": 1860,
+    "month": 1,
+    "cash": 0,
+    "debt": 0,
+    "bank": 0,
+    "ship_size": 60,
+    "ship_goods": [
+        0,
+        0,
+        0,
+        0,
+        0
+    ],
+    "ship_guns": 5,
+    "ship_damage": 0,
+    "ship_cargo": null,
+    "pirate_chance": 7,
+    "warehouse_size": 10000,
+    "warehouse_goods": [
+        0,
+        0,
+        0,
+        0,
+        0
+    ],
+    "threatened": false,
+    "extorted": 0,
+    "bailout": 1,
+    "location": 0,
+    "transfer": 0,
+    "prices": [
+        6,
+        170,
+        2200,
+        26000,
+        200000
+    ]
+}

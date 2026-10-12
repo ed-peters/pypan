@@ -2,7 +2,7 @@
 // input dock, and turns taps and key presses into answers for the Game.
 
 import type { Game } from "../engine/game";
-import type { Ending, Session } from "../engine/pypan";
+import type { GameOver, Session } from "../engine/pypan";
 import type { Prompt } from "../engine/prompts";
 import { ART, TITLE } from "./art";
 import { entryValue, keyToResult, type KeyResult } from "./keys";
@@ -18,11 +18,11 @@ export interface TerminalCallbacks {
   /** Called when the player asks for a new game after this one ends. */
   onNewGame: () => void;
   /** Called once when a game ends. */
-  onEnd?: (ending: Ending) => void;
+  onEnd?: (result: GameOver) => void;
 }
 
 export class Terminal {
-  private game: Game<Ending> | null = null;
+  private game: Game<GameOver> | null = null;
   private session: Session | null = null;
   private entry = "";
   private typing: { timer: number; finish: () => void } | null = null;
@@ -104,7 +104,7 @@ export class Terminal {
   }
 
   /** Start showing a new game. */
-  attach(game: Game<Ending>, session: Session): void {
+  attach(game: Game<GameOver>, session: Session): void {
     this.game = game;
     this.session = session;
     this.render();
@@ -176,11 +176,7 @@ export class Terminal {
 
     if (!prompt) {
       this.art.textContent = TITLE;
-      this.typeMessage(
-        this.game?.result === "sunk"
-          ? "Your ship has been lost with all hands, Taipan.\n\nGAME OVER"
-          : "Your game has been saved, Taipan.",
-      );
+      this.typeMessage(this.game?.result ? finalScreen(this.game.result) : "");
       this.renderDock([button("New game", () => this.callbacks.onNewGame(), "wide")]);
       return;
     }
@@ -297,6 +293,14 @@ export class Terminal {
     this.game = null;
     this.renderDock([button("New game", () => this.callbacks.onNewGame(), "wide")]);
   }
+}
+
+/** The text of the final screen: how the game ended, then the score and ranks. */
+function finalScreen(result: GameOver): string {
+  const how = result.ending === "sunk"
+    ? "Your ship has been lost with all hands, Taipan."
+    : "You have retired, Taipan.";
+  return `${how}\n\n${result.report}\n\nGAME OVER`;
 }
 
 // ------------------------------------------------------------------------------------

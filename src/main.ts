@@ -12,10 +12,8 @@ const store = new LocalStorageStore();
 const root = document.querySelector<HTMLElement>("#app")!;
 const terminal = new Terminal(root, {
   onNewGame: start,
-  // a sunk ship can't be restored
-  onEnd: (ending) => {
-    if (ending === "sunk") void store.clear();
-  },
+  // a finished game (retired or sunk) can't be restored
+  onEnd: () => void store.clear(),
 });
 
 async function start(): Promise<void> {

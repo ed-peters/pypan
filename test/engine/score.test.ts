@@ -1,0 +1,66 @@
+import { describe, expect, it } from "vitest";
+import { cashPosition, positionComment, rank, score, scoreReport } from "../../src/engine/score";
+import { makeHong } from "../helpers/hong";
+
+describe("cashPosition", () => {
+  it("is cash plus bank, less debt, ignoring goods", () => {
+    const h = makeHong({ cash: 1000, bank: 5000, debt: 2500, shipGoods: [100, 0, 0, 0, 0] });
+    expect(cashPosition(h)).toBe(3500);
+  });
+});
+
+describe("score", () => {
+  it("is cash position per month played, divided by 100", () => {
+    // 1,200,000 over 12 months
+    expect(score(makeHong({ cash: 1200000, debt: 0, time: 12 }))).toBe(1000);
+  });
+
+  it("rounds down, including below zero", () => {
+    expect(score(makeHong({ cash: 1999, debt: 0, time: 1 }))).toBe(19);
+    expect(score(makeHong({ cash: 0, debt: 150, time: 1 }))).toBe(-2);
+  });
+});
+
+describe("rank", () => {
+  it.each([
+    [1000000, "Ma Tsu"], [50000, "Ma Tsu"],
+    [49999, "Master Taipan"], [8000, "Master Taipan"],
+    [7999, "Taipan"], [1000, "Taipan"],
+    [999, "Compradore"], [500, "Compradore"],
+    [499, "Galley Hand"], [0, "Galley Hand"], [-50, "Galley Hand"],
+  ])("ranks %d as %s", (s, title) => {
+    expect(rank(s)).toBe(title);
+  });
+});
+
+describe("positionComment", () => {
+  it.each([
+    [1000001, "You're a M I L L I O N A I R E !!!"],
+    [1000000, null],
+    [1000, null],
+    [999, "Have you considered a land-based job?"],
+    [0, "Have you considered a land-based job?"],
+    [-1, "The crew has requested that you stay on shore for their safety!!"],
+  ])("comments on %d", (position, comment) => {
+    expect(positionComment(position)).toBe(comment);
+  });
+});
+
+describe("scoreReport", () => {
+  it("announces the score and marks the player's rank in the table", () => {
+    expect(scoreReport(1234)).toBe(
+      "Your score is 1,234.\n\n" +
+      "  Rank           Score\n" +
+      "  Ma Tsu         50,000 and over\n" +
+      "  Master Taipan  8,000 to 49,999\n" +
+      "> Taipan         1,000 to 7,999\n" +
+      "  Compradore     500 to 999\n" +
+      "  Galley Hand    less than 500",
+    );
+  });
+
+  it("shows negative scores", () => {
+    expect(scoreReport(-2)).toMatch(/^Your score is -2\./);
+    expect(scoreReport(-2)).toContain("> Galley Hand");
+  });
+});

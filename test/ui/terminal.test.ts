@@ -53,7 +53,7 @@ describe("Terminal", () => {
     expect($(".art").textContent).toBe("");
     expect($(".message").textContent).toMatch(/What shall I do, Taipan\?$/);
     expect($(".strip").textContent).toContain("Guns 5");
-    expect(buttons().map((b) => b.textContent)).toEqual(expect.arrayContaining(["[6] Leave port", "[7] Exit the game"]));
+    expect(buttons().map((b) => b.textContent)).toEqual(expect.arrayContaining(["[6] Leave port", "[7] Retire"]));
   });
 
   it("answers from the keyboard too", () => {
@@ -119,12 +119,25 @@ describe("Terminal", () => {
     expect(toggle.getAttribute("aria-expanded")).toBe("true");
   });
 
-  it("offers a new game when the game ends", () => {
+  it("shows the score after retiring, and offers a new game", () => {
     setup();
-    tap("Guns");
-    tap("Exit the game");
+    tap("Guns"); //                  no debt, so Retire is offered
+    tap("Retire");
+    expect($(".message").textContent).toBe("Are you sure you want to retire, Taipan?");
+    tap("[Y] Yes");
+    expect($(".message").textContent).toBe("Have you considered a land-based job?");
     tap("Continue");
-    expect($(".message").textContent).toBe("Your game has been saved, Taipan.");
+    expect($(".message").textContent).toBe(
+      "You have retired, Taipan.\n\n" +
+      "Your score is 0.\n\n" +
+      "  Rank           Score\n" +
+      "  Ma Tsu         50,000 and over\n" +
+      "  Master Taipan  8,000 to 49,999\n" +
+      "  Taipan         1,000 to 7,999\n" +
+      "  Compradore     500 to 999\n" +
+      "> Galley Hand    less than 500\n\n" +
+      "GAME OVER",
+    );
     tap("New game");
     expect(onNewGame).toHaveBeenCalled();
   });
@@ -135,11 +148,12 @@ describe("Terminal", () => {
     const { game, session } = newGame({ rng: rolls() });
     term.attach(game, session);
     tap("Guns");
-    tap("Exit the game");
+    tap("Retire");
+    tap("[Y] Yes");
     expect(onEnd).not.toHaveBeenCalled();
     tap("Continue");
     expect(onEnd).toHaveBeenCalledOnce();
-    expect(onEnd).toHaveBeenCalledWith("exit");
+    expect(onEnd).toHaveBeenCalledWith(expect.objectContaining({ ending: "retired", score: 0 }));
   });
 
   it("shows GAME OVER when the ship sinks", () => {
@@ -158,9 +172,10 @@ describe("Terminal", () => {
     tap("Continue"); //  3 hostile ships approaching
     tap("Run away");
     while (!game.done) tap("Continue");
-    expect(game.result).toBe("sunk");
-    expect($(".message").textContent).toBe("Your ship has been lost with all hands, Taipan.\n\nGAME OVER");
-    expect(onEnd).toHaveBeenCalledWith("sunk");
+    expect(game.result?.ending).toBe("sunk");
+    expect($(".message").textContent).toMatch(/^Your ship has been lost with all hands, Taipan\.\n\nYour score is 0\./);
+    expect($(".message").textContent).toMatch(/GAME OVER$/);
+    expect(onEnd).toHaveBeenCalledWith(expect.objectContaining({ ending: "sunk" }));
     expect(buttons().map((b) => b.textContent)).toEqual(["New game"]);
   });
 });

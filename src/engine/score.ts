@@ -1,0 +1,51 @@
+// Final score when the game ends, by retiring or sinking.
+
+import { money } from "./format";
+import { currentTime, type Hong } from "./hong";
+
+/** Score ranks, best first: each applies from its minimum score upward. */
+export const RANKS = [
+  { title: "Ma Tsu", min: 50000, range: "50,000 and over" },
+  { title: "Master Taipan", min: 8000, range: "8,000 to 49,999" },
+  { title: "Taipan", min: 1000, range: "1,000 to 7,999" },
+  { title: "Compradore", min: 500, range: "500 to 999" },
+  { title: "Galley Hand", min: -Infinity, range: "less than 500" },
+] as const;
+
+export type Rank = (typeof RANKS)[number]["title"];
+
+/** What the player is worth at the end: cash plus bank, less debt. Goods don't count. */
+export function cashPosition(h: Hong): number {
+  return h.cash + h.bank - h.debt;
+}
+
+/** Cash position per month played, divided by 100, rounded down. */
+export function score(h: Hong): number {
+  return Math.floor(cashPosition(h) / currentTime(h) / 100);
+}
+
+export function rank(s: number): Rank {
+  return RANKS.find((r) => s >= r.min)!.title;
+}
+
+/** A comment on the final cash position, if it deserves one. */
+export function positionComment(position: number): string | null {
+  if (position > 1000000) {
+    return "You're a M I L L I O N A I R E !!!";
+  }
+  if (position < 0) {
+    return "The crew has requested that you stay on shore for their safety!!";
+  }
+  if (position < 1000) {
+    return "Have you considered a land-based job?";
+  }
+  return null;
+}
+
+/** "Your score is N" and the ranking table, with the player's rank marked. */
+export function scoreReport(s: number): string {
+  const mine = rank(s);
+  const width = Math.max(...RANKS.map((r) => r.title.length));
+  const rows = RANKS.map((r) => `${r.title === mine ? ">" : " "} ${r.title.padEnd(width)}  ${r.range}`);
+  return `Your score is ${money(s)}.\n\n  ${"Rank".padEnd(width)}  Score\n${rows.join("\n")}`;
+}

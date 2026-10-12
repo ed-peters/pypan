@@ -9,17 +9,41 @@ build a fortune.
 The game began as a Python `curses` terminal application (`etc/pypan.py`, kept as a
 reference). It is now a TypeScript web app with a green-screen UI for iPhone and iPad:
 the game logic lives in `src/engine`, the UI in `src/ui`. The port fixed a number of
-bugs in the Python version and added Li Yuen's pirate fleet and sinking; see
-§17 for the full list of changes.
+bugs in the Python version and added Li Yuen's pirate fleet, sinking, and retiring
+with a final score; see §17 for the full list of changes.
 
 ---
 
 ## 1. Objective
 
-There is no explicit win condition. The game is an open-ended economic sandbox: the
-player accumulates net worth (cash, bank balance, and goods) over time while servicing
-a large starting debt. Play continues until the player exits (saving the game) or the
-ship is sunk in a pirate battle, which ends the game for good.
+The player builds a fortune while servicing a large starting debt. The game ends when
+the player **retires** (in Hong Kong, once out of debt; see §5) or the ship is **sunk**
+in a pirate battle (§7.3). Either way the game is over for good and is scored.
+
+### 1.1 Scoring
+
+When the game ends, the **final cash position** is cash + bank − debt (goods don't
+count). The captain comments on it, if it deserves a comment (only the first that
+applies):
+
+- Over 1,000,000: "You're a M I L L I O N A I R E !!!"
+- Below 0: "The crew has requested that you stay on shore for their safety!!"
+- Below 1,000: "Have you considered a land-based job?"
+
+The **score** is `cash position / months played / 100`, rounded down (it can be
+negative). The final screen says "Your score is N." and shows the ranking table with
+the player's rank marked:
+
+| Rank | Score |
+|---|---|
+| Ma Tsu | 50,000 and over |
+| Master Taipan | 8,000 to 49,999 |
+| Taipan | 1,000 to 7,999 |
+| Compradore | 500 to 999 |
+| Galley Hand | less than 500 |
+
+To stop playing without ending the game, the player just closes the app; the game is
+saved at every port menu and can be restored (§13).
 
 ---
 
@@ -186,9 +210,10 @@ and the lender, then repeatedly presents the port action menu. The menu
 - **Transfer goods** (only if `transfer >= 0`)
 - In Hong Kong only: **Visit Elder Brother Wu**, **Visit the bank**
 - **Leave port**
-- In Hong Kong only: **Exit the game**
+- In Hong Kong only, and only when out of debt: **Retire**. It asks "Are you sure you
+  want to retire, Taipan?" before ending the game (§1.1).
 
-The game auto-saves at the top of every menu iteration and on exit.
+The game auto-saves at the top of every menu iteration.
 
 ### 5.1 Sailing (`sail_away`)
 
@@ -270,7 +295,7 @@ hull. Gun-hit probability rises with existing damage (certain above 80%).
 - **Fled** or **interrupted**: no reward.
 - **Sunk**: in any battle, once hull damage reaches 100% of ship size the captain
   says "The buggers got us, Taipan!!" and "It's all over now!!", and the game is
-  over. The saved game is deleted so it can't be restored.
+  over and scored (§1.1). The saved game is deleted so it can't be restored.
 
 ### 7.4 Li Yuen's Fleet
 
@@ -365,7 +390,7 @@ space. Only one special cargo can be carried at a time.
 - **Save**: the `Hong` state is saved to the browser's `localStorage` (key
   `pypan.save`) in the same pretty-printed JSON format the Python version wrote to
   `pypan.json`, so Python saves can be imported. It saves at the top of every port
-  menu iteration and on exit. A ship that sinks deletes the save.
+  menu iteration. When the game ends (retiring or sinking), the save is deleted.
 - **Load**: offered at startup if a save exists. A missing, corrupt, or unreadable
   save is treated as no save.
 - Saves are per browser: a game started on one device isn't visible on another.
@@ -430,7 +455,8 @@ Each prompt shows touch controls in a dock below the report:
   Amounts above the maximum are allowed; the game explains why they're refused (and
   for repairs, offers Wu's help).
 
-When the game ends, the player can start a new one.
+When the game ends, the final screen shows how it ended, the score, and the ranking
+table (§1.1), with a button to start a new game.
 
 ---
 
@@ -438,7 +464,6 @@ When the game ends, the player can start a new one.
 
 - **Escalating bailouts** — the `bailout` multiplier is never increased (pypan-39).
 - **Make jade an event** — jade exists as a tradeable good but has no special event.
-- No explicit win/retirement condition is implemented.
 - **Location-specific pricing** — prices are random per port; the "based" mode is
   the planned starting point.
 - **Resuming mid-event** — reloading during a battle resumes from the last port menu.
@@ -469,10 +494,13 @@ Additions:
 
 - **Li Yuen's pirate fleet** (§7.4), which was defined but never used.
 - **Sinking** (§7.3): the ship can now be lost in battle, ending the game.
+- **Retiring and scoring** (§1.1): Retire replaces Exit; the game ends with a score
+  and rank.
 
 Interface changes:
 
 - The web UI replaces `curses` (§15), with saves in browser storage (§13).
 - Market prices are shown in two columns.
-- In Hong Kong, **Leave port** comes before **Exit the game**.
+- **Exit the game** is gone: progress is saved automatically, so closing the app is
+  enough. **Retire** takes its place at the end of the Hong Kong menu.
 - Display amounts (such as Li Yuen's demand) use thousands separators throughout.

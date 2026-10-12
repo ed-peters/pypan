@@ -71,11 +71,19 @@ describe("starting a game", () => {
 describe("the port menu", () => {
   const labels = (h: Hong) => establishOpts(h, new ScriptedRng()).map(([l]) => l);
 
-  it("offers everything in Hong Kong", () => {
-    expect(labels(makeHong())).toEqual([
+  it("offers everything in Hong Kong, including retiring when out of debt", () => {
+    expect(labels(makeHong({ debt: 0 }))).toEqual([
       "Buy goods", "Sell goods", "Transfer goods", "Visit Elder Brother Wu",
-      "Visit the bank", "Leave port", "Exit the game",
+      "Visit the bank", "Leave port", "Retire",
     ]);
+  });
+
+  it("won't let you retire while in debt", () => {
+    expect(labels(makeHong({ debt: 1 }))).not.toContain("Retire");
+  });
+
+  it("only lets you retire in Hong Kong", () => {
+    expect(labels(makeHong({ location: SHANGHAI, debt: 0, transfer: -1 }))).not.toContain("Retire");
   });
 
   it("offers only trading and sailing elsewhere, plus transfers with a lorcha", () => {
@@ -87,10 +95,39 @@ describe("the port menu", () => {
 });
 
 describe("game endings", () => {
-  it("ends with 'exit' when the player exits", () => {
-    const { game } = newGame({ rng: new ScriptedRng(MIN_PRICES) });
-    drive(game, [0, 6]);
-    expect(game.result).toBe("exit");
+  // a restored game in Hong Kong, out of debt; the extortion counter doesn't change
+  const retiree = (overrides: Parameters<typeof makeHong>[0]) =>
+    newGame({ rng: new ScriptedRng([1]), saved: makeHong({ debt: 0, extorted: 1, ...overrides }) });
+  const RETIRE = 6;
+
+  it("asks before retiring, and carries on if you change your mind", () => {
+    const { game } = retiree({ cash: 5000, time: 12 });
+    const seen = drive(game, [2, RETIRE, false]);
+    expect(seen.slice(-2)).toEqual([
+      "Are you sure you want to retire, Taipan?",
+      expect.stringMatching(/What shall I do, Taipan\?$/),
+    ]);
+    expect(game.done).toBe(false);
+  });
+
+  it("scores a retirement: cash plus bank, less debt, per month, over 100", () => {
+    const { game } = retiree({ cash: 700000, bank: 500000, time: 12 });
+    const seen = drive(game, [2, RETIRE, true]);
+    expect(seen.at(-1)).toBe("You're a M I L L I O N A I R E !!!");
+    expect(game.result).toEqual({
+      ending: "retired",
+      position: 1200000,
+      score: 1000,
+      rank: "Taipan",
+      report: expect.stringMatching(/^Your score is 1,000\./),
+    });
+  });
+
+  it("makes no comment on a middling fortune", () => {
+    const { game } = retiree({ cash: 5000, time: 12 });
+    const seen = drive(game, [2, RETIRE, true]);
+    expect(seen.at(-1)).toBe("Are you sure you want to retire, Taipan?");
+    expect(game.result).toMatchObject({ ending: "retired", position: 5000, score: 4, rank: "Galley Hand" });
   });
 
   it("ends with 'sunk' when the ship sinks, without saving afterwards", () => {
@@ -100,14 +137,19 @@ describe("game endings", () => {
     const rng = new ScriptedRng([0, 2, 0.5, 100, 1, 0, 2, 1, 0.5]);
     const { game } = newGame({ rng, saved, onSave: (h) => saves.push(h) });
     const seen = drive(game, [2, 5, SHANGHAI, 0]);
-    expect(seen.at(-1)).toBe("It's all over now!!");
-    expect(game.result).toBe("sunk");
+    expect(seen.slice(-3)).toEqual([
+      "The buggers got us, Taipan!!",
+      "It's all over now!!",
+      "Have you considered a land-based job?",
+    ]);
+    expect(game.result).toMatchObject({ ending: "sunk", position: 0, score: 0, rank: "Galley Hand" });
     expect(saves).toHaveLength(1); // only the menu checkpoint before sailing
   });
+
 });
 
 describe("a whole game", () => {
-  it("starts, buys, sails, sells, sails home, pays Li Yuen and exits", () => {
+  it("starts, buys, sails, sells, sails home and pays Li Yuen", () => {
     const rng = new ScriptedRng([
       ...MIN_PRICES, //            starting prices: general at 5
       0.5, //                      Li Yuen asks 81
@@ -128,19 +170,19 @@ describe("a whole game", () => {
       1, GENERAL, 60, //           sell 60 general for 1740
       2, HONG_KONG, //             leave port for Hong Kong
       false, true, //              no business with Wu; pay Li Yuen
-      6, //                        exit the game
     ]);
 
     expect(seen).toContain("Li Yuen has sent a Lieutenant, Taipan.  He says his admiral wishes to see you in Hong Kong, posthaste!");
     expect(seen).toContain("Li Yuen asks 369 in donation to the temple of Tin Hau, the Sea Goddess. Will you pay?");
-    expect(seen.at(-1)).toBe("Very well. Until we meet again, Taipan!");
-    expect(game.done).toBe(true);
+    // back at the menu, still in debt, so no retiring yet
+    expect(game.prompt).toMatchObject({ kind: "choose" });
+    expect(game.prompt?.kind === "choose" && game.prompt.options).not.toContain("Retire");
     expect(rng.remaining).toBe(0);
     expect(session.hong).toMatchObject({
       location: HONG_KONG, month: 3, cash: 1471, debt: 6050, extorted: 1,
       shipGoods: [0, 0, 0, 0, 0],
     });
-    // saved at each menu (HK, HK, Shanghai, Shanghai, HK) and on exit
-    expect(saves).toEqual([400, 100, 100, 1840, 1471, 1471]);
+    // saved at each menu: HK, HK, Shanghai, Shanghai, HK
+    expect(saves).toEqual([400, 100, 100, 1840, 1471]);
   });
 });

@@ -1,9 +1,0 @@
-When the game ends, calculate the final cash position as cash on hand minus debt.
-
-If the player has > 1000000, say "You're a M I L L I O N A I R E !!!";
-If the player has < 0, say "The crew has requested that you stay on shore for their safety!!";
-If the player has < 1000, say "Have you considered a land-based job?".
-
-Then announce the score by saying "Your score is ${score}" and printing the ranking table.
-
-

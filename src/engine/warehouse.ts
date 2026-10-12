@@ -1,0 +1,74 @@
+// The Hong Kong warehouse, transfers and the lorcha (SPEC.md section 10).
+
+import { GOODS, HONG_KONG, WAREHOUSE_SIZE_INCREMENT, good } from "./constants";
+import { money } from "./format";
+import { currentTime, hasAny, warehouseAvailable, type Hong } from "./hong";
+import { askNum, askOptOrCancel, askYn, say, type Flow } from "./prompts";
+import type { Rng } from "./rng";
+
+/** On arrival: set the transfer fee for this port, and maybe offer a bigger warehouse. */
+export function* checkWarehouse(h: Hong, rng: Rng): Flow {
+  // establish the transfer price for goods to and from the warehouse
+  if (h.location === HONG_KONG) {
+    h.transfer = 0;
+  } else if (currentTime(h) > 12 && rng.chanceOf(6)) {
+    h.transfer = rng.randrange(5) + 5;
+    yield* say(`Good joss! A lorcha is waiting nearby and can transfer goods with your warehouse in Hong Kong for ${h.transfer}%, Taipan.`);
+  } else {
+    h.transfer = -1;
+  }
+
+  // if we're at home, we might be able to upgrade the warehouse
+  if (h.location === HONG_KONG && currentTime(h) > 12 && rng.chanceOf(10)) {
+    const time = currentTime(h);
+    const cost = rng.randrange(1000 * (time + 5) / 6) * Math.trunc(h.warehouseSize / 500) + 1000;
+    if (h.cash >= cost && (yield* askYn(`A new warehouse with an additional ${WAREHOUSE_SIZE_INCREMENT} capacity is available for ${money(cost)}. Would like to upgrade, Taipan?`))) {
+      h.cash -= cost;
+      h.warehouseSize += WAREHOUSE_SIZE_INCREMENT;
+    }
+  }
+}
+
+/** Move one good between ship and warehouse; the fee skims what arrives. */
+export function* transfer(h: Hong): Flow {
+  // decide what good we're going to transfer; if we have none, there's no point
+  const g = yield* askOptOrCancel("What shall I transfer, Taipan?", GOODS);
+  if (g === null) {
+    return;
+  }
+  if (!hasAny(h, g)) {
+    yield* say(`You have no ${good(g)} to transfer, Taipan.`);
+    return;
+  }
+
+  // if we have any onboard, and space in the warehouse, we can offload the good
+  if (h.shipGoods[g]! > 0 && warehouseAvailable(h) > 0) {
+    const n = yield* askNum(
+      `How much ${good(g)} should I send to the warehouse, Taipan?`,
+      Math.min(h.shipGoods[g]!, warehouseAvailable(h)),
+    );
+    if (n > h.shipGoods[g]!) {
+      yield* say("You do not have that much in your ship's hold, Taipan.");
+    } else if (n > warehouseAvailable(h)) {
+      yield* say("You have no space in the warehouse, Taipan.");
+    } else if (n > 0) {
+      h.shipGoods[g]! -= n;
+      h.warehouseGoods[g]! += n - fee(h, n);
+    }
+  }
+
+  // if we have any in the warehouse, we can always load stuff on the ship
+  if (h.warehouseGoods[g]! > 0) {
+    const n = yield* askNum(`How much ${good(g)} should I bring onto the ship, Taipan?`, h.warehouseGoods[g]!);
+    if (n > h.warehouseGoods[g]!) {
+      yield* say("You do not have that much in your warehouse, Taipan.");
+    } else if (n > 0) {
+      h.warehouseGoods[g]! -= n;
+      h.shipGoods[g]! += n - fee(h, n);
+    }
+  }
+}
+
+function fee(h: Hong, n: number): number {
+  return Math.trunc(n * (h.transfer / 100));
+}

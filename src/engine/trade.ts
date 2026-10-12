@@ -1,0 +1,92 @@
+// Trading: local prices, price shocks, buying and selling (SPEC.md sections 4.1-4.3).
+
+import { GOODS, NUM_GOODS, good } from "./constants";
+import { money } from "./format";
+import { currentTime, type Hong } from "./hong";
+import { setPrices } from "./prices";
+import { askNum, askOptOrCancel, say, type Flow } from "./prompts";
+import type { Rng } from "./rng";
+
+export const MSG_POS_SHOCK = [
+  "Famine in South China, Taipan! General cargo prices have risen to the heavens!",
+  "An agent for the Moro rebels has been spotted in the area, Taipan! Arms are sky-high here!",
+  "Taipan! The wharves here have been burned by rebel samurai! All the silk was destroyed!",
+  "Taipan! A fire has swept the area! The price of opium has leaped because of hospital use!",
+  "A British trading company has been buying all the local jade, Taipan! Prices are sky-high!",
+] as const;
+
+export const MSG_NEG_SHOCK = [
+  "Malay pirates have flooded the area with cheap general cargo from their booty, Taipan!",
+  "Taipan! A period of relative peace has resulted in surplus arms being made available on the local market!",
+  "A rival hong has dumped surplus silk on the market here, Taipan! Prices have crashed!",
+  "Taipan, a Yankee captain is selling Turkish opium at below-market prices here!",
+  "Taipan! Burmese jade from a newly-discovered mine has been flooding the market here!",
+] as const;
+
+/** Current prices followed by a message (pypan.py's get_condition_report). */
+export function conditionReport(h: Hong, message: string): string {
+  const width = Math.max(...GOODS.map((g) => g.length));
+  const lines = GOODS.map((g, i) => `  ${g.padStart(width)} - ${money(h.prices[i]!)}`);
+  return `Current market conditions are as follows:\n\n${lines.join("\n")}\n\n${message}`;
+}
+
+/** Set prices on arrival, with a 1-in-10 chance of a shock after the first month. */
+export function* establishPrices(h: Hong, rng: Rng): Flow {
+  h.prices = setPrices(rng, h.location);
+
+  if (currentTime(h) > 1 && rng.chanceOf(10)) {
+    const g = rng.randrange(NUM_GOODS);
+    const f = rng.inRange(0, 5) + 5;
+    if (rng.chanceOf(2)) {
+      yield* say(MSG_POS_SHOCK[g]!);
+      h.prices[g]! *= f;
+    } else {
+      yield* say(MSG_NEG_SHOCK[g]!);
+      h.prices[g] = Math.max(1, Math.trunc(h.prices[g]! / f));
+    }
+  }
+}
+
+export function* buyGoods(h: Hong): Flow {
+  const g = yield* askOptOrCancel(conditionReport(h, "What shall I buy, Taipan?"), GOODS);
+  if (g === null) {
+    return;
+  }
+
+  // if you can't afford any, don't bother
+  const x = Math.floor(h.cash / h.prices[g]!);
+  if (x === 0) {
+    yield* say(`You cannot afford any ${good(g).toLowerCase()} at these prices, Taipan.`);
+    return;
+  }
+
+  const n = yield* askNum(conditionReport(h, `How much ${good(g).toLowerCase()} shall I buy, Taipan?`), x);
+  if (n > x) {
+    yield* say("You do not have enough cash on hand, Taipan.");
+  } else {
+    h.cash -= n * h.prices[g]!;
+    h.shipGoods[g]! += n;
+  }
+}
+
+export function* sellGoods(h: Hong): Flow {
+  const g = yield* askOptOrCancel(conditionReport(h, "What shall I sell, Taipan?"), GOODS);
+  if (g === null) {
+    return;
+  }
+
+  // you can't sell something you don't have
+  const x = h.shipGoods[g]!;
+  if (x === 0) {
+    yield* say(`You have no ${good(g).toLowerCase()} in your ship's hold, Taipan.`);
+    return;
+  }
+
+  const n = yield* askNum(conditionReport(h, `How much ${good(g).toLowerCase()} shall I sell, Taipan?`), x);
+  if (n > x) {
+    yield* say("You do not have that much in your ship's hold, Taipan.");
+  } else {
+    h.cash += n * h.prices[g]!;
+    h.shipGoods[g]! -= n;
+  }
+}

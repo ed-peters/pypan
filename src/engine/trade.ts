@@ -23,10 +23,23 @@ export const MSG_NEG_SHOCK = [
   "Taipan! Burmese jade from a newly-discovered mine has been flooding the market here!",
 ] as const;
 
-/** Current prices followed by a message (pypan.py's get_condition_report). */
+/**
+ * Current prices followed by a message (pypan.py's get_condition_report). Prices
+ * are in two columns to leave room for the menu below on small screens.
+ */
 export function conditionReport(h: Hong, message: string): string {
-  const width = Math.max(...GOODS.map((g) => g.length));
-  const lines = GOODS.map((g, i) => `  ${g.padStart(width)} - ${money(h.prices[i]!)}`);
+  const entries = GOODS.map((g, i) => [g, money(h.prices[i]!)] as const);
+  const rows = Math.ceil(entries.length / 2);
+  const columns = [entries.slice(0, rows), entries.slice(rows)].map((col, c) => {
+    const lw = Math.max(...col.map(([g]) => g.length));
+    // only the left column's prices need padding, to line up the right column
+    const vw = c === 0 ? Math.max(...col.map(([, v]) => v.length)) : 0;
+    return col.map(([g, v]) => `${g.padStart(lw)} - ${v.padEnd(vw)}`);
+  });
+  const lines = columns[0]!.map((left, r) => {
+    const right = columns[1]![r];
+    return right ? `${left}  ${right}` : left.trimEnd();
+  });
   return `Current market conditions are as follows:\n\n${lines.join("\n")}\n\n${message}`;
 }
 

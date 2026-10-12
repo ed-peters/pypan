@@ -74,7 +74,7 @@ describe("the port menu", () => {
   it("offers everything in Hong Kong", () => {
     expect(labels(makeHong())).toEqual([
       "Buy goods", "Sell goods", "Transfer goods", "Visit Elder Brother Wu",
-      "Visit the bank", "Exit the game", "Leave port",
+      "Visit the bank", "Leave port", "Exit the game",
     ]);
   });
 
@@ -104,11 +104,11 @@ describe("a whole game", () => {
     const seen = drive(game, [
       1, false, false, //          debt start; refuse Li Yuen; no business with Wu
       0, GENERAL, 60, //           buy 60 general for 300
-      6, SHANGHAI, //              leave port for Shanghai
+      5, SHANGHAI, //              leave port for Shanghai
       1, GENERAL, 60, //           sell 60 general for 1740
       2, HONG_KONG, //             leave port for Hong Kong
       false, true, //              no business with Wu; pay Li Yuen
-      5, //                        exit the game
+      6, //                        exit the game
     ]);
 
     expect(seen).toContain("Li Yuen has sent a Lieutenant, Taipan.  He says his admiral wishes to see you in Hong Kong, posthaste!");

@@ -61,9 +61,11 @@ export function establishOpts(h: Hong, rng: Rng): [string, Action][] {
   if (h.location === HONG_KONG) {
     opts.push(["Visit Elder Brother Wu", () => visitWu(h, rng)]);
     opts.push(["Visit the bank", () => visitBank(h)]);
-    opts.push(["Exit the game", () => saveAndExit()]);
   }
   opts.push(["Leave port", () => sailAway(h, rng)]);
+  if (h.location === HONG_KONG) {
+    opts.push(["Exit the game", () => saveAndExit()]);
+  }
   return opts;
 }
 

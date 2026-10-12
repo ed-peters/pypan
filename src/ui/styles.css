@@ -93,7 +93,8 @@ button:active {
 .screen {
   height: 100%;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  /* the report always keeps a few lines; it scrolls rather than being overlapped */
+  grid-template-rows: auto minmax(5rem, 1fr) auto;
   grid-template-areas: "panes" "report" "dock";
   gap: var(--gap);
   padding:
@@ -212,7 +213,6 @@ button:active {
 
 .report {
   grid-area: report;
-  min-height: 7rem;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   border: 1px solid var(--dim);
@@ -402,5 +402,12 @@ button:active {
 
   .keypad .ok {
     grid-column: span 6;
+  }
+}
+
+/* Short screens: give the long menus less room so the report stays visible. */
+@media (max-height: 600px) and (max-aspect-ratio: 1/1) {
+  .dock {
+    max-height: 38dvh;
   }
 }

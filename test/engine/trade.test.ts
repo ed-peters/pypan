@@ -12,15 +12,13 @@ import { play, texts } from "../helpers/play";
 const MIN_PRICES = [0, 0, 0, 0, 0];
 
 describe("conditionReport", () => {
-  it("lists every price, then the message", () => {
+  it("lists every price in two aligned columns, then the message", () => {
     const text = conditionReport(makeHong(), "What shall I buy, Taipan?");
     expect(text).toBe(
       "Current market conditions are as follows:\n\n" +
-      "  General - 10\n" +
-      "     Arms - 100\n" +
-      "     Silk - 1,000\n" +
-      "    Opium - 10,000\n" +
-      "     Jade - 100,000\n\n" +
+      "General - 10     Opium - 10,000\n" +
+      "   Arms - 100     Jade - 100,000\n" +
+      "   Silk - 1,000\n\n" +
       "What shall I buy, Taipan?",
     );
   });

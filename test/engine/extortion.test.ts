@@ -49,7 +49,7 @@ describe("checkExtortion", () => {
 
   it("asks for much more after a year, and Wu can cover it", () => {
     const h = makeHong({ time: 13, cash: 400, debt: 5000 });
-    // no counter change; early roll (discarded); 13000 + randrange(12999)
+    // no counter change; early roll (discarded); 13000 + randrange(13000)
     const p = play(checkExtortion(h, new ScriptedRng([1, 0.5, 500])), [true, true]);
     expect(texts(p)[0]).toBe(
       "Li Yuen asks 13,500 in donation to the temple of Tin Hau, the Sea Goddess. Will you pay?",

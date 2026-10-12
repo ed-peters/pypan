@@ -4,9 +4,9 @@
 // seed and tests can force specific outcomes. Engine code must never call
 // Math.random() directly.
 //
-// The helpers mirror the ones in etc/pypan.py, including their quirks:
+// The helpers mirror the ones in etc/pypan.py:
 //   - randrange(n) truncates n toward zero (Python's int())
-//   - inRange(lo, hi) returns lo..hi-2, not lo..hi
+//   - inRange(lo, hi) returns lo..hi-1 (pypan.py's in_range was two short: pypan-38)
 
 /** Largest value returned by int(); matches Python's random.randint(0, 2147483647). */
 export const MAX_INT = 2147483647;
@@ -32,9 +32,9 @@ export abstract class Rng {
     return this.int() % m;
   }
 
-  /** A random integer in lo..hi-2 (sic: faithful to pypan.py's in_range). */
+  /** A random integer in lo..hi-1 (hi is exclusive, like Python's randrange). */
   inRange(lo: number, hi: number): number {
-    return lo + this.randrange(hi - 1 - lo);
+    return lo + this.randrange(hi - lo);
   }
 
   /** A random element of a non-empty list. */

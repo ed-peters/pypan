@@ -49,9 +49,9 @@ describe("checkCargo", () => {
 });
 
 describe("randomCargo", () => {
-  it("is 5-28% of the ship's size and never bound for here", () => {
+  it("is 5-30% of the ship's size and never bound for here", () => {
     const h = makeHong();
-    for (let i = 0; i < 24; i++) {
+    for (let i = 0; i < 26; i++) {
       const c = randomCargo(h, new ScriptedRng([0, 0, NAGASAKI, i, 0]));
       expect(c.size).toBe(Math.trunc(60 * (5 + i) / 100));
       expect(c.destination).toBe(NAGASAKI);

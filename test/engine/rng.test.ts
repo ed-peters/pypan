@@ -88,16 +88,16 @@ describe("Rng helpers (Python semantics)", () => {
     expect(r.chanceOf(10)).toBe(false);
   });
 
-  it("inRange(lo, hi) spans lo..hi-2 (faithful quirk)", () => {
-    // in_range(5, 31) is used for prices: SPEC says 5-30, the code gives 5-29.
+  it("inRange(lo, hi) spans lo..hi-1", () => {
+    // inRange(5, 31) is used for prices, which SPEC gives as 5-30
     const r = new SeededRng(3);
     const seen = new Set<number>();
     for (let i = 0; i < 5000; i++) {
       seen.add(r.inRange(5, 31));
     }
     expect(Math.min(...seen)).toBe(5);
-    expect(Math.max(...seen)).toBe(29);
-    expect(seen.size).toBe(25);
+    expect(Math.max(...seen)).toBe(30);
+    expect(seen.size).toBe(26);
   });
 });
 

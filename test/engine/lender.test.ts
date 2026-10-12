@@ -29,7 +29,7 @@ describe("checkLender", () => {
 
   it("threatens you once when you owe too much", () => {
     const h = makeHong({ debt: 10001 });
-    // braves = 17 + randrange(21)
+    // braves = 17 + randrange(22)
     const rng = new ScriptedRng([4]);
     const p = play(checkLender(h, rng), [false]);
     expect(texts(p)).toEqual([
@@ -50,7 +50,7 @@ describe("checkLender", () => {
 
   it("can have you robbed if you were warned before and still owe too much", () => {
     const h = makeHong(WARNED);
-    // chanceOf(4) hits; bodyguards = 3 + randrange(5)
+    // chanceOf(4) hits; bodyguards = 3 + randrange(6)
     const p = play(checkLender(h, new ScriptedRng([0, 2])), [false]);
     expect(texts(p).at(-1)).toBe(
       "Bad joss!! 5 of your bodyguards have been killed by cutthroats and you have been robbed of all of your cash, Taipan!!",

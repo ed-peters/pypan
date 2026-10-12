@@ -16,7 +16,7 @@ export function* checkStorm(h: Hong, rng: Rng, destination: number): Flow<number
   let msg = "We made it";
   // storms don't add damage to a ship that is already 80% damaged
   if ((h.shipDamage / h.shipSize) * 100 < 80 && rng.chanceOf(10)) {
-    h.shipDamage += rng.inRange(5, 20);
+    h.shipDamage += rng.inRange(5, 21);
     msg = `${msg}, but we took some damage!`;
   } else if (rng.chanceOf(3)) {
     destination = randomOtherCity(rng, destination);

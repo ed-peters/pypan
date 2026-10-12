@@ -4,7 +4,7 @@ import { setPrices } from "../../src/engine/prices";
 import { ScriptedRng, SeededRng } from "../../src/engine/rng";
 
 describe("setPrices (random mode)", () => {
-  it("prices each good at 5..29 times its magnitude", () => {
+  it("prices each good at 5..30 times its magnitude", () => {
     const r = new SeededRng(8);
     for (let i = 0; i < 500; i++) {
       const p = setPrices(r, i % CITIES.length);
@@ -12,15 +12,15 @@ describe("setPrices (random mode)", () => {
       p.forEach((price, g) => {
         expect(price % mult(g)).toBe(0);
         expect(price / mult(g)).toBeGreaterThanOrEqual(5);
-        expect(price / mult(g)).toBeLessThanOrEqual(29);
+        expect(price / mult(g)).toBeLessThanOrEqual(30);
       });
     }
   });
 
-  it("uses one inRange(5, 31) roll per good", () => {
-    // inRange(5, 31) = 5 + randrange(25)
-    const r = new ScriptedRng([0, 1, 2, 3, 24]);
-    expect(setPrices(r, 0)).toEqual([5, 60, 700, 8000, 290000]);
+  it("uses one inRange(5, 31) roll per good, up to 30x", () => {
+    // inRange(5, 31) = 5 + randrange(26)
+    const r = new ScriptedRng([0, 1, 2, 3, 25]);
+    expect(setPrices(r, 0)).toEqual([5, 60, 700, 8000, 300000]);
     expect(r.remaining).toBe(0);
   });
 });

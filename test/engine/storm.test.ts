@@ -23,6 +23,15 @@ describe("checkStorm", () => {
     expect(p.game.result).toBe(SHANGHAI);
   });
 
+  it("does 5-20 points of damage", () => {
+    // inRange(5, 21) = 5 + randrange(16)
+    for (const [roll, damage] of [[0, 5], [15, 20], [16, 5]]) {
+      const h = makeHong();
+      play(checkStorm(h, new ScriptedRng([0, 0, roll!]), SHANGHAI));
+      expect(h.shipDamage).toBe(damage);
+    }
+  });
+
   it("can blow the ship off course", () => {
     const p = play(checkStorm(makeHong(), new ScriptedRng([0, 1, 0, MANILA]), SHANGHAI));
     expect(p.transcript[1]?.prompt.text).toBe("We made it, but we got blown off course to Manila!");

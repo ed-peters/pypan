@@ -8,7 +8,7 @@ import {
 import { makeHong } from "../helpers/hong";
 import { play, texts } from "../helpers/play";
 
-// Five inRange(5, 31) rolls of randrange(25) = 0 give prices [5, 50, 500, 5000, 50000].
+// Five inRange(5, 31) rolls of randrange(26) = 0 give prices [5, 50, 500, 5000, 50000].
 const MIN_PRICES = [0, 0, 0, 0, 0];
 
 describe("conditionReport", () => {
@@ -43,15 +43,15 @@ describe("establishPrices", () => {
     expect(p.transcript).toEqual([]);
   });
 
-  it("can multiply a price by 5-8", () => {
+  it("can multiply a price by 5-9", () => {
     const h = makeHong({ time: 2 });
-    // shock; silk; factor = 5 + randrange(4) = 8; positive
-    const p = play(establishPrices(h, new ScriptedRng([...MIN_PRICES, 0, SILK, 3, 0])));
+    // shock; silk; factor = 5 + randrange(5) = 9; positive
+    const p = play(establishPrices(h, new ScriptedRng([...MIN_PRICES, 0, SILK, 4, 0])));
     expect(texts(p)).toEqual([MSG_POS_SHOCK[SILK]]);
-    expect(h.prices).toEqual([5, 50, 4000, 5000, 50000]);
+    expect(h.prices).toEqual([5, 50, 4500, 5000, 50000]);
   });
 
-  it("can divide a price by 5-8, but not below 1", () => {
+  it("can divide a price by 5-9, but not below 1", () => {
     const h = makeHong({ time: 2 });
     // shock; general; factor = 5; negative
     const p = play(establishPrices(h, new ScriptedRng([...MIN_PRICES, 0, GENERAL, 0, 1])));

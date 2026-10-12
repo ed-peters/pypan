@@ -42,6 +42,6 @@ export function randomCargo(h: Hong, rng: Rng): Cargo {
   const description = rng.choice(CARGO_DESCRIPTIONS);
   const unit = Math.trunc(35 * 10 ** rng.randrange(NUM_GOODS - 2));
   const destination = randomOtherCity(rng, h.location);
-  const size = Math.trunc(h.shipSize * rng.inRange(5, 30) / 100);
+  const size = Math.trunc(h.shipSize * rng.inRange(5, 31) / 100);
   return { description, destination, illegal: false, size, value: unit * size + rng.randrange(100) };
 }

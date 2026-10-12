@@ -128,4 +128,39 @@ describe("Terminal", () => {
     tap("New game");
     expect(onNewGame).toHaveBeenCalled();
   });
+
+  it("reports how the game ended", () => {
+    const onEnd = vi.fn();
+    const term = new Terminal(root, { onNewGame, onEnd });
+    const { game, session } = newGame({ rng: rolls() });
+    term.attach(game, session);
+    tap("Guns");
+    tap("Exit the game");
+    expect(onEnd).not.toHaveBeenCalled();
+    tap("Continue");
+    expect(onEnd).toHaveBeenCalledOnce();
+    expect(onEnd).toHaveBeenCalledWith("exit");
+  });
+
+  it("shows GAME OVER when the ship sinks", () => {
+    const onEnd = vi.fn();
+    const term = new Terminal(root, { onNewGame, onEnd });
+    // a guns start with a nearly wrecked ship; pirates: 3 ships; no Li Yuen;
+    // run fails, no partial escape; return fire sinks us
+    const rng = new ScriptedRng([0, 0, 0, 0, 0, 0, 2, 0.5, 100, 1, 0, 2, 1, 0.99]);
+    const { game, session } = newGame({ rng });
+    term.attach(game, session);
+    tap("Guns");
+    session.hong!.shipDamage = 59;
+    session.hong!.shipGuns = 0;
+    tap("Leave port");
+    tap("Shanghai");
+    tap("Continue"); //  3 hostile ships approaching
+    tap("Run away");
+    while (!game.done) tap("Continue");
+    expect(game.result).toBe("sunk");
+    expect($(".message").textContent).toBe("Your ship has been lost with all hands, Taipan.\n\nGAME OVER");
+    expect(onEnd).toHaveBeenCalledWith("sunk");
+    expect(buttons().map((b) => b.textContent)).toEqual(["New game"]);
+  });
 });

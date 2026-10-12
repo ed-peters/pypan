@@ -15,7 +15,8 @@ import { establishPrices } from "./trade";
 import { checkWarehouse } from "./warehouse";
 import type { Rng } from "./rng";
 
-export function* sailAway(h: Hong, rng: Rng): Flow {
+/** Sail to another port. Returns "sunk" if the ship is lost on the way. */
+export function* sailAway(h: Hong, rng: Rng): Flow<"sunk" | void> {
   if (isOverloaded(h)) {
     yield* say("Your ship is overloaded, Taipan.");
     return;
@@ -36,6 +37,9 @@ export function* sailAway(h: Hong, rng: Rng): Flow {
   h.location = AT_SEA;
   advanceTime(h);
   const arrival = yield* withArt("boat", atSea(h, rng, destination));
+  if (arrival === null) {
+    return "sunk";
+  }
 
   // set location and accrue interest
   h.location = arrival;
@@ -51,9 +55,11 @@ export function* sailAway(h: Hong, rng: Rng): Flow {
   yield* establishPrices(h, rng);
 }
 
-/** Pirates and storms en route; returns where we actually arrive. */
-function* atSea(h: Hong, rng: Rng, destination: number): Flow<number> {
-  yield* checkPirates(h, rng);
+/** Pirates and storms en route; returns where we actually arrive, or null if sunk. */
+function* atSea(h: Hong, rng: Rng, destination: number): Flow<number | null> {
+  if ((yield* checkPirates(h, rng)) === "sunk") {
+    return null;
+  }
   const arrival = yield* checkStorm(h, rng, destination);
 
   // .. and we're there

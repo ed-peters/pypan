@@ -20,8 +20,11 @@ export interface Session {
   hong: Hong | null;
 }
 
-/** Play a game: choose how to start (or restore `saved`), then trade until exit. */
-export function* playPyPan(s: Session, saved: Hong | null = null): Flow {
+/** How a game ends: the player exits (and it's saved), or the ship sinks. */
+export type Ending = "exit" | "sunk";
+
+/** Play a game: choose how to start (or restore `saved`), then trade until it ends. */
+export function* playPyPan(s: Session, saved: Hong | null = null): Flow<Ending> {
   const opts = ["Guns (and no debt)", "Debt (and no guns)"];
   if (saved) {
     opts.push("Your last game restored");
@@ -29,11 +32,11 @@ export function* playPyPan(s: Session, saved: Hong | null = null): Flow {
   const o = yield* askOpt("Would you like to start with:", opts);
   const h = o === 2 && saved ? saved : newHong(s.rng, o === 0);
   s.hong = h;
-  yield* compradorsLoop(h, s.rng);
+  return yield* compradorsLoop(h, s.rng);
 }
 
-/** Port menu loop; returns when the player exits the game. */
-export function* compradorsLoop(h: Hong, rng: Rng): Flow {
+/** Port menu loop; returns when the game ends. */
+export function* compradorsLoop(h: Hong, rng: Rng): Flow<Ending> {
   if (h.cash > 0) {
     yield* checkExtortion(h, rng);
   }
@@ -41,14 +44,15 @@ export function* compradorsLoop(h: Hong, rng: Rng): Flow {
   for (;;) {
     yield* checkpoint();
     const action = yield* pick(conditionReport(h, "What shall I do, Taipan?"), establishOpts(h, rng));
-    if (yield* action()) {
-      return;
+    const ending = yield* action();
+    if (ending) {
+      return ending;
     }
   }
 }
 
-/** A menu action; returns true to exit the game. */
-type Action = () => Flow<boolean | void>;
+/** A menu action; returns an Ending if the game is over. */
+type Action = () => Flow<Ending | void>;
 
 export function establishOpts(h: Hong, rng: Rng): [string, Action][] {
   const opts: [string, Action][] = [
@@ -69,10 +73,10 @@ export function establishOpts(h: Hong, rng: Rng): [string, Action][] {
   return opts;
 }
 
-function* saveAndExit(): Flow<boolean> {
+function* saveAndExit(): Flow<Ending> {
   yield* say("Very well. Until we meet again, Taipan!");
   yield* checkpoint();
-  return true;
+  return "exit";
 }
 
 export interface NewGameOptions {
@@ -84,7 +88,7 @@ export interface NewGameOptions {
 }
 
 /** Start a game: the Game to drive, plus the Session to read state from. */
-export function newGame({ rng, saved = null, onSave }: NewGameOptions): { game: Game; session: Session } {
+export function newGame({ rng, saved = null, onSave }: NewGameOptions): { game: Game<Ending>; session: Session } {
   const session: Session = { rng, hong: null };
   const game = new Game(playPyPan(session, saved), {
     onCheckpoint: () => {

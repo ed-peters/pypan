@@ -11,13 +11,17 @@ import { play, texts } from "../helpers/play";
 // trunc(1/4 * 1000 * 3 + 100 + 250) = 1100.
 const SETUP = [2, 0.5, 100];
 
+// Each round of a regular battle starts with a 1-in-20 roll for Li Yuen to interrupt.
+const NO_LI_YUEN = 1;
+const LI_YUEN = 0;
+
 function gunHong(overrides: Partial<Hong> = {}): Hong {
   return Object.assign(newHong(new ScriptedRng([0, 0, 0, 0, 0]), true), { cash: 0 }, overrides);
 }
 
-function battle(h: Hong, rolls: number[]): { b: PirateBattle; rng: ScriptedRng } {
+function battle(h: Hong, rolls: number[], against?: number): { b: PirateBattle; rng: ScriptedRng } {
   const rng = new ScriptedRng([...SETUP, ...rolls]);
-  return { b: new PirateBattle(h, rng), rng };
+  return { b: new PirateBattle(h, rng, against), rng };
 }
 
 describe("PirateBattle setup", () => {
@@ -48,8 +52,8 @@ describe("PirateBattle setup", () => {
 describe("fighting", () => {
   it("wins by sinking every ship, and takes the booty", () => {
     const h = gunHong();
-    // three 39-point hits each sink a ship (new ships at health 20), then two misses
-    const { b } = battle(h, [29, 0, 29, 0, 29, 0, 0, 0]);
+    // three 39-point hits each sink a ship (new ships at health 20); the rest hold fire
+    const { b, rng } = battle(h, [NO_LI_YUEN, 29, 0, 29, 0, 29, 0]);
     const p = play(b.execute(), [0]);
     expect(p.transcript.map((e) => [e.prompt.text, e.prompt.art])).toEqual([
       ["3 hostile ships approaching, Taipan!", undefined],
@@ -59,12 +63,14 @@ describe("fighting", () => {
       ["We won the battle, Taipan, and we captured some booty worth 1,100!", "pirates"],
     ]);
     expect(h.cash).toBe(1100);
+    expect(p.game.result).toBe("won");
+    expect(rng.remaining).toBe(0);
   });
 
   it("holds fire once every ship is sunk", () => {
     const h = gunHong({ shipGuns: 2 });
     // one ship, sunk by the first gun; the second gun doesn't fire
-    const rng = new ScriptedRng([0, 0.5, 100, 29, 0]);
+    const rng = new ScriptedRng([0, 0.5, 100, NO_LI_YUEN, 29, 0]);
     const b = new PirateBattle(h, rng);
     expect(b.pirates).toBe(1);
     const p = play(b.execute(), [0]);
@@ -77,7 +83,7 @@ describe("fighting", () => {
   it("takes return fire after a miss", () => {
     const h = gunHong({ shipGuns: 1 });
     // one 10-point hit; gun-hit roll 50 (no); damage = trunc(0.5 * 3 * 1 * 0.5 + 1.5)
-    const rng = new ScriptedRng([2, 0.5, 100, 0, 50, 0.5]);
+    const rng = new ScriptedRng([2, 0.5, 100, NO_LI_YUEN, 0, 50, 0.5, NO_LI_YUEN]);
     const p = play(new PirateBattle(h, rng).execute(), [0]);
     expect(texts(p).slice(3)).toEqual([
       "Aye, we'll fire our cannons at 'em, Taipan!\n\nThey're still after us!",
@@ -91,30 +97,78 @@ describe("fighting", () => {
   it("always hits a gun when the ship is over 80% damaged", () => {
     const h = gunHong({ shipGuns: 1, shipDamage: 50 });
     // no gun-hit roll needed
-    const rng = new ScriptedRng([2, 0.5, 100, 0, 0.5]);
+    const rng = new ScriptedRng([2, 0.5, 100, NO_LI_YUEN, 0, 0.5, NO_LI_YUEN]);
     const p = play(new PirateBattle(h, rng).execute(), [0]);
     expect(texts(p)).toContain("They're firing on us, Taipan!\n\nThe buggers hit a gun!");
     expect([h.shipGuns, h.shipSize]).toEqual([0, 70]);
   });
 });
 
+describe("sinking", () => {
+  it("sinks the ship when damage reaches its size", () => {
+    const h = makeHong({ shipDamage: 59 });
+    // run fails (0 > 2 is false); no partial escape; damage 2 -> 61 of 60
+    const { b, rng } = battle(h, [NO_LI_YUEN, 0, 2, 1, 0.5]);
+    const p = play(b.execute(), [0]);
+    expect(texts(p).slice(-3)).toEqual([
+      "They're firing on us, Taipan!\n\nThey hit us!",
+      "The buggers got us, Taipan!!",
+      "It's all over now!!",
+    ]);
+    expect(p.game.result).toBe("sunk");
+    expect(rng.remaining).toBe(0);
+  });
+
+  it("keeps fighting while the ship is still afloat", () => {
+    const h = makeHong({ shipDamage: 57 });
+    const { b } = battle(h, [NO_LI_YUEN, 0, 2, 1, 0.5, NO_LI_YUEN]);
+    const p = play(b.execute(), [0]);
+    expect(h.shipDamage).toBe(59);
+    expect(p.game.done).toBe(false);
+  });
+});
+
+describe("Li Yuen interrupting", () => {
+  it("can drive the pirates off at the start of a round, ending the battle with no booty", () => {
+    const h = gunHong();
+    const { b, rng } = battle(h, [LI_YUEN]);
+    const p = play(b.execute());
+    expect(texts(p)).toEqual([
+      "3 hostile ships approaching, Taipan!",
+      "Li Yuen's fleet drove them off, Taipan!!",
+    ]);
+    expect(p.game.result).toBe("interrupted");
+    expect(h.cash).toBe(0);
+    expect(rng.remaining).toBe(0);
+  });
+
+  it("can interrupt in a later round", () => {
+    const h = gunHong({ shipGuns: 1 });
+    const { b } = battle(h, [NO_LI_YUEN, 0, 50, 0.5, LI_YUEN]);
+    const p = play(b.execute(), [0]);
+    expect(texts(p).at(-1)).toBe("Li Yuen's fleet drove them off, Taipan!!");
+    expect(p.game.result).toBe("interrupted");
+  });
+});
+
 describe("running", () => {
   it("can escape, with no booty", () => {
     const h = makeHong({ cash: 0 });
-    const { b } = battle(h, [4, 0]);
+    const { b } = battle(h, [NO_LI_YUEN, 4, 0]);
     const p = play(b.execute(), [0]);
     expect(texts(p).slice(2)).toEqual([
       "Aye, we'll set sails and run, Taipan!",
       "We got away from 'em, Taipan!",
     ]);
     expect(b.fled).toBe(true);
+    expect(p.game.result).toBe("fled");
     expect(h.cash).toBe(0);
   });
 
   it("can shake off some of the pirates", () => {
     const h = makeHong();
     // fail (0 > 2 is false); partial 1-in-5; lost = randrange(1) + 1; then return fire
-    const { b } = battle(h, [0, 2, 0, 0, 0.5]);
+    const { b } = battle(h, [NO_LI_YUEN, 0, 2, 0, 0, 0.5, NO_LI_YUEN]);
     const p = play(b.execute(), [0]);
     expect(texts(p)).toContain("Couldn't lose 'em, Taipan, but we escaped from 1 of 'em!");
     expect(b.pirates).toBe(2);
@@ -122,7 +176,7 @@ describe("running", () => {
 
   it("gets better odds with each attempt", () => {
     const h = makeHong();
-    const { b } = battle(h, [0, 2, 1, 0.5, 0, 2, 1, 0.5]);
+    const { b } = battle(h, [NO_LI_YUEN, 0, 2, 1, 0.5, NO_LI_YUEN, 0, 2, 1, 0.5, NO_LI_YUEN]);
     const p = play(b.execute(), [0, 0]);
     expect(texts(p).filter((t) => t === "Couldn't lose 'em, Taipan!")).toHaveLength(2);
     // 3 + 2 + 3
@@ -131,9 +185,12 @@ describe("running", () => {
 });
 
 describe("dumping cargo", () => {
+  // dump, then return fire (no guns, so just the damage roll), then the next round
+  const ROUND = [NO_LI_YUEN, 0.5, NO_LI_YUEN];
+
   it("throws goods overboard, improving escape odds by 1 per 10 units", () => {
     const h = makeHong({ shipGoods: [50, 0, 0, 0, 0] });
-    const { b } = battle(h, [0.5]);
+    const { b } = battle(h, ROUND);
     const p = play(b.execute(), [0, GENERAL, 50]);
     expect(p.transcript[3]?.prompt).toEqual({
       kind: "number", text: "How much General shall I toss overboard, Taipan?", max: 50, art: "pirates",
@@ -144,14 +201,14 @@ describe("dumping cargo", () => {
 
   it("helps escape odds by at least 1 for any cargo dumped", () => {
     const h = makeHong({ shipGoods: [50, 0, 0, 0, 0] });
-    const { b } = battle(h, [0.5]);
+    const { b } = battle(h, ROUND);
     play(b.execute(), [0, GENERAL, 3]);
     expect(b.runOk).toBe(3 + 1);
   });
 
   it("does nothing when dumping none", () => {
     const h = makeHong({ shipGoods: [50, 0, 0, 0, 0] });
-    const { b } = battle(h, [0.5]);
+    const { b } = battle(h, ROUND);
     play(b.execute(), [0, GENERAL, 0]);
     expect(b.runOk).toBe(3);
     expect(h.shipGoods[GENERAL]).toBe(50);
@@ -159,29 +216,102 @@ describe("dumping cargo", () => {
 
   it("won't dump what isn't aboard", () => {
     const h = makeHong({ shipGoods: [50, 0, 0, 0, 0] });
-    const p = play(battle(h, [0.5]).b.execute(), [0, SILK]);
+    const p = play(battle(h, ROUND).b.execute(), [0, SILK]);
     expect(texts(p)).toContain("We don't have any, Taipan!");
   });
 
   it("won't dump more than is aboard", () => {
     const h = makeHong({ shipGoods: [50, 0, 0, 0, 0] });
-    const p = play(battle(h, [0.5]).b.execute(), [0, GENERAL, 51]);
+    const p = play(battle(h, ROUND).b.execute(), [0, GENERAL, 51]);
     expect(texts(p)).toContain("We don't have enough on board, Taipan!");
     expect(h.shipGoods[GENERAL]).toBe(50);
   });
 });
 
-describe("checkPirates", () => {
-  it("attacks 1-in-pirateChance voyages", () => {
-    expect(play(checkPirates(makeHong(), new ScriptedRng([1]))).transcript).toEqual([]);
-    const p = play(checkPirates(makeHong(), new ScriptedRng([0, ...SETUP])));
-    expect(texts(p)[0]).toBe("3 hostile ships approaching, Taipan!");
+describe("Li Yuen's fleet", () => {
+  it("has 5 to (capacity / 5 + guns) ships", () => {
+    // capacity 60, no guns: 5 + randrange(8)
+    const count = (h: Hong, roll: number) => new PirateBattle(h, new ScriptedRng([roll, 0.5, 100]), PIRATE_KING).pirates;
+    expect(count(makeHong(), 0)).toBe(5);
+    expect(count(makeHong(), 7)).toBe(12);
+    expect(count(makeHong(), 8)).toBe(5);
+    // capacity 60 with 5 guns: up to 17
+    expect(count(gunHong(), 12)).toBe(17);
+  });
+
+  it("always has at least 5 ships, even against a tiny ship", () => {
+    const b = new PirateBattle(makeHong({ shipSize: 10 }), new ScriptedRng([0, 0.5, 100]), PIRATE_KING);
+    expect(b.pirates).toBe(5);
+  });
+
+  it("announces itself, and never interrupts its own battle", () => {
+    const h = makeHong();
+    // 5 + randrange(8) = 7 ships; run: randrange(5) = 4 > randrange(7) = 0, so we escape
+    const { b, rng } = battle(h, [4, 0], PIRATE_KING);
+    const p = play(b.execute(), [0]);
+    expect(texts(p)[0]).toBe("7 ships of Li Yuen's pirate fleet, Taipan!!!");
+    expect(p.game.result).toBe("fled");
+    expect(rng.remaining).toBe(0);
+  });
+
+  it("hits twice as hard", () => {
+    const rng = new ScriptedRng([...SETUP, 0.5]);
+    const b = new PirateBattle(gunHong(), rng, PIRATE_KING);
+    // 7 ships: trunc(0.5 * 7 * 2 * 0.5 + 3.5)
+    expect(b.calculateDamage()).toBe(7);
   });
 });
 
-it("Li Yuen's ships hit twice as hard", () => {
-  const rng = new ScriptedRng([...SETUP, 0.5]);
-  const b = new PirateBattle(gunHong(), rng, PIRATE_KING);
-  // trunc(0.5 * 3 * 2 * 0.5 + 1.5)
-  expect(b.calculateDamage()).toBe(3);
+describe("checkPirates", () => {
+  it("usually brings no pirates at all", () => {
+    const rng = new ScriptedRng([1, 1]);
+    const p = play(checkPirates(makeHong(), rng));
+    expect(p.transcript).toEqual([]);
+    expect(p.game.result).toBeNull();
+    expect(rng.remaining).toBe(0);
+  });
+
+  it("attacks with regular pirates 1-in-pirateChance voyages", () => {
+    const p = play(checkPirates(makeHong(), new ScriptedRng([0, ...SETUP, NO_LI_YUEN])));
+    expect(texts(p)[0]).toBe("3 hostile ships approaching, Taipan!");
+  });
+
+  it("doesn't send Li Yuen after a regular battle that ends normally", () => {
+    const rng = new ScriptedRng([0, ...SETUP, NO_LI_YUEN, 4, 0]);
+    const p = play(checkPirates(makeHong(), rng), [0]);
+    expect(p.game.result).toBe("fled");
+    expect(rng.remaining).toBe(0);
+  });
+
+  it("can send Li Yuen when there are no regular pirates; he lets you be if you've paid", () => {
+    const p = play(checkPirates(makeHong({ extorted: 1 }), new ScriptedRng([1, 0])));
+    expect(texts(p)).toEqual(["Li Yuen's pirates, Taipan!!!", "Good joss!! They let us be!!"]);
+    expect(p.game.result).toBeNull();
+  });
+
+  it("has Li Yuen attack if you haven't paid", () => {
+    const p = play(checkPirates(makeHong({ extorted: 0 }), new ScriptedRng([1, 0, 0, 0.5, 100])));
+    expect(texts(p)).toEqual([
+      "Li Yuen's pirates, Taipan!!!",
+      "5 ships of Li Yuen's pirate fleet, Taipan!!!",
+      "5 enemies remaining ... What shall we do, Taipan?",
+    ]);
+  });
+
+  it("brings Li Yuen's fleet on after it drives off the pirates", () => {
+    const p = play(checkPirates(makeHong({ extorted: 1 }), new ScriptedRng([0, ...SETUP, LI_YUEN])));
+    expect(texts(p)).toEqual([
+      "3 hostile ships approaching, Taipan!",
+      "Li Yuen's fleet drove them off, Taipan!!",
+      "Li Yuen's pirates, Taipan!!!",
+      "Good joss!! They let us be!!",
+    ]);
+    expect(p.game.result).toBe("interrupted");
+  });
+
+  it("reports a sinking", () => {
+    const h = makeHong({ shipDamage: 59 });
+    const p = play(checkPirates(h, new ScriptedRng([0, ...SETUP, NO_LI_YUEN, 0, 2, 1, 0.5])), [0]);
+    expect(p.game.result).toBe("sunk");
+  });
 });

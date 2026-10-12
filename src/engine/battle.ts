@@ -1,5 +1,6 @@
-// Pirate battles (SPEC.md section 7). Only the pirate fleet is wired into voyages;
-// PIRATE_KING (Li Yuen) is kept for later and only changes the damage multiplier.
+// Pirate battles (SPEC.md section 7; section 7.4 for Li Yuen's fleet).
+// PIRATE_FLEET is the regular pirates; PIRATE_KING is Li Yuen's fleet, which is
+// bigger and does double damage. In any battle the ship sinks at 100% damage.
 
 import {
   ENEMY_DAMAGE_BUMP, ENEMY_DAMAGE_START, ENEMY_HEALTH_BUMP, ENEMY_HEALTH_START,
@@ -12,6 +13,12 @@ import type { Rng } from "./rng";
 
 export const PIRATE_FLEET = 1;
 export const PIRATE_KING = 2;
+
+/** The smallest fleet Li Yuen sends. */
+export const LI_YUEN_MIN_SHIPS = 5;
+
+/** How a battle ended. "interrupted" means Li Yuen's fleet drove the pirates off. */
+export type BattleOutcome = "won" | "fled" | "interrupted" | "sunk";
 
 type Action = () => Flow;
 
@@ -33,29 +40,51 @@ export class PirateBattle {
   ) {
     const years = h.year - START_YEAR;
     this.id = against === PIRATE_FLEET ? 1 : 2;
-    this.pirates = rng.randrange(h.shipSize / 10 + h.shipGuns) + 1;
+    if (this.id === PIRATE_FLEET) {
+      this.pirates = rng.randrange(h.shipSize / 10 + h.shipGuns) + 1;
+    } else {
+      // Li Yuen brings at least LI_YUEN_MIN_SHIPS, up to capacity / 5 + guns
+      const max = Math.max(LI_YUEN_MIN_SHIPS, Math.trunc(h.shipSize / 5) + h.shipGuns);
+      this.pirates = rng.inRange(LI_YUEN_MIN_SHIPS, max + 1);
+    }
     this.baseHealth = ENEMY_HEALTH_START + years * ENEMY_HEALTH_BUMP;
     this.currHealth = Math.trunc(this.baseHealth * rng.float()) + 20;
     this.enemyDamage = ENEMY_DAMAGE_START + years * ENEMY_DAMAGE_BUMP;
     this.booty = Math.trunc((currentTime(h) / 4) * 1000 * this.pirates + rng.randrange(1000) + 250);
   }
 
-  *execute(): Flow {
-    yield* say(`${this.pirates} hostile ships approaching, Taipan!`);
-    yield* withArt("pirates", this.fight());
+  *execute(): Flow<BattleOutcome> {
+    yield* say(
+      this.id === PIRATE_FLEET
+        ? `${this.pirates} hostile ships approaching, Taipan!`
+        : `${this.pirates} ships of Li Yuen's pirate fleet, Taipan!!!`,
+    );
+    return yield* withArt("pirates", this.fight());
   }
 
-  private *fight(): Flow {
+  private *fight(): Flow<BattleOutcome> {
     while (this.pirates > 0) {
+      // Li Yuen may interrupt a regular battle (but never his own)
+      if (this.id === PIRATE_FLEET && this.rng.chanceOf(20)) {
+        yield* say("Li Yuen's fleet drove them off, Taipan!!");
+        return "interrupted";
+      }
       yield* this.myTurn();
       if (this.pirates > 0) {
         yield* this.theirTurn();
+        if (this.h.shipDamage >= this.h.shipSize) {
+          yield* say("The buggers got us, Taipan!!");
+          yield* say("It's all over now!!");
+          return "sunk";
+        }
       }
     }
-    if (!this.fled) {
-      yield* say(`We won the battle, Taipan, and we captured some booty worth ${money(this.booty)}!`);
-      this.h.cash += this.booty;
+    if (this.fled) {
+      return "fled";
     }
+    yield* say(`We won the battle, Taipan, and we captured some booty worth ${money(this.booty)}!`);
+    this.h.cash += this.booty;
+    return "won";
   }
 
   private *myTurn(): Flow {
@@ -163,9 +192,30 @@ export class PirateBattle {
   }
 }
 
-/** A 1-in-pirateChance chance of a pirate fleet attacking. */
-export function* checkPirates(h: Hong, rng: Rng): Flow {
+/**
+ * Pirates at sea: a 1-in-pirateChance chance of a regular pirate fleet. If they
+ * don't come (1-in-20), or Li Yuen drives them off, Li Yuen's fleet shows up.
+ * Returns how the last battle ended, or null if there was none.
+ */
+export function* checkPirates(h: Hong, rng: Rng): Flow<BattleOutcome | null> {
+  let outcome: BattleOutcome | null = null;
   if (rng.chanceOf(h.pirateChance)) {
-    yield* new PirateBattle(h, rng, PIRATE_FLEET).execute();
+    outcome = yield* new PirateBattle(h, rng, PIRATE_FLEET).execute();
+    if (outcome !== "interrupted") {
+      return outcome;
+    }
+  } else if (!rng.chanceOf(20)) {
+    return null;
   }
+  return (yield* liYuen(h, rng)) ?? outcome;
+}
+
+/** Li Yuen's fleet arrives: it leaves you be if you've paid him, or attacks. */
+function* liYuen(h: Hong, rng: Rng): Flow<BattleOutcome | null> {
+  yield* say("Li Yuen's pirates, Taipan!!!");
+  if (h.extorted !== 0) {
+    yield* say("Good joss!! They let us be!!");
+    return null;
+  }
+  return yield* new PirateBattle(h, rng, PIRATE_KING).execute();
 }

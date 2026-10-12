@@ -86,15 +86,35 @@ describe("the port menu", () => {
   });
 });
 
+describe("game endings", () => {
+  it("ends with 'exit' when the player exits", () => {
+    const { game } = newGame({ rng: new ScriptedRng(MIN_PRICES) });
+    drive(game, [0, 6]);
+    expect(game.result).toBe("exit");
+  });
+
+  it("ends with 'sunk' when the ship sinks, without saving afterwards", () => {
+    const saved = makeHong({ cash: 0, debt: 0, extorted: 1, shipDamage: 59 });
+    const saves: Hong[] = [];
+    // pirates: 3 ships; no Li Yuen; run fails, no partial escape; 2 damage sinks us
+    const rng = new ScriptedRng([0, 2, 0.5, 100, 1, 0, 2, 1, 0.5]);
+    const { game } = newGame({ rng, saved, onSave: (h) => saves.push(h) });
+    const seen = drive(game, [2, 5, SHANGHAI, 0]);
+    expect(seen.at(-1)).toBe("It's all over now!!");
+    expect(game.result).toBe("sunk");
+    expect(saves).toHaveLength(1); // only the menu checkpoint before sailing
+  });
+});
+
 describe("a whole game", () => {
   it("starts, buys, sails, sells, sails home, pays Li Yuen and exits", () => {
     const rng = new ScriptedRng([
       ...MIN_PRICES, //            starting prices: general at 5
       0.5, //                      Li Yuen asks 81
-      1, 1, //                     to Shanghai: no pirates, no storm
+      1, 1, 1, //                  to Shanghai: no pirates, no Li Yuen, no storm
       1, //                        extortion counter unchanged -> lieutenant
       24, 0, 0, 0, 0, 1, //        Shanghai prices: general at 29; no shock
-      1, 1, //                     back home: no pirates, no storm
+      1, 1, 1, //                  back home: no pirates, no Li Yuen, no storm
       1, 0.5, //                   extortion counter unchanged; Li Yuen asks 369
       ...MIN_PRICES, 1, //         Hong Kong prices; no shock
     ]);

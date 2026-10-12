@@ -30,8 +30,8 @@ describe("sailAway", () => {
 
   it("makes a quiet voyage: a month passes, interest accrues, prices change", () => {
     const h = makeHong({ extorted: 1, bank: 1000 });
-    // no pirates; no storm; extortion counter unchanged; prices
-    const rng = new ScriptedRng([1, 1, 1, ...PRICES]);
+    // no pirates; no Li Yuen; no storm; extortion counter unchanged; prices
+    const rng = new ScriptedRng([1, 1, 1, 1, ...PRICES]);
     const p = play(sailAway(h, rng), [SHANGHAI]);
     expect(p.transcript.map((e) => [e.prompt.text, e.prompt.art])).toEqual([
       ["Where shall we sail to, Taipan?", undefined],
@@ -44,7 +44,7 @@ describe("sailAway", () => {
 
   it("is at sea, a month later, until the arrival message is acknowledged", () => {
     const h = makeHong({ extorted: 1 });
-    const game = new Game(sailAway(h, new ScriptedRng([1, 1])));
+    const game = new Game(sailAway(h, new ScriptedRng([1, 1, 1])));
     game.answer(SHANGHAI);
     expect(game.prompt?.text).toBe("Arriving at Shanghai ... ");
     expect([h.location, h.month, h.debt]).toEqual([AT_SEA, 2, 5000]);
@@ -52,8 +52,8 @@ describe("sailAway", () => {
 
   it("can be blown off course", () => {
     const h = makeHong({ extorted: 1 });
-    // no pirates; storm, no damage, blown off course to Manila
-    const rng = new ScriptedRng([1, 0, 1, 0, MANILA, 1, ...PRICES]);
+    // no pirates; no Li Yuen; storm, no damage, blown off course to Manila
+    const rng = new ScriptedRng([1, 1, 0, 1, 0, MANILA, 1, ...PRICES]);
     const p = play(sailAway(h, rng), [SHANGHAI]);
     expect(texts(p).slice(1)).toEqual([
       "Storm, Taipan!",
@@ -66,8 +66,8 @@ describe("sailAway", () => {
 
   it("can meet pirates, fought under pirate art", () => {
     const h = makeHong({ extorted: 1 });
-    // pirates attack: 1 ship; we run and escape (randrange(5) > randrange(1))
-    const rng = new ScriptedRng([0, 0, 0.5, 100, 4, 0, 1, 1, ...PRICES]);
+    // pirates attack: 1 ship; no Li Yuen; we run and escape (randrange(5) > randrange(1))
+    const rng = new ScriptedRng([0, 0, 0.5, 100, 1, 4, 0, 1, 1, ...PRICES]);
     const p = play(sailAway(h, rng), [SHANGHAI, 0]);
     expect(p.transcript.slice(1).map((e) => [e.prompt.text, e.prompt.art])).toEqual([
       ["1 hostile ships approaching, Taipan!", "boat"],
@@ -79,10 +79,34 @@ describe("sailAway", () => {
     expect(rng.remaining).toBe(0);
   });
 
+  it("can meet Li Yuen's fleet at sea, which lets you be if you've paid", () => {
+    const h = makeHong({ extorted: 1 });
+    // no pirates; Li Yuen; no storm; extortion counter unchanged; prices
+    const rng = new ScriptedRng([1, 0, 1, 1, ...PRICES]);
+    const p = play(sailAway(h, rng), [SHANGHAI]);
+    expect(p.transcript.slice(1).map((e) => [e.prompt.text, e.prompt.art])).toEqual([
+      ["Li Yuen's pirates, Taipan!!!", "boat"],
+      ["Good joss!! They let us be!!", "boat"],
+      ["Arriving at Shanghai ... ", "boat"],
+    ]);
+    expect(rng.remaining).toBe(0);
+  });
+
+  it("ends the voyage if the ship sinks", () => {
+    const h = makeHong({ extorted: 1, shipDamage: 59 });
+    // pirates: 3 ships; no Li Yuen; run fails, no partial escape; 2 damage sinks us
+    const rng = new ScriptedRng([0, 2, 0.5, 100, 1, 0, 2, 1, 0.5]);
+    const p = play(sailAway(h, rng), [SHANGHAI, 0]);
+    expect(texts(p).at(-1)).toBe("It's all over now!!");
+    expect(p.game.result).toBe("sunk");
+    expect([h.location, h.debt]).toEqual([AT_SEA, 5000]);
+    expect(rng.remaining).toBe(0);
+  });
+
   it("runs the Hong Kong arrival events", () => {
     const h = makeHong({ location: SHANGHAI, extorted: 1, transfer: -1 });
-    // no pirates; no storm; (Wu: no rolls); extortion counter unchanged; prices
-    const rng = new ScriptedRng([1, 1, 1, ...PRICES]);
+    // no pirates; no Li Yuen; no storm; (Wu: no rolls); extortion counter unchanged; prices
+    const rng = new ScriptedRng([1, 1, 1, 1, ...PRICES]);
     const p = play(sailAway(h, rng), [HONG_KONG, false]);
     expect(texts(p).slice(1)).toEqual([
       "Arriving at Hong Kong ... ",

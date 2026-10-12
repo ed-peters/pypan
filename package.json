@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "deploy:pages": "sh scripts/deploy-gh-pages.sh"
   },
   "devDependencies": {
     "fast-check": "^4.10.2",

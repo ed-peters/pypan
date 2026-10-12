@@ -17,6 +17,17 @@ npm run typecheck
 npm run build      # static output in dist/
 ```
 
+## Playing on GitHub Pages
+
+The game is published at https://ed-peters.github.io/pypan/ from the `gh-pages` branch,
+which holds only the built site. To update it from the current commit:
+
+```sh
+npm run deploy:pages -- --push
+```
+
+Without `--push` it just builds and commits to the local `gh-pages` branch.
+
 ## Layout
 
 ```

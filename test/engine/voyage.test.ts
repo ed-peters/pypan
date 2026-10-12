@@ -6,7 +6,7 @@ import { sailAway } from "../../src/engine/voyage";
 import { makeHong } from "../helpers/hong";
 import { play, texts } from "../helpers/play";
 
-// Five price rolls of 0 give [5, 50, 500, 5000, 50000]; then no price shock.
+// Five price rolls of 0 (x1) give each port's lowest prices; then no price shock.
 const PRICES = [0, 0, 0, 0, 0, 1];
 
 describe("sailAway", () => {
@@ -38,7 +38,7 @@ describe("sailAway", () => {
       ["Arriving at Shanghai ... ", "boat"],
     ]);
     expect(h).toMatchObject({ location: SHANGHAI, month: 2, debt: 5500, bank: 1050, transfer: -1 });
-    expect(h.prices).toEqual([5, 50, 500, 5000, 50000]);
+    expect(h.prices).toEqual([5, 80, 700, 8000, 70000]); // Shanghai
     expect(rng.remaining).toBe(0);
   });
 

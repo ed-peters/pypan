@@ -8,7 +8,7 @@ import {
 import { makeHong } from "../helpers/hong";
 import { play, texts } from "../helpers/play";
 
-// Five inRange(5, 31) rolls of randrange(26) = 0 give prices [5, 50, 500, 5000, 50000].
+// Five price rolls of 0 (x1) give the Hong Kong prices [5, 60, 500, 5000, 60000].
 const MIN_PRICES = [0, 0, 0, 0, 0];
 
 describe("conditionReport", () => {
@@ -29,7 +29,7 @@ describe("establishPrices", () => {
     const h = makeHong({ time: 1 });
     const rng = new ScriptedRng(MIN_PRICES);
     const p = play(establishPrices(h, rng));
-    expect(h.prices).toEqual([5, 50, 500, 5000, 50000]);
+    expect(h.prices).toEqual([5, 60, 500, 5000, 60000]);
     expect(p.transcript).toEqual([]);
     expect(rng.remaining).toBe(0);
   });
@@ -37,7 +37,7 @@ describe("establishPrices", () => {
   it("usually leaves new prices alone after the first month", () => {
     const h = makeHong({ time: 2 });
     const p = play(establishPrices(h, new ScriptedRng([...MIN_PRICES, 1])));
-    expect(h.prices).toEqual([5, 50, 500, 5000, 50000]);
+    expect(h.prices).toEqual([5, 60, 500, 5000, 60000]);
     expect(p.transcript).toEqual([]);
   });
 
@@ -46,7 +46,7 @@ describe("establishPrices", () => {
     // shock; silk; factor = 5 + randrange(5) = 9; positive
     const p = play(establishPrices(h, new ScriptedRng([...MIN_PRICES, 0, SILK, 4, 0])));
     expect(texts(p)).toEqual([MSG_POS_SHOCK[SILK]]);
-    expect(h.prices).toEqual([5, 50, 4500, 5000, 50000]);
+    expect(h.prices).toEqual([5, 60, 4500, 5000, 60000]);
   });
 
   it("can divide a price by 5-9, but not below 1", () => {
@@ -54,7 +54,7 @@ describe("establishPrices", () => {
     // shock; general; factor = 5; negative
     const p = play(establishPrices(h, new ScriptedRng([...MIN_PRICES, 0, GENERAL, 0, 1])));
     expect(texts(p)).toEqual([MSG_NEG_SHOCK[GENERAL]]);
-    expect(h.prices).toEqual([1, 50, 500, 5000, 50000]);
+    expect(h.prices).toEqual([1, 60, 500, 5000, 60000]);
   });
 });
 

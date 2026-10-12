@@ -5,7 +5,7 @@ import type { Rng } from "./rng";
 // ------------------------------------------------------------------------------------
 // Tuning
 
-export const BASED_PRICES = false;
+export const BASED_PRICES = true;
 export const START_CASH = 400;
 export const START_DEBT = 5000;
 export const START_YEAR = 1860;
@@ -21,7 +21,6 @@ export const WAREHOUSE_SIZE_INCREMENT = 5000;
 export const DEBT_THREAT_LEVEL = 10000;
 export const DEBT_MULTIPLIER = 2;
 export const ROBBERY_CASH_LIMIT = 20000;
-export const PRICE_SIGMA = 15.0;
 export const ENEMY_HEALTH_START = 20;
 export const ENEMY_HEALTH_BUMP = 10;
 export const ENEMY_DAMAGE_START = 0.5;
@@ -86,13 +85,16 @@ export function mult(n: number): number {
 }
 
 /**
- * Per-good base prices for the "based" pricing mode. Column 0 is the good's
- * magnitude; columns 1..7 are the base for each city (indexed by city + 1).
+ * Per-good base prices for the "based" pricing mode, from taipan.c. Column 0 is the
+ * good's magnitude; columns 1..7 are how dear the good is in each city (indexed by
+ * city + 1: Hong Kong, Shanghai, Nagasaki, Saigon, Manila, Singapore, Batavia).
+ * taipan.c has no Jade; its row is our own.
  */
 export const BASE_PRICES: readonly (readonly number[])[] = [
-  [1, 11, 16, 15, 14, 12, 10, 13],
-  [10, 11, 14, 15, 16, 10, 13, 12],
-  [100, 12, 16, 10, 11, 13, 14, 15],
-  [1000, 10, 11, 12, 13, 14, 15, 16],
-  [10000, 10, 11, 12, 13, 14, 15, 16],
+  // magnitude, HK  Sha Nag Sai Man Sin Bat
+  [1,           10, 11, 12, 13, 14, 15, 16], // General: dearer the further from Hong Kong
+  [10,          12, 16, 10, 11, 13, 14, 15], // Arms: cheap in Nagasaki/Saigon, dear in Shanghai
+  [100,         11, 14, 15, 16, 10, 13, 12], // Silk: cheap in Hong Kong/Manila, dear in Saigon
+  [1000,        11, 16, 15, 14, 12, 10, 13], // Opium: cheap in Hong Kong/Singapore, dear in Shanghai
+  [10000,       13, 15, 16, 12, 14, 10, 11], // Jade: cheap in Singapore/Batavia, dear in Nagasaki
 ];

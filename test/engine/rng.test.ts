@@ -55,16 +55,6 @@ describe("SeededRng", () => {
     expect(hits).toBeGreaterThan(9000);
     expect(hits).toBeLessThan(11000);
   });
-
-  it("produces a roughly normal distribution", () => {
-    const r = new SeededRng(11);
-    const xs = Array.from({ length: 20000 }, () => r.normal(10, 15));
-    const mean = xs.reduce((s, x) => s + x, 0) / xs.length;
-    const sd = Math.sqrt(xs.reduce((s, x) => s + (x - mean) ** 2, 0) / xs.length);
-    expect(mean).toBeCloseTo(10, 0);
-    expect(sd).toBeGreaterThan(14);
-    expect(sd).toBeLessThan(16);
-  });
 });
 
 describe("Rng helpers (Python semantics)", () => {

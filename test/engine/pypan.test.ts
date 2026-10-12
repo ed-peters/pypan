@@ -155,9 +155,9 @@ describe("a whole game", () => {
       0.5, //                      Li Yuen asks 81
       1, 1, 1, //                  to Shanghai: no pirates, no Li Yuen, no storm
       1, //                        extortion counter unchanged -> lieutenant
-      24, 0, 0, 0, 0, 1, //        Shanghai prices: general at 29; no shock
+      2, 0, 0, 0, 0, 1, //         Shanghai prices: general at 5 x 3 = 15; no shock
       1, 1, 1, //                  back home: no pirates, no Li Yuen, no storm
-      1, 0.5, //                   extortion counter unchanged; Li Yuen asks 369
+      1, 0.5, //                   extortion counter unchanged; Li Yuen asks 201
       ...MIN_PRICES, 1, //         Hong Kong prices; no shock
     ]);
     const saves: number[] = [];
@@ -167,22 +167,22 @@ describe("a whole game", () => {
       1, false, false, //          debt start; refuse Li Yuen; no business with Wu
       0, GENERAL, 60, //           buy 60 general for 300
       5, SHANGHAI, //              leave port for Shanghai
-      1, GENERAL, 60, //           sell 60 general for 1740
+      1, GENERAL, 60, //           sell 60 general for 900
       2, HONG_KONG, //             leave port for Hong Kong
       false, true, //              no business with Wu; pay Li Yuen
     ]);
 
     expect(seen).toContain("Li Yuen has sent a Lieutenant, Taipan.  He says his admiral wishes to see you in Hong Kong, posthaste!");
-    expect(seen).toContain("Li Yuen asks 369 in donation to the temple of Tin Hau, the Sea Goddess. Will you pay?");
+    expect(seen).toContain("Li Yuen asks 201 in donation to the temple of Tin Hau, the Sea Goddess. Will you pay?");
     // back at the menu, still in debt, so no retiring yet
     expect(game.prompt).toMatchObject({ kind: "choose" });
     expect(game.prompt?.kind === "choose" && game.prompt.options).not.toContain("Retire");
     expect(rng.remaining).toBe(0);
     expect(session.hong).toMatchObject({
-      location: HONG_KONG, month: 3, cash: 1471, debt: 6050, extorted: 1,
+      location: HONG_KONG, month: 3, cash: 799, debt: 6050, extorted: 1,
       shipGoods: [0, 0, 0, 0, 0],
     });
     // saved at each menu: HK, HK, Shanghai, Shanghai, HK
-    expect(saves).toEqual([400, 100, 100, 1840, 1471]);
+    expect(saves).toEqual([400, 100, 100, 1000, 799]);
   });
 });

@@ -41,13 +41,6 @@ export abstract class Rng {
   choice<T>(xs: readonly T[]): T {
     return xs[this.randrange(xs.length)]!;
   }
-
-  /** A normally distributed float (Box-Muller); used by the "based" price mode. */
-  normal(mu: number, sigma: number): number {
-    const u1 = 1 - this.float(); // (0, 1], so log() is finite
-    const u2 = this.float();
-    return mu + sigma * Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
-  }
 }
 
 /** Seedable PRNG (mulberry32). Its whole state is one 32-bit integer. */

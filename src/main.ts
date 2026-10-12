@@ -1,7 +1,25 @@
-// Entry point for the browser UI. The game engine lives in src/engine and the
-// terminal-style UI in src/ui; both are built out under the Beads issues.
+// Boots the browser app: load any saved game, start the engine, attach the UI.
 
-const app = document.querySelector<HTMLDivElement>("#app");
-if (app) {
-  app.textContent = "PyPan — coming soon, Taipan.";
+import "@fontsource/vt323";
+import "./ui/styles.css";
+
+import { newGame } from "./engine/pypan";
+import { SeededRng } from "./engine/rng";
+import { LocalStorageStore } from "./storage";
+import { Terminal } from "./ui/terminal";
+
+const store = new LocalStorageStore();
+const root = document.querySelector<HTMLElement>("#app")!;
+const terminal = new Terminal(root, { onNewGame: start });
+
+async function start(): Promise<void> {
+  const saved = await store.load();
+  const { game, session } = newGame({
+    rng: new SeededRng(),
+    saved,
+    onSave: (h) => void store.save(h),
+  });
+  terminal.attach(game, session);
 }
+
+void start();

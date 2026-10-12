@@ -1,0 +1,406 @@
+/* PyPan green-screen terminal. */
+
+:root {
+  --bg: #020a04;
+  --fg: #39ff6a;
+  --dim: #27b552;
+  --faint: #0d3d1c;
+  --glow: 0 0 2px rgba(57, 255, 106, 0.8), 0 0 8px rgba(57, 255, 106, 0.35);
+  /* dimmer text gets less glow, or it blurs */
+  --glow-dim: 0 0 3px rgba(57, 255, 106, 0.25);
+  --font: "VT323", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --gap: 0.75rem;
+  --tap: 2.75rem; /* 44px minimum touch target */
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font);
+  font-size: clamp(19px, 1.2vw + 13px, 25px);
+  line-height: 1.15;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  overflow: hidden;
+  text-shadow: var(--glow);
+}
+
+/* Scanlines and a soft vignette, like an old phosphor tube. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.18) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at center, transparent 60%, rgba(0, 0, 0, 0.45) 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::after {
+    background: radial-gradient(ellipse at center, transparent 60%, rgba(0, 0, 0, 0.45) 100%);
+  }
+}
+
+#app {
+  height: 100dvh;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  text-shadow: inherit;
+  background: transparent;
+  border: 1px solid var(--dim);
+  border-radius: 0;
+  min-height: var(--tap);
+  padding: 0.2rem 0.7rem;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+button:hover,
+button:focus-visible {
+  outline: none;
+  border-color: var(--fg);
+  background: var(--faint);
+}
+
+button:active {
+  background: var(--fg);
+  color: var(--bg);
+  text-shadow: none;
+}
+
+/* ------------------------------------------------------------------------------------
+   Layout: narrow (phones, portrait tablets) first */
+
+.screen {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas: "panes" "report" "dock";
+  gap: var(--gap);
+  padding:
+    calc(env(safe-area-inset-top, 0px) + var(--gap))
+    calc(env(safe-area-inset-right, 0px) + var(--gap))
+    calc(env(safe-area-inset-bottom, 0px) + var(--gap))
+    calc(env(safe-area-inset-left, 0px) + var(--gap));
+}
+
+.panes {
+  grid-area: panes;
+  display: grid;
+  gap: var(--gap);
+}
+
+.pane {
+  border: 1px solid var(--dim);
+  padding: 0.3rem 0.6rem;
+}
+
+.pane h2,
+.pane h3 {
+  font-size: 1em;
+  font-weight: normal;
+  margin: 0 0 0.25rem;
+  letter-spacing: 0.08em;
+}
+
+.pane h3 {
+  margin-top: 0.4rem;
+  color: var(--dim);
+}
+
+.rows {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 0.6rem;
+  margin: 0;
+}
+
+.rows dt,
+.pane h3,
+.hint,
+.dock .cancel {
+  text-shadow: var(--glow-dim);
+}
+
+.rows dt {
+  text-align: right;
+  color: var(--dim);
+}
+
+.rows dt::after {
+  content: ":";
+}
+
+.rows dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* On narrow screens the status pane collapses to a strip... */
+.status-pane h2,
+.status-pane .status {
+  display: none;
+}
+
+.strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.1rem 1rem;
+}
+
+.strip span:first-child {
+  flex-basis: 100%;
+}
+
+/* ...and the hold and warehouse open as a drawer over the message, behind a toggle. */
+.panes {
+  position: relative;
+  z-index: 1;
+}
+
+.goods-pane {
+  display: none;
+}
+
+.panes.show-cargo .goods-pane {
+  display: block;
+  position: absolute;
+  top: calc(100% + 1px);
+  width: calc(50% - var(--gap) / 2);
+  background: var(--bg);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.8);
+}
+
+.panes.show-cargo .goods-pane:nth-of-type(2) {
+  left: 0;
+}
+
+.panes.show-cargo .goods-pane:nth-of-type(3) {
+  right: 0;
+}
+
+.cargo-toggle {
+  text-align: left;
+}
+
+.cargo-toggle::before {
+  content: "▸ ";
+}
+
+.panes.show-cargo .cargo-toggle::before {
+  content: "▾ ";
+}
+
+.report {
+  grid-area: report;
+  min-height: 7rem;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--dim);
+  padding: 0.4rem 0.8rem 0.8rem;
+}
+
+.report-title {
+  font-size: 1em;
+  font-weight: normal;
+  letter-spacing: 0.08em;
+  margin: 0 0 0.5rem;
+}
+
+.art {
+  font: inherit;
+  margin: 0 0 0.5rem;
+  line-height: 1;
+  overflow-x: auto;
+}
+
+.art:empty {
+  display: none;
+}
+
+.message {
+  white-space: pre-wrap;
+  max-width: 64ch;
+}
+
+/* ------------------------------------------------------------------------------------
+   Input dock */
+
+.dock {
+  grid-area: dock;
+  display: grid;
+  gap: 0.4rem;
+  /* long menus scroll rather than squeezing out the message */
+  max-height: 55dvh;
+  overflow-y: auto;
+}
+
+.dock.pair {
+  grid-template-columns: 1fr 1fr;
+}
+
+.dock.menu {
+  grid-template-columns: 1fr 1fr;
+}
+
+.dock .option {
+  text-align: left;
+}
+
+.dock .cancel {
+  color: var(--dim);
+}
+
+.dock.number {
+  grid-template-columns: 1fr;
+  justify-items: stretch;
+}
+
+.entry-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid var(--dim);
+  padding: 0.2rem 0.7rem;
+}
+
+.entry {
+  font-size: 1.4em;
+  font-variant-numeric: tabular-nums;
+}
+
+.entry::after {
+  content: "_";
+  animation: blink 1s steps(1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entry::after {
+    animation: none;
+  }
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.hint {
+  color: var(--dim);
+}
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+}
+
+.keypad .ok {
+  grid-column: 1 / -1;
+}
+
+/* ------------------------------------------------------------------------------------
+   Tall tablets (iPad portrait): all three panes in a row across the top */
+
+@media (min-width: 700px) and (max-aspect-ratio: 1/1) {
+  .panes {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .status-pane h2,
+  .goods-pane,
+  .panes.show-cargo .goods-pane {
+    display: block;
+    position: static;
+    width: auto;
+    box-shadow: none;
+  }
+
+  .status-pane .status {
+    display: grid;
+  }
+
+  .strip,
+  .cargo-toggle {
+    display: none;
+  }
+
+  .dock.menu {
+    grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  }
+}
+
+/* ------------------------------------------------------------------------------------
+   Wide screens (iPad landscape, desktop): the curses layout */
+
+@media (min-width: 820px) and (min-aspect-ratio: 1/1) {
+  .dock {
+    max-height: none;
+  }
+
+  .dock.menu {
+    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  }
+
+  .screen {
+    grid-template-columns: minmax(0, 1fr) 17rem;
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "report panes"
+      "dock panes";
+    max-width: 75rem;
+    margin: 0 auto;
+  }
+
+  .panes {
+    grid-template-columns: 1fr;
+    align-content: start;
+  }
+
+  .status-pane h2,
+  .goods-pane,
+  .panes.show-cargo .goods-pane {
+    display: block;
+    position: static;
+    width: auto;
+    box-shadow: none;
+  }
+
+  .status-pane .status {
+    display: grid;
+  }
+
+  .strip,
+  .cargo-toggle {
+    display: none;
+  }
+
+  .keypad {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .keypad .ok {
+    grid-column: span 6;
+  }
+}

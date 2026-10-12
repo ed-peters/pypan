@@ -44,14 +44,13 @@ export const SINGAPORE = 5;
 export const BATAVIA = 6;
 export const AT_SEA = 7;
 
-// Sic: one less than the number of cities, so randomOtherCity never picks Batavia.
-export const NUM_CITIES = CITIES.length - 1;
+export const NUM_CITIES = CITIES.length;
 
 export function city(n: number): string {
   return CITIES[n] ?? "At Sea";
 }
 
-/** A random city other than n (never Batavia; see NUM_CITIES). */
+/** A random city other than n. */
 export function randomOtherCity(rng: Rng, n: number): number {
   for (;;) {
     const o = rng.randrange(NUM_CITIES);

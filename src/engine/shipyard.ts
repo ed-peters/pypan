@@ -4,7 +4,7 @@ import { GUN_SIZE, HONG_KONG, SHIP_SIZE_INCREMENT } from "./constants";
 import { money } from "./format";
 import { currentTime, repairPercent, type Hong } from "./hong";
 import { wuCoversShortfall } from "./lender";
-import { askNum, askYn, say, type Flow } from "./prompts";
+import { askNum, askYn, type Flow } from "./prompts";
 import type { Rng } from "./rng";
 
 /** On arrival: repairs at home, then (after six months) offers of a new ship or gun. */
@@ -41,29 +41,27 @@ export function* offerRepair(h: Hong, rng: Rng): Flow {
   );
   const cost = rate * h.shipDamage + 1;
 
-  // sic: quotes raw damage as a percent
-  let n = yield* askNum(
-    `Och, 'tis a pity to be ${h.shipDamage}% damaged. We can fix yer whole ship for ${money(cost)}, or make partial repairs if you wish. How much will ye spend?`,
+  // there's no paying more than the full cost
+  let n = Math.min(cost, yield* askNum(
+    `Och, 'tis a pity to be ${100 - repairPercent(h)}% damaged. We can fix yer whole ship for ${money(cost)}, or make partial repairs if you wish. How much will ye spend?`,
     Math.min(h.cash, cost),
-  );
+  ));
 
   // if you don't have enough, EBW can make up the difference for you
-  // (sic: otherwise the repair cost is never deducted from your cash)
   if (n > h.cash) {
     if (!(yield* wuCoversShortfall(h, cost, "McHenry"))) {
       return;
     }
     n = cost;
+  } else {
+    h.cash -= n;
   }
 
-  // sic: leftover debug message
-  yield* say(`fixing ${Math.trunc(h.shipDamage * n / cost)}`);
-
-  // sic: partial repairs leave damage proportional to what you *paid*
+  // repairs are in proportion to what you pay
   if (n === cost) {
     h.shipDamage = 0;
   } else {
-    h.shipDamage = Math.trunc(h.shipDamage * n / cost);
+    h.shipDamage -= Math.trunc(h.shipDamage * n / cost);
   }
 }
 

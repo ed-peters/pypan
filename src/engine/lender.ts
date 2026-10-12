@@ -19,6 +19,7 @@ export function* checkLender(h: Hong, rng: Rng): Flow {
   }
 
   // if you owe him too much he might remind you of it
+  const warnedBefore = h.threatened;
   if (h.debt > DEBT_THREAT_LEVEL && !h.threatened) {
     yield* say(`Elder Brother Wu has sent ${rng.inRange(17, 39)} braves to escort you to the Wu mansion, Taipan.`);
     yield* say("Elder Brother Wu reminds you of the Confucian ideal of personal worthiness, and how this applies to paying one's debts.");
@@ -32,9 +33,8 @@ export function* checkLender(h: Hong, rng: Rng): Flow {
     yield* visitWu(h, rng);
   }
 
-  // if you still don't get the picture, he might rob you
-  // (sic: only once he has *not* threatened you)
-  if (currentTime(h) > 12 && !h.threatened && rng.chanceOf(4)) {
+  // if you were warned on an earlier visit and still owe too much, he might rob you
+  if (currentTime(h) > 12 && warnedBefore && h.debt > DEBT_THREAT_LEVEL && rng.chanceOf(4)) {
     yield* say(`Bad joss!! ${rng.inRange(3, 9)} of your bodyguards have been killed by cutthroats and you have been robbed of all of your cash, Taipan!!`);
     h.cash = 0;
   }

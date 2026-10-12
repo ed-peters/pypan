@@ -45,8 +45,11 @@ describe("checkLender", () => {
     expect(texts(again)).toHaveLength(1);
   });
 
-  it("can have you robbed after a year if you haven't been threatened", () => {
-    const h = makeHong({ time: 13, cash: 5000 });
+  // warned on an earlier visit, and still owing more than the threat level
+  const WARNED = { time: 13, cash: 5000, debt: 20000, threatened: true };
+
+  it("can have you robbed if you were warned before and still owe too much", () => {
+    const h = makeHong(WARNED);
     // chanceOf(4) hits; bodyguards = 3 + randrange(5)
     const p = play(checkLender(h, new ScriptedRng([0, 2])), [false]);
     expect(texts(p).at(-1)).toBe(
@@ -55,24 +58,43 @@ describe("checkLender", () => {
     expect(h.cash).toBe(0);
   });
 
+  it("usually doesn't rob you", () => {
+    const h = makeHong(WARNED);
+    play(checkLender(h, new ScriptedRng([1])), [false]);
+    expect(h.cash).toBe(5000);
+  });
+
   it("doesn't rob you in the first year", () => {
-    const h = makeHong({ time: 12 });
-    const rng = new ScriptedRng();
-    const p = play(checkLender(h, rng), [false]);
+    const h = makeHong({ ...WARNED, time: 12 });
+    const p = play(checkLender(h, new ScriptedRng()), [false]);
     expect(texts(p).some((t) => ROBBED.test(t))).toBe(false);
   });
 
-  it("doesn't rob you once you've been threatened (faithful quirk)", () => {
-    const h = makeHong({ time: 13, threatened: true });
+  it("doesn't rob you if you were never warned", () => {
+    const h = makeHong({ time: 13, debt: 5000 });
     const p = play(checkLender(h, new ScriptedRng()), [false]);
     expect(texts(p).some((t) => ROBBED.test(t))).toBe(false);
     expect(h.cash).toBe(400);
   });
 
-  it("usually doesn't rob you", () => {
-    const h = makeHong({ time: 13 });
-    play(checkLender(h, new ScriptedRng([1])), [false]);
-    expect(h.cash).toBe(400);
+  it("doesn't rob you on the visit when he first warns you", () => {
+    const h = makeHong({ ...WARNED, threatened: false });
+    // just the braves roll; no robbery roll
+    const rng = new ScriptedRng([4]);
+    const p = play(checkLender(h, rng), [false]);
+    expect(h.threatened).toBe(true);
+    expect(texts(p).some((t) => ROBBED.test(t))).toBe(false);
+    expect(rng.remaining).toBe(0);
+  });
+
+  it("doesn't rob you once you've paid your debt down to the threat level", () => {
+    const h = makeHong({ ...WARNED, debt: 15000 });
+    // repay 5000 during the visit, leaving 10000; no robbery roll is made
+    const rng = new ScriptedRng();
+    const p = play(checkLender(h, rng), [true, 5000]);
+    expect(h.debt).toBe(10000);
+    expect(texts(p).some((t) => ROBBED.test(t))).toBe(false);
+    expect(p.game.done).toBe(true);
   });
 });
 

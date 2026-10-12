@@ -43,29 +43,42 @@ describe("offerRepair", () => {
     expect(h.shipDamage).toBe(10);
   });
 
-  it("quotes the cost and fixes everything when paid in full", () => {
+  it("quotes the damage as a percent of the ship, and the cost", () => {
     const h = makeHong({ shipDamage: 10 });
     const p = play(offerRepair(h, new ScriptedRng(REPAIR_ROLL)), [true, 301]);
     expect(p.transcript[1]?.prompt).toEqual({
       kind: "number",
-      text: "Och, 'tis a pity to be 10% damaged. We can fix yer whole ship for 301, or make partial repairs if you wish. How much will ye spend?",
+      text: "Och, 'tis a pity to be 16% damaged. We can fix yer whole ship for 301, or make partial repairs if you wish. How much will ye spend?",
       max: 301,
     });
-    expect(texts(p).at(-1)).toBe("fixing 10");
-    expect(h.shipDamage).toBe(0);
+    // no stray messages after the repair
+    expect(p.transcript).toHaveLength(2);
   });
 
-  it("never charges you when you pay yourself (faithful quirk)", () => {
+  it("charges you for repairs and fixes everything when paid in full", () => {
     const h = makeHong({ shipDamage: 10 });
     play(offerRepair(h, new ScriptedRng(REPAIR_ROLL)), [true, 301]);
-    expect(h.cash).toBe(400);
+    expect([h.cash, h.shipDamage]).toEqual([99, 0]);
   });
 
-  it("leaves damage in proportion to what you paid (faithful quirk)", () => {
+  it("fixes damage in proportion to what you pay", () => {
     const h = makeHong({ shipDamage: 10 });
-    play(offerRepair(h, new ScriptedRng(REPAIR_ROLL)), [true, 250]);
-    // paid 83% of the cost; 83% of the damage remains
-    expect(h.shipDamage).toBe(8);
+    play(offerRepair(h, new ScriptedRng(REPAIR_ROLL)), [true, 150]);
+    // paid 49.8% of the cost: 4 of 10 points fixed
+    expect([h.cash, h.shipDamage]).toEqual([250, 6]);
+  });
+
+  it("charges no more than the full cost", () => {
+    const h = makeHong({ shipDamage: 10 });
+    const p = play(offerRepair(h, new ScriptedRng(REPAIR_ROLL)), [true, 350]);
+    expect([h.cash, h.shipDamage]).toEqual([99, 0]);
+    expect(p.game.done).toBe(true);
+  });
+
+  it("fixes nothing if you pay nothing", () => {
+    const h = makeHong({ shipDamage: 10 });
+    play(offerRepair(h, new ScriptedRng(REPAIR_ROLL)), [true, 0]);
+    expect([h.cash, h.shipDamage]).toEqual([400, 10]);
   });
 
   it("lets Wu pay the difference", () => {

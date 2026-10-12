@@ -61,16 +61,17 @@ describe("fighting", () => {
     expect(h.cash).toBe(1100);
   });
 
-  it("can sink more ships than there are (faithful quirk)", () => {
+  it("holds fire once every ship is sunk", () => {
     const h = gunHong({ shipGuns: 2 });
-    // one ship; the first gun sinks it, the second sinks a phantom replacement
-    const rng = new ScriptedRng([0, 0.5, 100, 29, 0, 29, 0]);
+    // one ship, sunk by the first gun; the second gun doesn't fire
+    const rng = new ScriptedRng([0, 0.5, 100, 29, 0]);
     const b = new PirateBattle(h, rng);
     expect(b.pirates).toBe(1);
     const p = play(b.execute(), [0]);
-    expect(b.pirates).toBe(-1);
-    expect(texts(p)).toContain("Aye, we'll fire our cannons at 'em, Taipan!\n\nWe got 2 of the buggers!");
+    expect(b.pirates).toBe(0);
+    expect(texts(p)).toContain("Aye, we'll fire our cannons at 'em, Taipan!\n\nWe got all of the buggers!");
     expect(texts(p).at(-1)).toMatch(/We won the battle/);
+    expect(rng.remaining).toBe(0);
   });
 
   it("takes return fire after a miss", () => {
@@ -130,7 +131,7 @@ describe("running", () => {
 });
 
 describe("dumping cargo", () => {
-  it("throws goods overboard, improving escape odds by at most 1 (faithful quirk)", () => {
+  it("throws goods overboard, improving escape odds by 1 per 10 units", () => {
     const h = makeHong({ shipGoods: [50, 0, 0, 0, 0] });
     const { b } = battle(h, [0.5]);
     const p = play(b.execute(), [0, GENERAL, 50]);
@@ -138,7 +139,22 @@ describe("dumping cargo", () => {
       kind: "number", text: "How much General shall I toss overboard, Taipan?", max: 50, art: "pirates",
     });
     expect(h.shipGoods[GENERAL]).toBe(0);
-    expect(b.runOk).toBe(4);
+    expect(b.runOk).toBe(3 + 5);
+  });
+
+  it("helps escape odds by at least 1 for any cargo dumped", () => {
+    const h = makeHong({ shipGoods: [50, 0, 0, 0, 0] });
+    const { b } = battle(h, [0.5]);
+    play(b.execute(), [0, GENERAL, 3]);
+    expect(b.runOk).toBe(3 + 1);
+  });
+
+  it("does nothing when dumping none", () => {
+    const h = makeHong({ shipGoods: [50, 0, 0, 0, 0] });
+    const { b } = battle(h, [0.5]);
+    play(b.execute(), [0, GENERAL, 0]);
+    expect(b.runOk).toBe(3);
+    expect(h.shipGoods[GENERAL]).toBe(50);
   });
 
   it("won't dump what isn't aboard", () => {

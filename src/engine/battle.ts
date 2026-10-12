@@ -113,8 +113,8 @@ export class PirateBattle {
     let text = "Aye, we'll fire our cannons at 'em, Taipan!";
     yield* say(text);
     let k = 0;
-    // sic: every gun fires even after the last ship sinks, so pirates can go negative
-    for (let i = 0; i < this.h.shipGuns; i++) {
+    // once the last ship sinks, the remaining guns hold their fire
+    for (let i = 0; i < this.h.shipGuns && this.pirates > 0; i++) {
       this.currHealth -= this.rng.randrange(30) + 10;
       if (this.currHealth < 0) {
         this.removePirates(1);
@@ -155,10 +155,10 @@ export class PirateBattle {
     const n = yield* askNum(`How much ${good(g)} shall I toss overboard, Taipan?`, this.h.shipGoods[g]!);
     if (n > this.h.shipGoods[g]!) {
       yield* say("We don't have enough on board, Taipan!");
-    } else {
+    } else if (n > 0) {
       this.h.shipGoods[g]! -= n;
-      // sic: min caps the benefit at 1 (pypan-28)
-      this.runOk += Math.min(1, Math.trunc(n / 10));
+      // any cargo dumped helps a little; more helps more
+      this.runOk += Math.max(1, Math.trunc(n / 10));
     }
   }
 }

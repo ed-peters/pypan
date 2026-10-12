@@ -18,13 +18,13 @@ describe("cities", () => {
     expect(randomOtherCity(r, 2)).toBe(4);
   });
 
-  it("randomOtherCity never picks Batavia (faithful quirk)", () => {
+  it("randomOtherCity can pick any other city, including Batavia", () => {
     const r = new SeededRng(17);
     const seen = new Set<number>();
     for (let i = 0; i < 2000; i++) {
       seen.add(randomOtherCity(r, HONG_KONG));
     }
-    expect([...seen].sort()).toEqual([1, 2, 3, 4, 5]);
+    expect([...seen].sort()).toEqual([1, 2, 3, 4, 5, BATAVIA]);
   });
 });
 

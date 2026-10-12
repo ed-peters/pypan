@@ -7,8 +7,8 @@ import { say, type Flow } from "./prompts";
 import type { Rng } from "./rng";
 
 export function* checkSafety(h: Hong, rng: Rng): Flow {
-  // sic: hazards begin in month 12, not after it
-  if (currentTime(h) < 12) {
+  // hazards don't begin until after the first year
+  if (currentTime(h) <= 12) {
     return;
   }
 

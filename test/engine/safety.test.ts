@@ -6,13 +6,14 @@ import { makeHong } from "../helpers/hong";
 import { play, texts } from "../helpers/play";
 
 describe("checkSafety", () => {
-  it("is safe before month 12", () => {
-    const h = makeHong({ time: 11, location: SHANGHAI, shipGoods: [0, 0, 0, 5, 0] });
-    expect(play(checkSafety(h, new ScriptedRng())).transcript).toEqual([]);
+  it("is safe through the first year, including month 12", () => {
+    const h = makeHong({ time: 12, location: SHANGHAI, cash: 50000, shipGoods: [0, 0, 0, 5, 0], warehouseGoods: [1, 0, 0, 0, 0] });
+    const rng = new ScriptedRng();
+    expect(play(checkSafety(h, rng)).transcript).toEqual([]);
   });
 
-  it("starts in month 12, not after it (faithful quirk)", () => {
-    const h = makeHong({ time: 12, location: SHANGHAI, shipGoods: [0, 0, 0, 5, 0] });
+  it("starts in month 13", () => {
+    const h = makeHong({ time: 13, location: SHANGHAI, shipGoods: [0, 0, 0, 5, 0] });
     const p = play(checkSafety(h, new ScriptedRng([0, 0.5])));
     expect(p.transcript).toHaveLength(1);
   });

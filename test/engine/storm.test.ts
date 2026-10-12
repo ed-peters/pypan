@@ -29,11 +29,17 @@ describe("checkStorm", () => {
     expect(p.game.result).toBe(MANILA);
   });
 
-  it("can't add damage past 80 points", () => {
-    const h = makeHong({ shipDamage: 80 });
+  it("won't damage a ship that is already 80% damaged", () => {
+    const h = makeHong({ shipDamage: 48 }); // 48 of 60 = 80%
     // no damage roll is made; straight to the blown-off-course roll
     const p = play(checkStorm(h, new ScriptedRng([0, 1]), SHANGHAI));
     expect(p.transcript[1]?.prompt.text).toBe("We made it!");
-    expect(h.shipDamage).toBe(80);
+    expect(h.shipDamage).toBe(48);
+  });
+
+  it("measures the 80% against the ship's size, not raw damage points", () => {
+    const h = makeHong({ shipDamage: 80, shipSize: 210 }); // 38%
+    play(checkStorm(h, new ScriptedRng([0, 0, 3]), SHANGHAI));
+    expect(h.shipDamage).toBe(88);
   });
 });

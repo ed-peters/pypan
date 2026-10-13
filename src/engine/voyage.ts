@@ -23,14 +23,13 @@ export function* sailAway(h: Hong, rng: Rng): Flow<"sunk" | void> {
     return;
   }
 
-  const destination = yield* askOptOrCancel("Where shall we sail to, Taipan?", CITIES);
+  // you can't sail to where you already are; "Never mind" goes before the last
+  // port, so it's at the bottom left of a two-column menu
+  const destination = yield* askOptOrCancel("Where shall we sail to, Taipan?", CITIES, {
+    disabled: [h.location],
+    cancelAt: CITIES.length - 1,
+  });
   if (destination === null) {
-    return;
-  }
-
-  // can't go somewhere if you're already there
-  if (h.location === destination) {
-    yield* say(`You are already in ${city(h.location)}, Taipan.`);
     return;
   }
 

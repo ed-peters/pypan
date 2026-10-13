@@ -190,9 +190,15 @@ Each shock prints a themed flavor message (see `MSG_POS_SHOCK` / `MSG_NEG_SHOCK`
 
 ### 4.3 Buying and Selling
 
-- **Buy**: limited by cash (`floor(cash / price)`). Goods go into the ship's hold.
-  No explicit capacity check at purchase time — overload is caught when sailing.
-- **Sell**: limited by the quantity in the ship's hold. Proceeds added to cash.
+- **Buy**: limited by cash (`floor(cash / price)`); wherever the bank can be visited
+  (Hong Kong, or with its representative in port), by cash plus the bank. Goods you
+  can't afford any of are disabled on the menu. Goods go into the ship's hold. No explicit capacity check at purchase time —
+  overload is caught when sailing. When cash doesn't cover it, the rest comes from
+  the bank: "The necessary funds will be sent from the bank, Taipan."
+- **Sell**: limited by the quantity in the ship's hold; goods not aboard are disabled
+  on the menu. Proceeds added to cash. With
+  only one good aboard, there's no menu: "Would you like to sell all of your
+  ((good)), Taipan?" Yes sells it all; No asks how much.
 
 Both show a condition report listing the current price of each good on the market
 (four goods until jade is introduced, §4.6), in two columns.
@@ -273,19 +279,24 @@ and the lender, then repeatedly presents the port action menu. The menu
 (`establish_opts`) offers, in order:
 
 - **Buy goods**
-- **Sell goods**
-- **Transfer goods** (only if `transfer >= 0`)
+- **Sell goods** (disabled when the hold has no goods)
+- **Transfer goods** (only if `transfer >= 0`; disabled when there are no goods in
+  the hold or the warehouse)
 - In Hong Kong, or abroad when the bank's representative is in port: **Visit the bank**
 - **Leave port**
 - In Hong Kong only, and only when out of debt: **Retire**. It asks "Are you sure you
   want to retire, Taipan?" before ending the game (§1.1).
+
+Abroad, **Leave port** comes third, right after Sell, so it's always in the same place
+whether or not transfers and the bank are on offer.
 
 The game auto-saves at the top of every menu iteration.
 
 ### 5.1 Sailing (`sail_away`)
 
 1. Refuses to sail if the ship is **overloaded** (`ship_available() < 0`).
-2. Prompts for a destination (cannot be the current city; can be cancelled).
+2. Prompts for a destination; the current city is shown but disabled, and it can be
+   cancelled. "Never mind" comes before Batavia, the last port.
 3. Sets location to **At Sea**, advances the clock one month, shows the boat art.
 4. **Pirate check**, including Li Yuen's fleet (see §7). If the ship sinks, the game
    ends here.
@@ -401,11 +412,14 @@ very start of a game that begins with cash (the debt start).
 
 ## 9. Ship & Warehouse Upgrades (`check_upgrades`, on arrival)
 
-- **Repairs (McHenry)**: offered when home with hull damage (and some cash). The quote
+- **Repairs (McHenry)**: offered when home with hull damage (and some cash or money in
+  the bank). The quote
   gives the damage as a percent of ship size and a cost that scales with elapsed
   time, damage, and ship size. You pay what you choose, up to the full cost; damage
   is fixed in proportion to what you pay, and paying the full cost fixes everything.
-  If you enter more than your cash, Wu can cover the difference (added to debt).
+  Cash pays first, then the bank ("The necessary funds will be sent from the bank,
+  Taipan."). If you enter more than your cash and bank together, Wu can cover the
+  difference (added to debt), after all your cash and bank funds are spent.
   Any repair ends with McHenry's "Aye, she'll be right as rain for ye!!"
 - **New ship** (after month 6, 1-in-4): buy a larger ship (`+50` capacity,
   `SHIP_SIZE_INCREMENT`) which also clears all damage. Cost scales with time/size.
@@ -422,8 +436,10 @@ The player has a warehouse in Hong Kong (10000 capacity) used to stockpile goods
 - **Transfer fee**: 0% in Hong Kong. Away from home, after month 12, a 1-in-6 chance
   that a "lorcha" lets you transfer goods to/from the Hong Kong warehouse for a 5–9%
   fee; otherwise transfers are unavailable away from home (`transfer = -1`).
-- **Transferring**: move a chosen good between ship's hold and warehouse. The
-  transfer fee skims a percentage off the quantity that actually arrives.
+- **Transferring**: move a chosen good between ship's hold and warehouse. When only
+  one good is in the hold and the warehouse together, there's no menu: it goes
+  straight to the questions for that good. Otherwise goods in neither are disabled. The transfer fee skims a percentage off the quantity that
+  actually arrives.
 - **Warehouse upgrade** (home only, after month 12, 1-in-10): buy `+5000` capacity
   (`WAREHOUSE_SIZE_INCREMENT`) for a time/size-scaled cost.
 
@@ -536,7 +552,7 @@ etc.). It is built for touch on iPhone and iPad, and also works with a keyboard.
 Layouts: on iPad landscape and desktop, the report is on the left with the three
 panes on the right (like the curses layout). On iPad portrait, the panes sit in a row
 across the top. On iPhone, a compact status strip sits at the top and the hold and
-warehouse open as a drawer.
+warehouse open as a drawer, with the hold on the left.
 
 ### 15.1 Input Conventions
 
@@ -545,7 +561,8 @@ Each prompt shows touch controls in a dock below the report:
 - **Message** (`say`): a Continue button, or tap the report; any key continues.
 - **Yes/No** (`ask_yn`): Yes and No buttons; Y/N keys.
 - **Menu** (`ask_opt`): numbered buttons; select by number or by the option's first
-  letter. Some menus can be cancelled (button or `Esc`).
+  letter. Some menus can be cancelled (button or `Esc`). Options that can't be chosen
+  right now are shown disabled rather than removed, so menus keep their shape.
 - **Number** (`ask_num`): an on-screen keypad with ⌫, **ALL** (fills in the maximum)
   and OK; on a keyboard, type digits, Backspace, **A** for all, **Enter** to confirm.
   Amounts above the maximum are allowed; the game explains why they're refused (and
@@ -613,3 +630,8 @@ Interface changes:
 - **Exit the game** is gone: progress is saved automatically, so closing the app is
   enough. **Retire** takes its place at the end of the Hong Kong menu.
 - Display amounts (such as Li Yuen's demand) use thousands separators throughout.
+- **Streamlined menus** (pypan-58): Sell, Transfer and the current port are disabled
+  when they can't be used; selling a lone good and transferring a lone good skip the
+  goods menu, and goods you can't buy, sell or transfer are disabled on its menu;
+  buying and repairs can draw on the bank wherever it can be visited; abroad, Leave
+  port is always third.

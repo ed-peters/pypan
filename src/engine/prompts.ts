@@ -30,11 +30,24 @@ export interface YnPrompt extends PromptBase {
   kind: "yn";
 }
 
-/** A numbered menu. Answer: option index, or null if cancelled (only when cancellable). */
+/**
+ * A numbered menu. Answer: option index, or null if cancelled (only when cancellable).
+ * Disabled options are shown but can't be chosen, so the menu keeps its shape.
+ */
 export interface ChoosePrompt extends PromptBase {
   kind: "choose";
   options: string[];
   cancellable: boolean;
+  /** Indexes of the options that can't be chosen. */
+  disabled?: number[];
+  /** Where "Never mind" goes among the options; the end if not given. */
+  cancelAt?: number;
+}
+
+/** Ways to shape a menu: options that can't be chosen, and where "Never mind" goes. */
+export interface MenuOptions {
+  disabled?: readonly number[];
+  cancelAt?: number;
 }
 
 /**
@@ -71,19 +84,39 @@ export function* askYn(text: string): Flow<boolean> {
 }
 
 /** Choose one of the options; returns its index. */
-export function* askOpt(text: string, options: readonly string[]): Flow<number> {
-  return (yield { kind: "choose", text, options: [...options], cancellable: false }) as number;
+export function* askOpt(text: string, options: readonly string[], menu: MenuOptions = {}): Flow<number> {
+  return (yield choosePrompt(text, options, false, menu)) as number;
 }
 
 /** Choose one of the options, or cancel (Esc); returns its index or null. */
-export function* askOptOrCancel(text: string, options: readonly string[]): Flow<number | null> {
-  return (yield { kind: "choose", text, options: [...options], cancellable: true }) as number | null;
+export function* askOptOrCancel(text: string, options: readonly string[], menu: MenuOptions = {}): Flow<number | null> {
+  return (yield choosePrompt(text, options, true, menu)) as number | null;
 }
 
-/** Choose among labeled values (pypan.py's ask_opt2); returns the chosen value. */
-export function* pick<T>(text: string, options: readonly (readonly [string, T])[]): Flow<T> {
-  const i = yield* askOpt(text, options.map(([label]) => label));
+/**
+ * Choose among labeled values (pypan.py's ask_opt2); returns the chosen value.
+ * An option with a third element of false is shown disabled.
+ */
+export function* pick<T>(text: string, options: readonly (readonly [string, T, boolean?])[]): Flow<T> {
+  const disabled = options.flatMap(([, , enabled], i) => (enabled === false ? [i] : []));
+  const i = yield* askOpt(text, options.map(([label]) => label), { disabled });
   return options[i]![1];
+}
+
+function choosePrompt(text: string, options: readonly string[], cancellable: boolean, menu: MenuOptions): ChoosePrompt {
+  const p: ChoosePrompt = { kind: "choose", text, options: [...options], cancellable };
+  if (menu.disabled?.length) {
+    p.disabled = [...menu.disabled];
+  }
+  if (menu.cancelAt !== undefined) {
+    p.cancelAt = menu.cancelAt;
+  }
+  return p;
+}
+
+/** Whether a menu option can be chosen. */
+export function isEnabled(p: ChoosePrompt, i: number): boolean {
+  return !p.disabled?.includes(i);
 }
 
 export function* askNum(text: string, max: number = 0): Flow<number> {

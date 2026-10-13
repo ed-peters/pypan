@@ -66,6 +66,13 @@ describe("Game", () => {
     expect(g.result).toBeNull();
   });
 
+  it("rejects disabled menu options", () => {
+    const g = new Game(askOptOrCancel("where?", ["a", "b"], { disabled: [0] }));
+    expect(() => g.answer(0)).toThrow(InvalidAnswerError);
+    g.answer(1);
+    expect(g.result).toBe(1);
+  });
+
   it("rejects answers after the game is over", () => {
     const g = new Game(say("bye"));
     g.answer();

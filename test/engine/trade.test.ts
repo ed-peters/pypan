@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ARMS, GENERAL, HONG_KONG, JADE, SILK } from "../../src/engine/constants";
+import { ARMS, GENERAL, HONG_KONG, JADE, SHANGHAI, SILK } from "../../src/engine/constants";
 import { currentTime } from "../../src/engine/hong";
 import { ScriptedRng } from "../../src/engine/rng";
 import {
@@ -121,11 +121,16 @@ describe("buyGoods", () => {
     expect(h.cash).toBe(400);
   });
 
-  it("won't ask how much when you can't afford any", () => {
-    const h = makeHong();
-    const p = play(buyGoods(h), [SILK]);
-    expect(texts(p).at(-1)).toBe("You cannot afford any silk at these prices, Taipan.");
-    expect(p.game.done).toBe(true);
+  it("disables goods you can't afford any of", () => {
+    const p = play(buyGoods(makeHong()));
+    // 400 cash buys general (10) and arms (100), but not silk, opium or jade
+    expect(p.transcript[0]!.prompt).toMatchObject({ disabled: [SILK, 3, JADE] });
+    expect(() => p.game.answer(SILK)).toThrow();
+  });
+
+  it("counts the bank toward what you can afford", () => {
+    const p = play(buyGoods(makeHong({ bank: 1000 })));
+    expect(p.transcript[0]!.prompt).toMatchObject({ disabled: [3, JADE] });
   });
 
   it("buys goods into the hold", () => {
@@ -145,6 +150,33 @@ describe("buyGoods", () => {
     expect(h.shipGoods[GENERAL]).toBe(0);
   });
 
+  it("draws on the bank in Hong Kong when cash runs short", () => {
+    const h = makeHong({ cash: 400, bank: 1000 });
+    const p = play(buyGoods(h), [SILK, 1]);
+    expect(p.transcript[1]?.prompt).toMatchObject({ kind: "number", max: 1 });
+    expect(texts(p).at(-1)).toBe("The necessary funds will be sent from the bank, Taipan.");
+    expect([h.cash, h.bank, h.shipGoods[SILK]]).toEqual([0, 400, 1]);
+  });
+
+  it("pays from cash alone when it's enough", () => {
+    const h = makeHong({ cash: 400, bank: 1000 });
+    const p = play(buyGoods(h), [GENERAL, 10]);
+    expect(texts(p)).not.toContain("The necessary funds will be sent from the bank, Taipan.");
+    expect([h.cash, h.bank]).toEqual([300, 1000]);
+  });
+
+  it("draws on the bank abroad when its representative is in port", () => {
+    const h = makeHong({ location: SHANGHAI, banker: true, cash: 400, bank: 1000 });
+    const p = play(buyGoods(h), [SILK, 1]);
+    expect(texts(p).at(-1)).toBe("The necessary funds will be sent from the bank, Taipan.");
+    expect([h.cash, h.bank, h.shipGoods[SILK]]).toEqual([0, 400, 1]);
+  });
+
+  it("doesn't draw on the bank abroad without its representative", () => {
+    const p = play(buyGoods(makeHong({ location: SHANGHAI, cash: 400, bank: 1000 })));
+    expect(p.transcript[0]!.prompt).toMatchObject({ disabled: [SILK, 3, JADE] });
+  });
+
   it("does not check hold space (overloading is caught when sailing)", () => {
     const h = makeHong({ cash: 10000 });
     play(buyGoods(h), [GENERAL, 1000]);
@@ -153,19 +185,38 @@ describe("buyGoods", () => {
 });
 
 describe("sellGoods", () => {
+  it("offers to sell the lot when only one good is aboard", () => {
+    const h = makeHong({ shipGoods: [0, 0, 3, 0, 0] });
+    const p = play(sellGoods(h), [true]);
+    expect(p.transcript[0]?.prompt).toMatchObject({ kind: "yn" });
+    expect(texts(p)[0]).toMatch(/Would you like to sell all of your silk, Taipan\?$/);
+    expect(h.cash).toBe(3400);
+    expect(h.shipGoods[SILK]).toBe(0);
+  });
+
+  it("asks how much when you won't sell the lot", () => {
+    const h = makeHong({ shipGoods: [0, 0, 3, 0, 0] });
+    const p = play(sellGoods(h), [false, 1]);
+    expect(p.transcript[1]?.prompt).toMatchObject({ kind: "number", max: 3 });
+    expect(texts(p)[1]).toMatch(/How much silk shall I sell, Taipan\?$/);
+    expect(h.cash).toBe(1400);
+    expect(h.shipGoods[SILK]).toBe(2);
+  });
+
   it("can be cancelled", () => {
     const h = makeHong();
     play(sellGoods(h), [null]);
     expect(h.cash).toBe(400);
   });
 
-  it("won't sell what isn't aboard", () => {
-    const p = play(sellGoods(makeHong()), [SILK]);
-    expect(texts(p).at(-1)).toBe("You have no silk in your ship's hold, Taipan.");
+  it("disables goods that aren't aboard", () => {
+    const p = play(sellGoods(makeHong({ shipGoods: [1, 0, 3, 0, 0] })));
+    expect(p.transcript[0]!.prompt).toMatchObject({ kind: "choose", disabled: [ARMS, 3, JADE] });
+    expect(() => p.game.answer(ARMS)).toThrow();
   });
 
   it("sells goods from the hold", () => {
-    const h = makeHong({ shipGoods: [0, 0, 3, 0, 0] });
+    const h = makeHong({ shipGoods: [1, 0, 3, 0, 0] });
     const p = play(sellGoods(h), [SILK, 2]);
     expect(p.transcript[1]?.prompt).toMatchObject({ kind: "number", max: 3 });
     expect(h.cash).toBe(2400);
@@ -173,7 +224,7 @@ describe("sellGoods", () => {
   });
 
   it("refuses to sell more than is aboard", () => {
-    const h = makeHong({ shipGoods: [0, 0, 3, 0, 0] });
+    const h = makeHong({ shipGoods: [1, 0, 3, 0, 0] });
     const p = play(sellGoods(h), [SILK, 4]);
     expect(texts(p).at(-1)).toBe("You do not have that much in your ship's hold, Taipan.");
     expect(h.shipGoods[SILK]).toBe(3);

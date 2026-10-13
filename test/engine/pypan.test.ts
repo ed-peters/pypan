@@ -90,14 +90,26 @@ describe("the port menu", () => {
   it("offers only trading and sailing elsewhere, plus transfers with a lorcha", () => {
     expect(labels(makeHong({ location: SHANGHAI, transfer: -1 }))).toEqual(["Buy goods", "Sell goods", "Leave port"]);
     expect(labels(makeHong({ location: SHANGHAI, transfer: 5 }))).toEqual([
-      "Buy goods", "Sell goods", "Transfer goods", "Leave port",
+      "Buy goods", "Sell goods", "Leave port", "Transfer goods",
     ]);
   });
 
   it("offers the bank elsewhere when its representative is in port", () => {
-    expect(labels(makeHong({ location: SHANGHAI, transfer: -1, banker: true }))).toEqual([
-      "Buy goods", "Sell goods", "Visit the bank", "Leave port",
+    expect(labels(makeHong({ location: SHANGHAI, transfer: 5, banker: true }))).toEqual([
+      "Buy goods", "Sell goods", "Leave port", "Transfer goods", "Visit the bank",
     ]);
+  });
+
+  it("disables selling and transferring when there's nothing to move", () => {
+    const enabled = (h: Hong) => establishOpts(h, new ScriptedRng()).map(([l, , e]) => [l, e]);
+    expect(enabled(makeHong())).toEqual([
+      ["Buy goods", true], ["Sell goods", false], ["Transfer goods", false],
+      ["Visit the bank", true], ["Leave port", true],
+    ]);
+    expect(enabled(makeHong({ warehouseGoods: [1, 0, 0, 0, 0] }))).toContainEqual(["Transfer goods", true]);
+    expect(enabled(makeHong({ shipGoods: [1, 0, 0, 0, 0] }))).toEqual(expect.arrayContaining([
+      ["Sell goods", true], ["Transfer goods", true],
+    ]));
   });
 });
 
@@ -174,7 +186,7 @@ describe("a whole game", () => {
       1, false, false, //          debt start; refuse Li Yuen; no business with Wu
       0, GENERAL, 60, //           buy 60 general for 300
       4, SHANGHAI, //              leave port for Shanghai
-      1, GENERAL, 60, //           sell 60 general for 900
+      1, true, //                  sell all 60 general for 900
       2, HONG_KONG, //             leave port for Hong Kong
       false, true, //              no business with Wu; pay Li Yuen
     ]);

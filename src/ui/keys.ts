@@ -1,7 +1,7 @@
 // Input handling as pure functions: which answer (if any) a key or button press
 // gives for the current prompt. Shared by the on-screen controls and the keyboard.
 
-import type { Prompt } from "../engine/prompts";
+import { isEnabled, type Prompt } from "../engine/prompts";
 
 /** Longest number the keypad accepts; well inside Number.MAX_SAFE_INTEGER. */
 export const MAX_DIGITS = 12;
@@ -53,10 +53,10 @@ export function keyToResult(prompt: Prompt, key: string, entry: string): KeyResu
       }
       if (/^[1-9]$/.test(key)) {
         const i = Number(key) - 1;
-        return i < prompt.options.length ? { type: "answer", value: i } : null;
+        return i < prompt.options.length && isEnabled(prompt, i) ? { type: "answer", value: i } : null;
       }
       if (key.length === 1) {
-        const i = prompt.options.findIndex((o) => o[0]?.toUpperCase() === key.toUpperCase());
+        const i = prompt.options.findIndex((o, j) => o[0]?.toUpperCase() === key.toUpperCase() && isEnabled(prompt, j));
         return i >= 0 ? { type: "answer", value: i } : null;
       }
       return null;

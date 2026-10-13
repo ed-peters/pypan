@@ -29,15 +29,22 @@ export function* checkWarehouse(h: Hong, rng: Rng): Flow {
   }
 }
 
+/** The goods aboard ship or in the warehouse. */
+export function goodsToTransfer(h: Hong): number[] {
+  return knownGoods(h).flatMap((_, g) => (hasAny(h, g) ? [g] : []));
+}
+
 /** Move one good between ship and warehouse; the fee skims what arrives. */
 export function* transfer(h: Hong): Flow {
-  // decide what good we're going to transfer; if we have none, there's no point
-  const g = yield* askOptOrCancel("What shall I transfer, Taipan?", knownGoods(h));
+  // decide what good we're going to transfer: if there's only one, that's it;
+  // otherwise goods we have none of are disabled
+  const goods = goodsToTransfer(h);
+  const g = goods.length === 1
+    ? goods[0]!
+    : yield* askOptOrCancel("What shall I transfer, Taipan?", knownGoods(h), {
+      disabled: knownGoods(h).flatMap((_, g) => (goods.includes(g) ? [] : [g])),
+    });
   if (g === null) {
-    return;
-  }
-  if (!hasAny(h, g)) {
-    yield* say(`You have no ${good(g)} to transfer, Taipan.`);
     return;
   }
 

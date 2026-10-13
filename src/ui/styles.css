@@ -191,12 +191,13 @@ button:active {
   box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.8);
 }
 
+/* the ship's hold on the left, the warehouse on the right */
 .panes.show-cargo .goods-pane:nth-of-type(2) {
-  left: 0;
+  right: 0;
 }
 
 .panes.show-cargo .goods-pane:nth-of-type(3) {
-  right: 0;
+  left: 0;
 }
 
 .cargo-toggle {
@@ -268,6 +269,18 @@ button:active {
 
 .dock .cancel {
   color: var(--dim);
+}
+
+/* options that can't be chosen keep their place in the menu */
+.dock .option:disabled,
+.dock .option:disabled:hover,
+.dock .option:disabled:active {
+  color: var(--dim);
+  text-shadow: none;
+  background: transparent;
+  border-color: var(--dim);
+  border-style: dashed;
+  cursor: default;
 }
 
 .dock.number {

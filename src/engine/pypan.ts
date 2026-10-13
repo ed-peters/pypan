@@ -10,9 +10,9 @@ import { checkLender } from "./lender";
 import { askOpt, askYn, checkpoint, pick, say, type Flow } from "./prompts";
 import type { Rng } from "./rng";
 import { cashPosition, positionComment, rank, score, scoreReport, type Rank } from "./score";
-import { buyGoods, conditionReport, sellGoods } from "./trade";
+import { buyGoods, conditionReport, goodsAboard, sellGoods } from "./trade";
 import { sailAway } from "./voyage";
-import { transfer } from "./warehouse";
+import { goodsToTransfer, transfer } from "./warehouse";
 
 /** State shared between the running game and its UI. */
 export interface Session {
@@ -78,21 +78,32 @@ export function* compradorsLoop(h: Hong, rng: Rng): Flow<Ending> {
 /** A menu action; returns an Ending if the game is over. */
 type Action = () => Flow<Ending | void>;
 
-export function establishOpts(h: Hong, rng: Rng): [string, Action][] {
-  const opts: [string, Action][] = [
-    ["Buy goods", () => buyGoods(h)],
-    ["Sell goods", () => sellGoods(h)],
+/** A menu option: its label, its action, and whether it can be chosen now. */
+type Option = [string, Action, boolean];
+
+export function establishOpts(h: Hong, rng: Rng): Option[] {
+  const opts: Option[] = [
+    ["Buy goods", () => buyGoods(h), true],
+    // selling and transferring are shown but disabled when there's nothing to move
+    ["Sell goods", () => sellGoods(h), goodsAboard(h).length > 0],
   ];
+  const leave: Option = ["Leave port", () => sailAway(h, rng), true];
+  // abroad, where transfers and the bank come and go, Leave is always third
+  if (h.location !== HONG_KONG) {
+    opts.push(leave);
+  }
   if (h.transfer >= 0) {
-    opts.push(["Transfer goods", () => transfer(h)]);
+    opts.push(["Transfer goods", () => transfer(h), goodsToTransfer(h).length > 0]);
   }
   if (bankAvailable(h)) {
-    opts.push(["Visit the bank", () => visitBank(h, rng)]);
+    opts.push(["Visit the bank", () => visitBank(h, rng), true]);
   }
-  opts.push(["Leave port", () => sailAway(h, rng)]);
+  if (h.location === HONG_KONG) {
+    opts.push(leave);
+  }
   // only a player who is out of debt can retire
   if (h.location === HONG_KONG && h.debt <= 0) {
-    opts.push(["Retire", () => retire()]);
+    opts.push(["Retire", () => retire(), true]);
   }
   return opts;
 }

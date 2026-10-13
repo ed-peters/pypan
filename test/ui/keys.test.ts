@@ -69,6 +69,12 @@ describe("keyToResult", () => {
     expect(keyToResult(menu, "z", "")).toBeNull();
   });
 
+  it("won't choose a disabled option by number or letter", () => {
+    const ports: Prompt = { ...cities, disabled: [1] };
+    expect(keyToResult(ports, "2", "")).toBeNull();
+    expect(keyToResult(ports, "s", "")).toEqual(answer(2));
+  });
+
   it("cancels with Escape only when allowed", () => {
     expect(keyToResult(cities, "Escape", "")).toEqual(answer(null));
     expect(keyToResult(menu, "Escape", "")).toBeNull();

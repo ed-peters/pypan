@@ -95,6 +95,27 @@ describe("offerRepair", () => {
     expect([h.cash, h.debt, h.shipDamage]).toEqual([0, 5201, 0]);
   });
 
+  it("draws on the bank when cash runs short", () => {
+    const h = makeHong({ cash: 100, bank: 1000, shipDamage: 10 });
+    const p = play(offerRepair(h, new ScriptedRng(REPAIR_ROLL)), [true, 301]);
+    expect(p.transcript[1]?.prompt).toMatchObject({ max: 301 });
+    expect(texts(p)).toContain("The necessary funds will be sent from the bank, Taipan.");
+    expect([h.cash, h.bank, h.debt, h.shipDamage]).toEqual([0, 799, 5000, 0]);
+  });
+
+  it("offers repairs with no cash when there's money in the bank", () => {
+    const h = makeHong({ cash: 0, bank: 1000, shipDamage: 10 });
+    play(offerRepair(h, new ScriptedRng(REPAIR_ROLL)), [true, 301]);
+    expect([h.bank, h.shipDamage]).toEqual([699, 0]);
+  });
+
+  it("uses cash and the bank before Wu pays the difference", () => {
+    const h = makeHong({ cash: 100, bank: 50, debt: 5000, shipDamage: 10 });
+    const p = play(offerRepair(h, new ScriptedRng(REPAIR_ROLL)), [true, 301, true]);
+    expect(texts(p)).toContain("The necessary funds will be sent from the bank, Taipan.");
+    expect([h.cash, h.bank, h.debt, h.shipDamage]).toEqual([0, 0, 5151, 0]);
+  });
+
   it("leaves the ship damaged if you won't take Wu's help", () => {
     const h = makeHong({ cash: 100, shipDamage: 10 });
     const p = play(offerRepair(h, new ScriptedRng(REPAIR_ROLL)), [true, 301, false]);

@@ -1,5 +1,6 @@
 // McHenry's repairs, new ships and guns (SPEC.md section 9).
 
+import { pay, spendable } from "./bank";
 import { GUN_SIZE, HONG_KONG, SHIP_SIZE_INCREMENT } from "./constants";
 import { money } from "./format";
 import { currentTime, repairPercent, type Hong } from "./hong";
@@ -27,7 +28,7 @@ export function* checkUpgrades(h: Hong, rng: Rng): Flow {
 
 export function* offerRepair(h: Hong, rng: Rng): Flow {
   // won't repair if there's no point
-  if (h.cash === 0 || h.shipDamage === 0) {
+  if (spendable(h) === 0 || h.shipDamage === 0) {
     return;
   }
 
@@ -44,7 +45,7 @@ export function* offerRepair(h: Hong, rng: Rng): Flow {
   // there's no paying more than the full cost
   let n = Math.min(cost, yield* askNum(
     `Och, 'tis a pity to be ${100 - repairPercent(h)}% damaged. We can fix yer whole ship for ${money(cost)}, or make partial repairs if you wish. How much will ye spend?`,
-    Math.min(h.cash, cost),
+    Math.min(spendable(h), cost),
   ));
 
   // paying nothing gets you nothing
@@ -52,13 +53,17 @@ export function* offerRepair(h: Hong, rng: Rng): Flow {
     return;
   }
 
-  // if you don't have enough, EBW can make up the difference for you
-  if (n > h.cash) {
-    if (!(yield* wuCoversShortfall(h, n, "McHenry"))) {
+  // in Hong Kong the bank can pay what cash can't; if that's not enough, EBW can
+  // make up the difference for you, after all your cash and bank funds
+  const funds = spendable(h);
+  if (n > funds) {
+    const banked = funds - h.cash;
+    if (!(yield* wuCoversShortfall(h, n - banked, "McHenry"))) {
       return;
     }
+    yield* pay(h, banked);
   } else {
-    h.cash -= n;
+    yield* pay(h, n);
   }
 
   // repairs are in proportion to what you pay

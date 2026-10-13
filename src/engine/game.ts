@@ -1,7 +1,7 @@
 // Drives a flow one prompt at a time, so a UI (or a test) can show the current
 // prompt and feed back the player's answer.
 
-import type { Flow, Prompt } from "./prompts";
+import { isEnabled, type Flow, type Prompt } from "./prompts";
 
 export class InvalidAnswerError extends Error {
   override name = "InvalidAnswerError";
@@ -87,6 +87,8 @@ function validate(p: Prompt, v: unknown): void {
         if (!p.cancellable) fail(`an option index 0..${p.options.length - 1}`);
       } else if (!Number.isInteger(v) || (v as number) < 0 || (v as number) >= p.options.length) {
         fail(`an option index 0..${p.options.length - 1}${p.cancellable ? " or null" : ""}`);
+      } else if (!isEnabled(p, v as number)) {
+        fail("an option that isn't disabled");
       }
       break;
     case "number":

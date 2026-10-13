@@ -23,9 +23,10 @@ describe("sailAway", () => {
     expect([h.location, h.month]).toEqual([HONG_KONG, 1]);
   });
 
-  it("won't sail to where you already are", () => {
-    const p = play(sailAway(makeHong(), new ScriptedRng()), [HONG_KONG]);
-    expect(texts(p).at(-1)).toBe("You are already in Hong Kong, Taipan.");
+  it("won't sail to where you already are, and puts Never mind before Batavia", () => {
+    const p = play(sailAway(makeHong({ location: MANILA }), new ScriptedRng()));
+    expect(p.transcript[0]?.prompt).toMatchObject({ kind: "choose", disabled: [MANILA], cancelAt: 6 });
+    expect(() => p.game.answer(MANILA)).toThrow();
   });
 
   it("makes a quiet voyage: a month passes, interest accrues, prices change", () => {

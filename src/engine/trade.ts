@@ -1,11 +1,12 @@
 // Trading: local prices, price shocks, buying and selling (SPEC.md sections 4.1-4.3).
 
+import { pay, spendable } from "./bank";
 import { good, mult } from "./constants";
 import { money } from "./format";
 import { currentTime, knownGoods, type Hong } from "./hong";
 import { applyJadeDeal } from "./jade";
 import { setPrices } from "./prices";
-import { askNum, askOptOrCancel, say, type Flow } from "./prompts";
+import { askNum, askOptOrCancel, askYn, say, type Flow } from "./prompts";
 import type { Rng } from "./rng";
 
 export const MSG_POS_SHOCK = [
@@ -69,40 +70,59 @@ export function* establishPrices(h: Hong, rng: Rng): Flow {
   applyJadeDeal(h);
 }
 
+/** How much of a good you can afford; the bank can pay too, wherever it's open. */
+function affordable(h: Hong, g: number): number {
+  return Math.floor(spendable(h) / h.prices[g]!);
+}
+
 export function* buyGoods(h: Hong): Flow {
-  const g = yield* askOptOrCancel(conditionReport(h, "What shall I buy, Taipan?"), knownGoods(h));
+  // goods you can't afford any of are disabled
+  const goods = knownGoods(h);
+  const g = yield* askOptOrCancel(conditionReport(h, "What shall I buy, Taipan?"), goods, {
+    disabled: goods.flatMap((_, g) => (affordable(h, g) === 0 ? [g] : [])),
+  });
   if (g === null) {
     return;
   }
 
-  // if you can't afford any, don't bother
-  const x = Math.floor(h.cash / h.prices[g]!);
-  if (x === 0) {
-    yield* say(`You cannot afford any ${good(g).toLowerCase()} at these prices, Taipan.`);
-    return;
-  }
+  const x = affordable(h, g);
 
   const n = yield* askNum(conditionReport(h, `How much ${good(g).toLowerCase()} shall I buy, Taipan?`), x);
   if (n > x) {
     yield* say("You do not have enough cash on hand, Taipan.");
   } else {
-    h.cash -= n * h.prices[g]!;
     h.shipGoods[g]! += n;
+    yield* pay(h, n * h.prices[g]!);
   }
 }
 
+/** The goods aboard ship. */
+export function goodsAboard(h: Hong): number[] {
+  return knownGoods(h).flatMap((_, g) => (h.shipGoods[g]! > 0 ? [g] : []));
+}
+
 export function* sellGoods(h: Hong): Flow {
-  const g = yield* askOptOrCancel(conditionReport(h, "What shall I sell, Taipan?"), knownGoods(h));
-  if (g === null) {
-    return;
+  const aboard = goodsAboard(h);
+  let g: number | null;
+  if (aboard.length === 1) {
+    // with only one good aboard, offer to sell the lot
+    g = aboard[0]!;
+    if (yield* askYn(conditionReport(h, `Would you like to sell all of your ${good(g).toLowerCase()}, Taipan?`))) {
+      h.cash += h.shipGoods[g]! * h.prices[g]!;
+      h.shipGoods[g] = 0;
+      return;
+    }
+  } else {
+    // you can't sell something you don't have
+    g = yield* askOptOrCancel(conditionReport(h, "What shall I sell, Taipan?"), knownGoods(h), {
+      disabled: knownGoods(h).flatMap((_, g) => (aboard.includes(g) ? [] : [g])),
+    });
+    if (g === null) {
+      return;
+    }
   }
 
-  // you can't sell something you don't have
   const x = h.shipGoods[g]!;
-  if (x === 0) {
-    yield* say(`You have no ${good(g).toLowerCase()} in your ship's hold, Taipan.`);
-    return;
-  }
 
   const n = yield* askNum(conditionReport(h, `How much ${good(g).toLowerCase()} shall I sell, Taipan?`), x);
   if (n > x) {

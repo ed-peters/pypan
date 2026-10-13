@@ -73,6 +73,19 @@ describe("Terminal", () => {
     expect(game.prompt?.text).toMatch(/What shall I do, Taipan\?$/);
   });
 
+  it("shows disabled options, and puts Never mind where the menu asks", () => {
+    const { game } = setup();
+    tap("Guns");
+    tap("[N] No"); //               no business with Wu
+    expect(buttons().find((b) => b.textContent === "[2] Sell goods")?.disabled).toBe(true);
+    tap("Leave port");
+    const labels = buttons().map((b) => b.textContent);
+    expect(labels.slice(-2)).toEqual(["[Esc] Never mind", "[7] Batavia"]);
+    expect(buttons()[0]?.disabled).toBe(true); // Hong Kong
+    tap("Hong Kong");
+    expect(game.prompt?.text).toBe("Where shall we sail to, Taipan?");
+  });
+
   it("enters numbers on the keypad, with ALL filling in the max", () => {
     const { session } = setup(new ScriptedRng([0, 0, 0, 0, 0, 0.5]));
     press("2"); //                 debt start: Li Yuen and Wu come first

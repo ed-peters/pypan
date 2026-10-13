@@ -3,7 +3,7 @@
 
 import type { Game } from "../engine/game";
 import type { GameOver, Session } from "../engine/pypan";
-import type { Prompt } from "../engine/prompts";
+import { isEnabled, type Prompt } from "../engine/prompts";
 import { ART, TITLE } from "./art";
 import { entryValue, keyToResult, type KeyResult } from "./keys";
 import {
@@ -220,9 +220,14 @@ export class Terminal {
         break;
 
       case "choose": {
-        const buttons = prompt.options.map((o, i) => button(`[${i + 1}] ${o}`, () => this.submit(i), "option"));
+        const buttons = prompt.options.map((o, i) => {
+          const b = button(`[${i + 1}] ${o}`, () => this.submit(i), "option");
+          b.disabled = !isEnabled(prompt, i);
+          return b;
+        });
         if (prompt.cancellable) {
-          buttons.push(button("[Esc] Never mind", () => this.submit(null), "option cancel"));
+          const cancel = button("[Esc] Never mind", () => this.submit(null), "option cancel");
+          buttons.splice(prompt.cancelAt ?? buttons.length, 0, cancel);
         }
         this.renderDock(buttons, "menu");
         break;

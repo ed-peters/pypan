@@ -50,6 +50,22 @@ export function* visitBank(h: Hong, rng: Rng): Flow {
   yield* checkRobbery(h, rng);
 }
 
+/** What can be spent here: cash, plus the bank wherever it can be visited (pypan-58). */
+export function spendable(h: Hong): number {
+  return h.cash + (bankAvailable(h) ? h.bank : 0);
+}
+
+/** Pay n from cash, then from the bank; n must be no more than spendable(h). */
+export function* pay(h: Hong, n: number): Flow {
+  if (n <= h.cash) {
+    h.cash -= n;
+    return;
+  }
+  h.bank -= n - h.cash;
+  h.cash = 0;
+  yield* say("The necessary funds will be sent from the bank, Taipan.");
+}
+
 /** Debt and bank interest for one voyage. */
 export function accrueInterest(h: Hong): void {
   h.debt = Math.trunc(h.debt * (1 + LOAN_RATE));

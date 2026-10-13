@@ -1,5 +1,6 @@
-// Where saved games live. The interface is async so a remote store (e.g. a
-// Cloudflare Worker) can implement it later; the local store never throws.
+// Where saved games live: the browser's localStorage (there is no backend). The
+// interface is async so another store could implement it; the local store never
+// throws.
 
 import type { Hong } from "../engine/hong";
 import { fromSaveString, toSaveString } from "../engine/save";

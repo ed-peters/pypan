@@ -1,8 +1,9 @@
 # PyPan
 
 A *Taipan!*-style trading game set in 1860s East Asia, rebuilt as a mobile-friendly
-web app with a green-screen terminal look. It targets iPad and iPhone Safari and will
-eventually be deployed to Cloudflare as static assets.
+web app with a green-screen terminal look. It targets iPad and iPhone Safari, is
+hosted on GitHub Pages as static files, and saves games in the browser's local
+storage (there is no backend).
 
 - [`SPEC.md`](SPEC.md) — game specification
 - [`etc/`](etc/) — the original Python/curses implementation (`pypan.py`), kept as the reference for the port

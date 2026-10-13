@@ -5,7 +5,7 @@ import { newGame } from "../../src/engine/pypan";
 import { ScriptedRng } from "../../src/engine/rng";
 import { Terminal } from "../../src/ui/terminal";
 
-// Guns start at the minimum prices: no extortion (no cash) and no Wu (no debt).
+// Guns start at the minimum prices: no extortion (no cash), then Wu offers business.
 const rolls = () => new ScriptedRng([0, 0, 0, 0, 0]);
 
 let root: HTMLElement;
@@ -48,6 +48,7 @@ describe("Terminal", () => {
   it("answers by tapping and updates the panes", () => {
     const { session } = setup();
     tap("Guns");
+    tap("[N] No"); //               no business with Wu
     expect(session.hong?.shipGuns).toBe(5);
     expect($(".report-title").textContent).toBe("COMPRADOR'S REPORT - January 1860");
     expect($(".art").textContent).toBe("");
@@ -65,6 +66,7 @@ describe("Terminal", () => {
   it("offers cancel on cancellable menus, by button or Escape", () => {
     const { game } = setup();
     tap("Guns");
+    tap("[N] No"); //               no business with Wu
     tap("Buy goods");
     expect(buttons().at(-1)?.textContent).toBe("[Esc] Never mind");
     press("Escape");
@@ -122,6 +124,7 @@ describe("Terminal", () => {
   it("shows the score after retiring, and offers a new game", () => {
     setup();
     tap("Guns"); //                  no debt, so Retire is offered
+    tap("[N] No"); //               no business with Wu
     tap("Retire");
     expect($(".message").textContent).toBe("Are you sure you want to retire, Taipan?");
     tap("[Y] Yes");
@@ -148,6 +151,7 @@ describe("Terminal", () => {
     const { game, session } = newGame({ rng: rolls() });
     term.attach(game, session);
     tap("Guns");
+    tap("[N] No"); //               no business with Wu
     tap("Retire");
     tap("[Y] Yes");
     expect(onEnd).not.toHaveBeenCalled();
@@ -165,6 +169,7 @@ describe("Terminal", () => {
     const { game, session } = newGame({ rng });
     term.attach(game, session);
     tap("Guns");
+    tap("[N] No"); //               no business with Wu
     session.hong!.shipDamage = 59;
     session.hong!.shipGuns = 0;
     tap("Leave port");

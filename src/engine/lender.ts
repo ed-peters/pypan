@@ -6,15 +6,10 @@ import { currentTime, isBroke, type Hong } from "./hong";
 import { askNum, askYn, say, type Flow } from "./prompts";
 import type { Rng } from "./rng";
 
-/** On arrival in Hong Kong: Wu's threat, an offer to visit him, and robbery. */
+/** On every arrival in Hong Kong: Wu's threat, an offer to visit him, and robbery. */
 export function* checkLender(h: Hong, rng: Rng): Flow {
   // EBW is only in Hong Kong
   if (h.location !== HONG_KONG) {
-    return;
-  }
-
-  // up-front action only happens if you owe money
-  if (h.debt <= 0) {
     return;
   }
 
@@ -28,7 +23,7 @@ export function* checkLender(h: Hong, rng: Rng): Flow {
     h.threatened = true;
   }
 
-  // if you owe him, you can visit him before doing anything else if you want
+  // you can visit him before doing anything else if you want
   if (yield* askYn("Do you have business with Elder Brother Wu, the moneylender, Taipan?")) {
     yield* visitWu(h, rng);
   }

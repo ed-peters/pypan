@@ -13,9 +13,9 @@ describe("checkLender", () => {
     expect(p.transcript).toEqual([]);
   });
 
-  it("does nothing when you owe nothing", () => {
-    const p = play(checkLender(makeHong({ debt: 0, time: 20 }), new ScriptedRng()));
-    expect(p.transcript).toEqual([]);
+  it("offers a visit even when you owe nothing, without threats or robbery", () => {
+    const p = play(checkLender(makeHong({ debt: 0, time: 20, threatened: true }), new ScriptedRng()), [false]);
+    expect(texts(p)).toEqual(["Do you have business with Elder Brother Wu, the moneylender, Taipan?"]);
   });
 
   it("offers a visit when you owe money", () => {

@@ -37,11 +37,13 @@ describe("starting a game", () => {
     expect(session.hong).toBeNull();
   });
 
-  it("starts with guns: no extortion (no cash), no Wu (no debt), straight to the menu", () => {
+  it("starts with guns: no extortion (no cash), then Wu offers business", () => {
     const saves: Hong[] = [];
     const { game, session } = newGame({ rng: new ScriptedRng(MIN_PRICES), onSave: (h) => saves.push(h) });
     game.answer(0);
     expect(session.hong).toMatchObject({ shipGuns: 5, cash: 0, debt: 0 });
+    expect(game.prompt?.text).toBe("Do you have business with Elder Brother Wu, the moneylender, Taipan?");
+    game.answer(false);
     expect(game.prompt?.text).toMatch(/What shall I do, Taipan\?$/);
     expect(saves).toEqual([session.hong]);
   });
@@ -107,7 +109,7 @@ describe("game endings", () => {
 
   it("asks before retiring, and carries on if you change your mind", () => {
     const { game } = retiree({ cash: 5000, time: 12 });
-    const seen = drive(game, [2, RETIRE, false]);
+    const seen = drive(game, [2, false, RETIRE, false]);
     expect(seen.slice(-2)).toEqual([
       "Are you sure you want to retire, Taipan?",
       expect.stringMatching(/What shall I do, Taipan\?$/),
@@ -117,7 +119,7 @@ describe("game endings", () => {
 
   it("scores a retirement: cash plus bank, less debt, per month, over 100", () => {
     const { game } = retiree({ cash: 700000, bank: 500000, time: 12 });
-    const seen = drive(game, [2, RETIRE, true]);
+    const seen = drive(game, [2, false, RETIRE, true]);
     expect(seen.at(-1)).toBe("You're a M I L L I O N A I R E !!!");
     expect(game.result).toEqual({
       ending: "retired",
@@ -130,7 +132,7 @@ describe("game endings", () => {
 
   it("makes no comment on a middling fortune", () => {
     const { game } = retiree({ cash: 5000, time: 12 });
-    const seen = drive(game, [2, RETIRE, true]);
+    const seen = drive(game, [2, false, RETIRE, true]);
     expect(seen.at(-1)).toBe("Are you sure you want to retire, Taipan?");
     expect(game.result).toMatchObject({ ending: "retired", position: 5000, score: 4, rank: "Galley Hand" });
   });
@@ -141,7 +143,7 @@ describe("game endings", () => {
     // pirates: 3 ships; no Li Yuen; run fails, no partial escape; 2 damage sinks us
     const rng = new ScriptedRng([0, 2, 0.5, 100, 1, 0, 2, 1, 0.5]);
     const { game } = newGame({ rng, saved, onSave: (h) => saves.push(h) });
-    const seen = drive(game, [2, 4, SHANGHAI, 0]);
+    const seen = drive(game, [2, false, 4, SHANGHAI, 0]);
     expect(seen.slice(-3)).toEqual([
       "The buggers got us, Taipan!!",
       "It's all over now!!",

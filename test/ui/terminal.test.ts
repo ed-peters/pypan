@@ -53,7 +53,7 @@ describe("Terminal", () => {
     expect($(".art").textContent).toBe("");
     expect($(".message").textContent).toMatch(/What shall I do, Taipan\?$/);
     expect($(".strip").textContent).toContain("Guns 5");
-    expect(buttons().map((b) => b.textContent)).toEqual(expect.arrayContaining(["[6] Leave port", "[7] Retire"]));
+    expect(buttons().map((b) => b.textContent)).toEqual(expect.arrayContaining(["[5] Leave port", "[6] Retire"]));
   });
 
   it("answers from the keyboard too", () => {

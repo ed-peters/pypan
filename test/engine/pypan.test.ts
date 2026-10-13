@@ -73,8 +73,7 @@ describe("the port menu", () => {
 
   it("offers everything in Hong Kong, including retiring when out of debt", () => {
     expect(labels(makeHong({ debt: 0 }))).toEqual([
-      "Buy goods", "Sell goods", "Transfer goods", "Visit Elder Brother Wu",
-      "Visit the bank", "Leave port", "Retire",
+      "Buy goods", "Sell goods", "Transfer goods", "Visit the bank", "Leave port", "Retire",
     ]);
   });
 
@@ -104,7 +103,7 @@ describe("game endings", () => {
   // a restored game in Hong Kong, out of debt; the extortion counter doesn't change
   const retiree = (overrides: Parameters<typeof makeHong>[0]) =>
     newGame({ rng: new ScriptedRng([1]), saved: makeHong({ debt: 0, extorted: 1, ...overrides }) });
-  const RETIRE = 6;
+  const RETIRE = 5;
 
   it("asks before retiring, and carries on if you change your mind", () => {
     const { game } = retiree({ cash: 5000, time: 12 });
@@ -142,7 +141,7 @@ describe("game endings", () => {
     // pirates: 3 ships; no Li Yuen; run fails, no partial escape; 2 damage sinks us
     const rng = new ScriptedRng([0, 2, 0.5, 100, 1, 0, 2, 1, 0.5]);
     const { game } = newGame({ rng, saved, onSave: (h) => saves.push(h) });
-    const seen = drive(game, [2, 5, SHANGHAI, 0]);
+    const seen = drive(game, [2, 4, SHANGHAI, 0]);
     expect(seen.slice(-3)).toEqual([
       "The buggers got us, Taipan!!",
       "It's all over now!!",
@@ -172,7 +171,7 @@ describe("a whole game", () => {
     const seen = drive(game, [
       1, false, false, //          debt start; refuse Li Yuen; no business with Wu
       0, GENERAL, 60, //           buy 60 general for 300
-      5, SHANGHAI, //              leave port for Shanghai
+      4, SHANGHAI, //              leave port for Shanghai
       1, GENERAL, 60, //           sell 60 general for 900
       2, HONG_KONG, //             leave port for Hong Kong
       false, true, //              no business with Wu; pay Li Yuen

@@ -221,7 +221,8 @@ Debt pressure (`check_lender`, Hong Kong only, triggered on arrival):
 - **Debt > 10000 (`DEBT_THREAT_LEVEL`) and not yet threatened**: Wu sends braves to
   escort you to his mansion and delivers an escalating Confucian warning; sets
   `threatened = True`.
-- You are always offered a chance to do business with Wu if you owe money.
+- You are always offered a chance to do business with Wu if you owe money. This
+  arrival prompt is the only way to visit him; he is not on the port menu.
 - **Robbery**: after month 12, if Wu threatened you on an *earlier* visit and your
   debt is still above 10000, there is a 1-in-4 chance cutthroats rob you of **all
   cash** (the consequence of ignoring the debt).
@@ -240,7 +241,6 @@ and the lender, then repeatedly presents the port action menu. The menu
 - **Buy goods**
 - **Sell goods**
 - **Transfer goods** (only if `transfer >= 0`)
-- In Hong Kong only: **Visit Elder Brother Wu**
 - In Hong Kong, or abroad when the bank's representative is in port: **Visit the bank**
 - **Leave port**
 - In Hong Kong only, and only when out of debt: **Retire**. It asks "Are you sure you
@@ -537,6 +537,8 @@ Additions:
   and rank.
 - **Mugging on leaving the bank** (§4.4), at the harbor odds.
 - **The bank's representative** (§4.4) can turn up in foreign ports.
+- **Elder Brother Wu** is no longer on the port menu; like McHenry, you're offered a
+  visit only on arrival in Hong Kong (§4.5).
 - **McHenry** says "Aye, she'll be right as rain for ye!!" after a repair, and when
   Wu covers a partial repair he pays only the amount you asked for (he used to pay
   the full cost).

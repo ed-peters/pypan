@@ -6,7 +6,7 @@ import { HONG_KONG } from "./constants";
 import { checkExtortion } from "./extortion";
 import { Game } from "./game";
 import { newHong, type Hong } from "./hong";
-import { checkLender, visitWu } from "./lender";
+import { checkLender } from "./lender";
 import { askOpt, askYn, checkpoint, pick, say, type Flow } from "./prompts";
 import type { Rng } from "./rng";
 import { cashPosition, positionComment, rank, score, scoreReport, type Rank } from "./score";
@@ -85,9 +85,6 @@ export function establishOpts(h: Hong, rng: Rng): [string, Action][] {
   ];
   if (h.transfer >= 0) {
     opts.push(["Transfer goods", () => transfer(h)]);
-  }
-  if (h.location === HONG_KONG) {
-    opts.push(["Visit Elder Brother Wu", () => visitWu(h, rng)]);
   }
   if (bankAvailable(h)) {
     opts.push(["Visit the bank", () => visitBank(h, rng)]);

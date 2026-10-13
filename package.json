@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "sim": "rolldown scripts/sim/simulate.ts -o node_modules/.cache/sim/simulate.mjs -f esm -p node > /dev/null && node node_modules/.cache/sim/simulate.mjs",
     "deploy:pages": "sh scripts/deploy-gh-pages.sh"
   },
   "devDependencies": {

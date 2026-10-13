@@ -1,9 +1,10 @@
 // Wealth simulation: play many games with the "decent player" bot (bot.ts) and
 // report the spread of wealth after 2, 5 and 10 years among the ships still afloat.
 //
-//   npm run sim -- [--runs 1000] [--start debt|guns] [--seed 1]
+//   npm run sim -- [--runs 1000] [--start debt|guns] [--seed 1] [--json]
 //
-// Low, middling and high success are the 25th, 50th and 90th percentiles.
+// Low, middling and high success are the 25th, 50th and 90th percentiles. --json
+// prints a summary for comparing scenarios (scripts/sim/run.mjs) instead.
 
 import { currentTime, type Hong } from "../../src/engine/hong";
 import { newGame } from "../../src/engine/pypan";
@@ -36,6 +37,8 @@ interface Snapshot {
   guns: number;
   score: number;
   jade: boolean;
+  /** Cash + bank - debt + what was paid for the goods aboard. */
+  atCost: number;
   ledger: Ledger;
 }
 
@@ -43,15 +46,19 @@ interface Run {
   /** Snapshot at the first port menu after N months played, by N. */
   at: Map<number, Snapshot>;
   sunkAt: number | null;
+  /** The biggest fall in worth at cost from an earlier peak (once over 10,000). */
+  maxDrawdown: number;
+  /** The same, after the first five years. */
+  lateDrawdown: number;
 }
 
-function args(): { runs: number; start: "debt" | "guns"; seed: number } {
+function args(): { runs: number; start: "debt" | "guns"; seed: number; json: boolean } {
   const a = process.argv.slice(2);
   const get = (k: string, d: string) => {
     const i = a.indexOf(`--${k}`);
     return i >= 0 ? a[i + 1]! : d;
   };
-  return { runs: Number(get("runs", "1000")), start: get("start", "debt") as "debt" | "guns", seed: Number(get("seed", "1")) };
+  return { runs: Number(get("runs", "1000")), start: get("start", "debt") as "debt" | "guns", seed: Number(get("seed", "1")), json: a.includes("--json") };
 }
 
 function play(seed: number, start: "debt" | "guns"): Run {
@@ -69,6 +76,7 @@ function play(seed: number, start: "debt" | "guns"): Run {
           shipSize: h.shipSize, guns: h.shipGuns,
           score: Math.floor(position / currentTime(h) / 100),
           jade: h.jade,
+          atCost: bot.worthAtCost(h),
           ledger: { ...bot.ledger, byGood: [...bot.ledger.byGood] },
         });
       }
@@ -83,7 +91,102 @@ function play(seed: number, start: "debt" | "guns"): Run {
     game.answer(bot.answer(game.prompt, session.hong));
   }
   const sunk = game.done && game.result?.ending === "sunk";
-  return { at, sunkAt: sunk ? currentTime(session.hong!) : null };
+  return { at, sunkAt: sunk ? currentTime(session.hong!) : null, maxDrawdown: drawdown(at), lateDrawdown: drawdown(at, 60) };
+}
+
+function drawdown(at: Map<number, Snapshot>, from = 0): number {
+  let peak = 0;
+  let worst = 0;
+  for (const m of [...at.keys()].filter((m) => m >= from).sort((a, b) => a - b)) {
+    const v = at.get(m)!.atCost;
+    peak = Math.max(peak, v);
+    if (peak >= 10000) worst = Math.max(worst, (peak - v) / peak);
+  }
+  return worst;
+}
+
+/** The figures compared across scenarios, for games afloat after LAST months. */
+export interface Summary {
+  runs: number;
+  start: string;
+  afloat: Record<number, number>;
+  position: Record<number, { p25: number; p50: number; p90: number }>;
+  /** Median share of each source in gross income, and losses against it. */
+  shares: { trading: number; shocks: number; bank: number; booty: number; consignments: number; losses: number };
+  shocks: { perGame: number; upSold: number; downBought: number; gain: number };
+  windfall: { median: number; over10: number; over25: number; late: number; lateOver10: number };
+  risk: { drawdown: number; over25: number; over50: number; late: number; lateOver25: number };
+  moonshot: {
+    /** Share of games offered it, and that backed it; per expedition backed, how many won. */
+    offered: number; backed: number; perExpedition: number; expeditions: number; stakeShare: number;
+    posSuccess: number; posFailure: number; posNotBacked: number;
+  };
+  jadeOnMarket: number;
+}
+
+function summarize(results: Run[], runs: number, start: string): Summary {
+  const alive = results.filter((r) => r.at.has(LAST));
+  const last = alive.map((r) => r.at.get(LAST)!);
+  const frac = (xs: unknown[], n = alive.length) => xs.length / n;
+  const med = (xs: number[]) => median(xs);
+  const pos = (months: number) => {
+    const v = [...results.flatMap((r) => (r.at.has(months) ? [r.at.get(months)!.position] : []))].sort((a, b) => a - b);
+    return { p25: percentile(v, 25), p50: percentile(v, 50), p90: percentile(v, 90) };
+  };
+  const income = last.map((x) => {
+    const l = x.ledger;
+    const parts = {
+      trading: l.tradeProfit - l.shockGain, shocks: l.shockGain, bank: l.bankInterest,
+      booty: l.booty, consignments: l.consignments,
+    };
+    const gross = Object.values(parts).reduce((a, b) => a + Math.max(0, b), 0) || 1;
+    const losses = l.robbery + l.liYuen + l.fines + l.seized + l.repairs + l.debtInterest;
+    return { ...Object.fromEntries(Object.entries(parts).map(([k, v]) => [k, v / gross])), losses: losses / gross } as Summary["shares"];
+  });
+  const share = (k: keyof Summary["shares"]) => med(income.map((x) => x[k]));
+  const ledgers = last.map((x) => x.ledger);
+  const backed = last.filter((x) => x.ledger.jadeStake > 0);
+  const group = (f: (x: Snapshot) => boolean) => med(last.filter(f).map((x) => x.position));
+  return {
+    runs, start,
+    afloat: Object.fromEntries(STAGES.map((st) => [st.months, results.filter((r) => r.at.has(st.months)).length / runs])),
+    position: Object.fromEntries(STAGES.map((st) => [st.months, pos(st.months)])),
+    shares: {
+      trading: share("trading"), shocks: share("shocks"), bank: share("bank"), booty: share("booty"),
+      consignments: share("consignments"), losses: share("losses"),
+    },
+    shocks: {
+      perGame: med(ledgers.map((l) => l.shocksUp + l.shocksDown)),
+      upSold: ledgers.reduce((a, l) => a + l.shocksUpSold, 0) / Math.max(1, ledgers.reduce((a, l) => a + l.shocksUp, 0)),
+      downBought: ledgers.reduce((a, l) => a + l.shocksDownBought, 0) / Math.max(1, ledgers.reduce((a, l) => a + l.shocksDown, 0)),
+      gain: med(ledgers.map((l) => l.shockGain)),
+    },
+    windfall: {
+      median: med(ledgers.map((l) => l.biggestWindfall)),
+      over10: frac(ledgers.filter((l) => l.biggestWindfall >= 0.1)),
+      over25: frac(ledgers.filter((l) => l.biggestWindfall >= 0.25)),
+      late: med(ledgers.map((l) => l.biggestLateWindfall)),
+      lateOver10: frac(ledgers.filter((l) => l.biggestLateWindfall >= 0.1)),
+    },
+    risk: {
+      drawdown: med(alive.map((r) => r.maxDrawdown)),
+      over25: frac(alive.filter((r) => r.maxDrawdown >= 0.25)),
+      over50: frac(alive.filter((r) => r.maxDrawdown >= 0.5)),
+      late: med(alive.map((r) => r.lateDrawdown)),
+      lateOver25: frac(alive.filter((r) => r.lateDrawdown >= 0.25)),
+    },
+    moonshot: {
+      offered: frac(ledgers.filter((l) => l.jadeOffers > 0)),
+      backed: frac(backed),
+      perExpedition: backed.reduce((a, x) => a + x.ledger.jadeWins, 0) / Math.max(1, backed.reduce((a, x) => a + x.ledger.jadeBacked, 0)),
+      expeditions: med(backed.map((x) => x.ledger.jadeBacked)),
+      stakeShare: med(backed.map((x) => x.ledger.jadeStakeShare)),
+      posSuccess: group((x) => x.ledger.jadeWins > 0),
+      posFailure: group((x) => x.ledger.jadeStake > 0 && x.ledger.jadeWins === 0),
+      posNotBacked: group((x) => x.ledger.jadeStake === 0),
+    },
+    jadeOnMarket: frac(last.filter((x) => x.jade)),
+  };
 }
 
 function percentile(sorted: number[], p: number): number {
@@ -111,13 +214,18 @@ function table(header: string[], rows: string[][]): string {
 }
 
 function main(): void {
-  const { runs, start, seed } = args();
+  const { runs, start, seed, json } = args();
   const t0 = Date.now();
   const results: Run[] = [];
   for (let i = 0; i < runs; i++) {
     results.push(play(seed + i, start));
   }
   const secs = ((Date.now() - t0) / 1000).toFixed(1);
+  const sum = summarize(results, runs, start);
+  if (json) {
+    console.log(JSON.stringify(sum));
+    return;
+  }
 
   const out: string[] = [];
   out.push(`${runs} games, ${start} start, seeds ${seed}..${seed + runs - 1} (${secs}s)\n`);
@@ -178,14 +286,17 @@ function main(): void {
   out.push("");
 
   // where the money came from, cumulative to each stage
-  const keys = (Object.keys(results[0]!.at.get(0)!.ledger) as (keyof Ledger)[]).filter((k) => k !== "byGood");
+  const keys = [
+    "tradeProfit", "shockGain", "consignments", "booty", "bankInterest", "debtInterest", "liYuen", "robbery",
+    "fines", "seized", "repairs", "ships", "guns",
+  ] as const;
   out.push("Money in and out, cumulative, median among ships afloat (P25-P75 for trading):\n");
   out.push(table(
     ["Stage", ...keys],
     STAGES.map((s) => {
       const ss = snaps(s.months);
       return [s.label, ...keys.map((k) => {
-        const v = ss.map((x) => x.ledger[k]);
+        const v = ss.map((x) => x.ledger[k] as number);
         if (k === "tradeProfit") {
           const sv = sorted(v);
           return `${fmt(percentile(sv, 50))} (${fmt(percentile(sv, 25))}-${fmt(percentile(sv, 75))})`;
@@ -217,6 +328,34 @@ function main(): void {
       const pos = sorted(snaps(s.months).filter((x) => x.jade === j).map((x) => x.position));
       return [s.label, j ? "yes" : "no", String(pos.length), ...TIERS.map((t) => fmt(percentile(pos, t.p)))];
     })),
+  ));
+  out.push("");
+
+  // price shocks, windfalls, risk and the jade moonshot, at 10 years
+  const pct = (x: number) => `${(100 * x).toFixed(1)}%`;
+  out.push("Income at 10 years: median share of gross income per game (losses against it):\n");
+  out.push(table(
+    ["Trading (not shocks)", "Price shocks", "Bank interest", "Booty", "Consignments", "Losses"],
+    [[sum.shares.trading, sum.shares.shocks, sum.shares.bank, sum.shares.booty, sum.shares.consignments, sum.shares.losses].map(pct)],
+  ));
+  out.push("");
+  out.push("Price shocks over 10 years:\n");
+  out.push(table(
+    ["Shocks per game", "Rises sold into", "Crashes bought into", "Median gain", "Biggest windfall (median, share of worth)", "Games with a windfall >= 10% / 25% of worth", "After year 5: biggest (median)", ">= 10%"],
+    [[fmt(sum.shocks.perGame), pct(sum.shocks.upSold), pct(sum.shocks.downBought), fmt(sum.shocks.gain), pct(sum.windfall.median), `${pct(sum.windfall.over10)} / ${pct(sum.windfall.over25)}`, pct(sum.windfall.late), pct(sum.windfall.lateOver10)]],
+  ));
+  out.push("");
+  out.push("Risk over 10 years (worth at cost, ships afloat):\n");
+  out.push(table(
+    ["Sunk by 10 years", "Median worst drawdown", "Games with a drawdown >= 25%", ">= 50%", "After year 5: median worst", ">= 25%"],
+    [[pct(1 - sum.afloat[LAST]!), pct(sum.risk.drawdown), pct(sum.risk.over25), pct(sum.risk.over50), pct(sum.risk.late), pct(sum.risk.lateOver25)]],
+  ));
+  out.push("");
+  out.push("The jade expedition (moonshot), among ships afloat at 10 years:\n");
+  out.push(table(
+    ["Offered", "Backed", "Stake (median share of worth)", "Expeditions backed (median)", "Won per expedition", "Position at 10 years: won", "backed, never won", "didn't back"],
+    [[pct(sum.moonshot.offered), pct(sum.moonshot.backed), pct(sum.moonshot.stakeShare), fmt(sum.moonshot.expeditions), pct(sum.moonshot.perExpedition),
+      fmt(sum.moonshot.posSuccess), fmt(sum.moonshot.posFailure), fmt(sum.moonshot.posNotBacked)]],
   ));
   out.push("");
 

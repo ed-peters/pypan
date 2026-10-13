@@ -16,6 +16,11 @@
 //
 // Any prompt it doesn't recognize is an error, so new game events can't quietly
 // skew the results.
+//
+// Price shocks: the gain from a shock is measured against the good's usual price at
+// that port. Selling into a rising shock gains (price - usual) per unit, at once.
+// Buying in a crash gains (usual - price) per unit, counted when those goods are
+// sold. Both are also part of tradeProfit.
 
 import { bankAvailable, spendable } from "../../src/engine/bank";
 import {
@@ -25,6 +30,7 @@ import {
   currentTime, isBroke, knownGoods, repairPercent, shipAvailable, type Hong,
 } from "../../src/engine/hong";
 import type { Prompt } from "../../src/engine/prompts";
+import { MSG_NEG_SHOCK, MSG_POS_SHOCK } from "../../src/engine/trade";
 
 /** Running totals of where money came from and went, for one game. */
 export interface Ledger {
@@ -38,16 +44,40 @@ export interface Ledger {
   liYuen: number;
   robbery: number;
   fines: number;
+  /** What was paid for opium the police confiscated. */
+  seized: number;
   repairs: number;
   ships: number;
   guns: number;
   bailouts: number;
+  /** Profit from price shocks (part of tradeProfit). */
+  shockGain: number;
+  /** Shocks seen: rises, rises we sold into, crashes, crashes we bought into. */
+  shocksUp: number;
+  shocksUpSold: number;
+  shocksDown: number;
+  shocksDownBought: number;
+  /** The biggest single windfall (shock sale or booty) as a share of worth at cost. */
+  biggestWindfall: number;
+  /** The same, after the first five years. */
+  biggestLateWindfall: number;
+  /** The jade expedition: offers, the stake if we backed one, and how it ended. */
+  jadeOffers: number;
+  jadeStake: number;
+  /** The biggest stake as a share of worth at cost when it was made. */
+  jadeStakeShare: number;
+  jadeOutcome: "success" | "failure" | null;
+  /** Expeditions backed, and how many succeeded. */
+  jadeBacked: number;
+  jadeWins: number;
 }
 
 export function newLedger(): Ledger {
   return {
     tradeProfit: 0, byGood: GOODS.map(() => 0), consignments: 0, booty: 0, bankInterest: 0, debtInterest: 0, liYuen: 0,
-    robbery: 0, fines: 0, repairs: 0, ships: 0, guns: 0, bailouts: 0,
+    robbery: 0, fines: 0, seized: 0, repairs: 0, ships: 0, guns: 0, bailouts: 0,
+    shockGain: 0, shocksUp: 0, shocksUpSold: 0, shocksDown: 0, shocksDownBought: 0,
+    biggestWindfall: 0, biggestLateWindfall: 0, jadeOffers: 0, jadeStake: 0, jadeStakeShare: 0, jadeOutcome: null, jadeBacked: 0, jadeWins: 0,
   };
 }
 
@@ -72,13 +102,22 @@ export class Bot {
   private cost: number[] = GOODS.map(() => 0);
   /** Pay for the consignment aboard, if any. */
   private consignment = 0;
+  /** Shock discounts on goods aboard, per good, counted when they're sold. */
+  private discount: number[] = GOODS.map(() => 0);
+  /** A shock announced on arrival, and the one at the port we're visiting. */
+  private pendingShock: { good: number; up: boolean } | null = null;
+  private shock: { good: number; up: boolean } | null = null;
+  /** Whether we've counted the current shock as sold into or bought into. */
+  private shockUsed = false;
+  /** Whether we backed the expedition that's under way. */
+  private backing = false;
 
   constructor(private readonly start: "guns" | "debt") {}
 
   answer(p: Prompt, h: Hong | null): unknown {
     const text = p.text;
     if (p.kind === "say") {
-      if (h) this.observe(text);
+      if (h) this.observe(text, h);
       return undefined;
     }
     if (!h) {
@@ -110,6 +149,11 @@ export class Bot {
     if (/^How much \w+ shall I buy, Taipan\?$/.test(last)) {
       const s = this.step as { good: number; qty: number };
       this.cost[s.good]! += s.qty * h.prices[s.good]!;
+      if (this.shock && !this.shock.up && this.shock.good === s.good) {
+        this.discount[s.good]! += s.qty * Math.max(0, expectedPrice(h.location, s.good) - h.prices[s.good]!);
+        if (!this.shockUsed) this.ledger.shocksDownBought += 1;
+        this.shockUsed = true;
+      }
       return s.qty;
     }
     if (text === "How much shall I deposit?") {
@@ -192,7 +236,14 @@ export class Bot {
     }
     m = /Would you like to invest ([\d,]+)\?$/.exec(text);
     if (m) {
-      return h.bank > 2 * num(m[1]!);
+      this.ledger.jadeOffers += 1;
+      this.backing = h.bank > 2 * num(m[1]!);
+      if (this.backing) {
+        this.ledger.jadeBacked += 1;
+        this.ledger.jadeStake += num(m[1]!);
+        this.ledger.jadeStakeShare = Math.max(this.ledger.jadeStakeShare, num(m[1]!) / this.worthAtCost(h));
+      }
+      return this.backing;
     }
 
     // ---------------------------------------------------------------- battle
@@ -214,6 +265,11 @@ export class Bot {
   private portMenu(p: Prompt, h: Hong): number {
     if (p.kind !== "choose") throw new Error("port menu isn't a menu");
     const key = `${currentTime(h)}/${h.location}`;
+    if (key !== this.visit) {
+      this.shock = this.pendingShock;
+      this.pendingShock = null;
+      this.shockUsed = false;
+    }
     if (key !== this.visit || this.plan.length === 0) {
       this.visit = key;
       this.plan = this.makePlan(h);
@@ -323,16 +379,64 @@ export class Bot {
 
   private recordSale(h: Hong, g: number, n: number): void {
     const aboard = h.shipGoods[g]!;
-    const paid = aboard > 0 ? this.cost[g]! * (n / aboard) : 0;
+    const share = aboard > 0 ? n / aboard : 0;
+    const paid = this.cost[g]! * share;
+    const worth = this.worthAtCost(h);
     this.ledger.tradeProfit += n * h.prices[g]! - paid;
     this.ledger.byGood[g]! += n * h.prices[g]! - paid;
     this.cost[g]! -= paid;
+
+    // selling into a rise, or selling what we bought in a crash
+    let gain = this.discount[g]! * share;
+    this.discount[g]! -= gain;
+    if (this.shock?.up && this.shock.good === g) {
+      gain += n * Math.max(0, h.prices[g]! - expectedPrice(h.location, g));
+      if (!this.shockUsed) this.ledger.shocksUpSold += 1;
+      this.shockUsed = true;
+    }
+    this.ledger.shockGain += gain;
+    this.windfall(gain, worth, h);
   }
 
-  /** Track money from messages: booty, consignments, robbery, fines. */
-  private observe(text: string): void {
+  private windfall(gain: number, worth: number, h: Hong): void {
+    // early on, when worth is a few hundred, any gain is a multiple of it
+    if (worth >= 10000) {
+      this.ledger.biggestWindfall = Math.max(this.ledger.biggestWindfall, gain / worth);
+      if (currentTime(h) > 61) {
+        this.ledger.biggestLateWindfall = Math.max(this.ledger.biggestLateWindfall, gain / worth);
+      }
+    }
+  }
+
+  /** Cash plus bank, less debt, plus what we paid for the goods aboard. */
+  worthAtCost(h: Hong): number {
+    return h.cash + h.bank - h.debt + this.cost.reduce((a, b) => a + b, 0);
+  }
+
+  /** Track money from messages: booty, consignments, robbery, fines, shocks, jade. */
+  private observe(text: string, h: Hong): void {
     let m = /captured some booty worth ([\d,]+)/.exec(text);
-    if (m) this.ledger.booty += num(m[1]!);
+    if (m) {
+      this.ledger.booty += num(m[1]!);
+      this.windfall(num(m[1]!), this.worthAtCost(h), h);
+    }
+    const up = (MSG_POS_SHOCK as readonly string[]).indexOf(text);
+    const down = (MSG_NEG_SHOCK as readonly string[]).indexOf(text);
+    if (up >= 0) {
+      this.pendingShock = { good: up, up: true };
+      this.ledger.shocksUp += 1;
+    } else if (down >= 0) {
+      this.pendingShock = { good: down, up: false };
+      this.ledger.shocksDown += 1;
+    }
+    if (/reports the success of his jade mining effort/.test(text)) {
+      this.ledger.jadeOutcome = "success";
+      this.ledger.jadeWins += 1;
+      this.backing = false;
+    } else if (/has been captured by rebels/.test(text) && this.backing) {
+      this.ledger.jadeOutcome = "failure";
+      this.backing = false;
+    }
     m = /so we were paid only ([\d,]+)/.exec(text);
     if (m) this.ledger.consignments += num(m[1]!);
     if (/^We have successfully delivered/.test(text)) this.ledger.consignments += this.consignment;
@@ -340,7 +444,11 @@ export class Bot {
     if (m) this.ledger.robbery += num(m[1]!);
     m = /fined you an additional ([\d,]+)/.exec(text);
     if (m) this.ledger.fines += num(m[1]!);
-    if (/confiscated your opium/.test(text)) this.cost[OPIUM] = 0;
+    if (/confiscated your opium/.test(text)) {
+      this.ledger.seized += this.cost[OPIUM]!;
+      this.cost[OPIUM] = 0;
+      this.discount[OPIUM] = 0;
+    }
   }
 }
 

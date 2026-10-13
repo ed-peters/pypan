@@ -12,8 +12,12 @@ borrowers now and then, and threatening or attacking those who don't pay.
   what you already owe.
 - **Collecting:** he threatens once when you owe over 10,000. After that he can send
   cutthroats to take all your cash.
-- **Earning interest:** the bank pays 5% per voyage on deposits. It's the only way to
-  earn interest today, and it has no risk.
+- **Earning interest:** the bank pays 0.5% per voyage on deposits. It's the only way
+  to earn interest today, and it has no risk.
+- **Idle money:** late in the game, trading is limited by the hold, not by money, so
+  money piles up in the bank. The middling player has about 7–12M there after 5 years
+  and about 300–440M after 10, earning 0.5% a month (`etc/wealth-curve.md`). Lending
+  would put that money to work.
 - **Battles:** `PirateBattle` covers only being attacked. There's nothing where the
   player is the attacker.
 
@@ -40,7 +44,10 @@ Build it as a late-game money sink with risk, in two stages.
 - **Reputation:** attacking a trader angers Li Yuen, or makes the harbor police hostile
   for a while, so violence has a cost.
 
-Stage 1 alone gives a riskier, better-paying alternative to the bank. Stage 2 is the
+Stage 1 alone gives a riskier, better-paying alternative to the bank. Because the
+money it uses would otherwise sit idle, it doesn't compete with trading. Even a
+modest rate after defaults (1–3% a month) beats the bank several times over without
+making trading pointless. Stage 2 is the
 part that needs new battle code.
 
 ## Questions to answer before implementing
@@ -51,7 +58,7 @@ part that needs new battle code.
    anonymous? How many loans can be open at once?
 3. **What are the terms?** Who sets the amount and rate, the trader or the player? Can
    you haggle? What are the terms per voyage, and how do they compare with the bank's
-   5%?
+   0.5% and with trading (about 6% a month from year 5 on, `etc/wealth-curve.md`)?
 4. **How does default work?** Probability, partial payment, extensions. Can a borrower
    pay you back in goods?
 5. **Where do you meet borrowers?** On arrival, at sea, or by choosing to visit them?

@@ -25,10 +25,15 @@ holding has:
 
 - **A purchase price** that scales with the good's magnitude and with time. For
   example, general cargo 200,000, arms 400,000, silk 800,000, opium 2,000,000 and jade
-  5,000,000, all times a time factor like the ship and gun offers.
+  5,000,000, all times a time factor like the ship and gun offers. For scale, the
+  middling player's cash position is about 11–18M after 5 years and 380–530M after 10
+  (`etc/wealth-curve.md`), so without the time factor even a jade holding would be
+  cheap late in the game.
 - **A monthly yield:** a percentage of the purchase price, paid on every arrival.
-  Suggest **8–10%** before rivals' losses (pypan-61). That beats the bank's 5% but stays
-  well below active trading.
+  Suggest **3–5%** before rivals' losses (pypan-61), or about 2–4% after them. That is
+  several times the bank's 0.5%, but below late-game trading (about 6% a month from
+  year 5 on, `etc/wealth-curve.md`). A yield of 8–10% would outpace trading by then,
+  and with idle money piling up in the bank, holdings would take over the game.
 - **Shares:** a holding can be bought in **shares**, for example quarters, so control
   builds up gradually. Control feeds the squeeze (pypan-62).
 

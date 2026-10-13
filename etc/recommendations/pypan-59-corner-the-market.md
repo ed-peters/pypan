@@ -51,9 +51,12 @@ questions:
 - **General cargo is nearly worthless in absolute terms.** A royalty proportional to
   general cargo's trade would be pennies. **The return on a holding must not depend on
   the good's unit price.** See pypan-60.
-- **Passive income already exists.** The bank pays **5% a month with no risk**, which
-  roughly doubles your money every 14 months. Holdings have to beat that, and carry
-  risk, or they're pointless.
+- **Passive income barely exists.** The bank pays **0.5% a month with no risk**, which
+  doubles your money only every 11½ years. Late in the game, trading is limited by
+  the hold rather than by money, so money piles up in the bank (about 7–12M for the
+  middling player after 5 years, and 300–440M after 10; see `etc/wealth-curve.md`).
+  Holdings compete with that idle money, not with trading, so a modest return is
+  already attractive.
 
 ## Recommendation
 
@@ -61,7 +64,9 @@ Build it in three phases, each playable on its own:
 
 1. **pypan-60, holdings.** Buy a holding (good × port). It pays a monthly return on its
    price. Cheap holdings for low-value goods, expensive ones for high-value goods.
-   Unlocked late (for example at rank Taipan, or a cash position of 1,000,000).
+   Unlocked late (for example at rank Taipan, or a cash position of 1,000,000). The
+   middling player has 1,000,000 by about month 30–36, and the low player by about
+   month 42–50.
 2. **pypan-61, rivals.** A **hostility** level per good. It grows with the value and
    number of holdings you own, and drives raid, bribery and competition events.
    Defense comes from guards, which can share work with pypan-55 (bodyguards).
@@ -80,10 +85,12 @@ actual strategy rather than flavor.
 1. **Is this the late game, or a parallel path?** Should it unlock by rank, cash
    position or year, so it's clearly "late game"?
 2. **What's the target pace?** Holdings that are too good make trading pointless.
-   Holdings that are too weak make them a curiosity. Pin a target, for example:
-   - shrewd trading: about 25% a month
-   - holdings, after losses: about 8–10% a month
-   - bank: 5% a month
+   Holdings that are too weak make them a curiosity. Measured paces
+   (`etc/wealth-curve.md`) and a suggested target:
+   - trading: about 30% a month in year 2 and 13% in year 3, settling to about 6% a
+     month from year 5 on, as the hold fills
+   - holdings, after losses: about 2–4% a month (suggested)
+   - bank: 0.5% a month
 3. **Who are the "merchant houses"?** Anonymous ("a rival hong"), a few named houses, or
    the traders from pypan-54 (sponsoring traders)? Named houses give the squeeze's
    "enemies you've cultivated for years" real meaning. They are also the biggest

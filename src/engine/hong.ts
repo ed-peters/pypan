@@ -67,7 +67,7 @@ export interface Hong {
   /** Whether jade has come onto the market; until then it's hidden. */
   jade: boolean;
   expedition: Expedition | null;
-  /** Whether an expedition has failed, so Fat Monkey Ren is back after escaping. */
+  /** Whether an expedition has failed, so Sir Beaumont-Finch is back after escaping. */
   expeditionFailed: boolean;
   jadeDeal: JadeDeal | null;
 }

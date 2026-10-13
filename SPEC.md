@@ -78,7 +78,7 @@ house). It is fully serializable to JSON for save/load. Key fields:
 | `prices[5]` | Current local price of each good | set for Hong Kong |
 | `jade` | Whether jade is on the market (§4.6); saved only when false, and missing means true | false |
 | `expedition` | The jade expedition under way: `port`, `resolves` (month), `invested`; saved only when set | none |
-| `expedition_failed` | Whether a jade expedition has failed, so later offers say Fat Monkey Ren escaped; saved only when true | false |
+| `expedition_failed` | Whether a jade expedition has failed, so later offers say Sir Beaumont-Finch escaped; saved only when true | false |
 | `jade_deal` | Backers' cheap jade: `port`, `until` (month); saved only when set | none |
 
 ### 2.2 Starting Choices
@@ -250,13 +250,13 @@ consignments):
 
 - **Offer:** after month 24, if jade isn't on the market, no expedition is under
   way, the bank holds over 2,000,000 (`JADE_BANK_LEVEL`; cash on hand doesn't
-  count) and the port is Singapore or Batavia, there's a 1-in-3 chance the Burmese
-  merchant Fat Monkey Ren seeks backers. The compradore asks whether to invest 1,000,000 ± 10%
+  count) and the port is Singapore or Batavia, there's a 1-in-3 chance the East India
+  Company man Sir Beaumont-Finch seeks backers. The compradore asks whether to invest 1,000,000 ± 10%
   (`JADE_INVESTMENT`, rounded to the thousand). If you accept, the funds are
   arranged from Hong Kong and taken from the bank. Either way the expedition goes
   ahead from that port, due 3 months later (`JADE_EXPEDITION_MONTHS`).
 - **Outcome:** on the first arrival once it's due, it succeeds 1-in-3; otherwise
-  Fat Monkey Ren is captured by rebels, and a new expedition can be offered later:
+  Sir Beaumont-Finch is captured by rebels, and a new expedition can be offered later:
   he has escaped and is back seeking investment.
 - **Success** brings jade onto the market everywhere. Backers also get cheap jade
   at the port where the expedition was offered, through the 3rd month after the

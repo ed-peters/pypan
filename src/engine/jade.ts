@@ -18,13 +18,13 @@ export function* checkJade(h: Hong, rng: Rng): Flow {
     h.expedition = null;
     if (!rng.chanceOf(3)) {
       h.expeditionFailed = true;
-      yield* say("Taipan, regrettably our friend Fat Monkey Ren has been captured by rebels. It appears there will be no jade forthcoming.");
+      yield* say("Taipan, regrettably our friend Sir Beaumont-Finch has been captured by rebels. It appears there will be no jade forthcoming.");
     } else if (e.invested) {
-      yield* say("Taipan!! Our friend Fat Monkey Ren reports the success of his jade mining effort. We will be offered low-price jade for a time in thanks.");
+      yield* say("Taipan!! Our friend Sir Beaumont-Finch reports the success of his jade mining effort. We will be offered low-price jade for a time in thanks.");
       h.jade = true;
       h.jadeDeal = { port: e.port, until: t + JADE_DISCOUNT_MONTHS };
     } else {
-      yield* say("Taipan, rumor has reached us of a new Burmese jade mine. It appears our friend Fat Monkey Ren was met with success.");
+      yield* say("Taipan, rumor has reached us of a new Burmese jade mine. It appears our friend Sir Beaumont-Finch was met with success.");
       h.jade = true;
     }
   }
@@ -32,11 +32,11 @@ export function* checkJade(h: Hong, rng: Rng): Flow {
   if (offersExpedition(h) && rng.chanceOf(3)) {
     const amount = Math.round(JADE_INVESTMENT * (0.9 + 0.2 * rng.float()) / 1000) * 1000;
     const pitch = h.expeditionFailed
-      ? "Taipan!! Fat Monkey Ren has escaped the Burmese rebels and is back seeking investment in another expedition to establish a jade mine."
-      : "Taipan, the Burmese merchant Fat Monkey Ren is gathering backers for an expedition to establish a jade mine.";
+      ? "Taipan!! Sir Beaumont-Finch has escaped the Burmese rebels and is back seeking investment in another expedition to establish a jade mine."
+      : "Taipan, the East India Company man Sir Beaumont-Finch is gathering backers for an expedition to establish a jade mine.";
     const invested = yield* askYn(`${pitch} Would you like to invest ${money(amount)}?`);
     if (invested) {
-      yield* say(`Very well, Taipan. We will arrange for funds from Hong Kong and our friend Fat Monkey Ren will proceed from ${city(h.location)} forthwith.`);
+      yield* say(`Very well, Taipan. We will arrange for funds from Hong Kong and our friend Sir Beaumont-Finch will proceed from ${city(h.location)} forthwith.`);
       h.bank -= amount;
     }
     // others back it if we don't
@@ -44,7 +44,7 @@ export function* checkJade(h: Hong, rng: Rng): Flow {
   }
 }
 
-/** Whether a merchant could come looking for backers here. */
+/** Whether Sir Beaumont-Finch could come looking for backers here. */
 function offersExpedition(h: Hong): boolean {
   return !h.jade
     && !h.expedition

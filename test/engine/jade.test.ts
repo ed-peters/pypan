@@ -5,8 +5,8 @@ import { ScriptedRng } from "../../src/engine/rng";
 import { makeHong } from "../helpers/hong";
 import { play, texts } from "../helpers/play";
 
-const OFFER = "Taipan, the Burmese merchant Fat Monkey Ren is gathering backers for an expedition to establish a jade mine. Would you like to invest 1,000,000?";
-const FAILED = "Taipan, regrettably our friend Fat Monkey Ren has been captured by rebels. It appears there will be no jade forthcoming.";
+const OFFER = "Taipan, the East India Company man Sir Beaumont-Finch is gathering backers for an expedition to establish a jade mine. Would you like to invest 1,000,000?";
+const FAILED = "Taipan, regrettably our friend Sir Beaumont-Finch has been captured by rebels. It appears there will be no jade forthcoming.";
 
 // month 25, in Singapore with 3,000,000 in the bank and no jade yet
 const rich = (overrides = {}) =>
@@ -21,7 +21,7 @@ describe("checkJade", () => {
     const p = play(checkJade(h, new ScriptedRng(OFFER_ROLLS)), [true]);
     expect(texts(p)).toEqual([
       OFFER,
-      "Very well, Taipan. We will arrange for funds from Hong Kong and our friend Fat Monkey Ren will proceed from Singapore forthwith.",
+      "Very well, Taipan. We will arrange for funds from Hong Kong and our friend Sir Beaumont-Finch will proceed from Singapore forthwith.",
     ]);
     expect([h.bank, h.cash]).toEqual([2000000, 400]);
     expect(h.expedition).toEqual({ port: SINGAPORE, resolves: 28, invested: true });
@@ -64,7 +64,7 @@ describe("checkJade", () => {
     const h = rich({ time: 28, location: SHANGHAI, expedition: { port: SINGAPORE, resolves: 28, invested: true } });
     const p = play(checkJade(h, new ScriptedRng([0])));
     expect(texts(p)).toEqual([
-      "Taipan!! Our friend Fat Monkey Ren reports the success of his jade mining effort. We will be offered low-price jade for a time in thanks.",
+      "Taipan!! Our friend Sir Beaumont-Finch reports the success of his jade mining effort. We will be offered low-price jade for a time in thanks.",
     ]);
     expect([h.jade, h.expedition, h.jadeDeal]).toEqual([true, null, { port: SINGAPORE, until: 31 }]);
   });
@@ -73,17 +73,17 @@ describe("checkJade", () => {
     const h = rich({ time: 28, location: SHANGHAI, expedition: { port: SINGAPORE, resolves: 28, invested: false } });
     const p = play(checkJade(h, new ScriptedRng([0])));
     expect(texts(p)).toEqual([
-      "Taipan, rumor has reached us of a new Burmese jade mine. It appears our friend Fat Monkey Ren was met with success.",
+      "Taipan, rumor has reached us of a new Burmese jade mine. It appears our friend Sir Beaumont-Finch was met with success.",
     ]);
     expect([h.jade, h.expedition, h.jadeDeal]).toEqual([true, null, null]);
   });
 
-  it("otherwise fails, and Fat Monkey Ren may escape to try again", () => {
+  it("otherwise fails, and Sir Beaumont-Finch may escape to try again", () => {
     const h = rich({ time: 28, expedition: { port: SINGAPORE, resolves: 28, invested: true } });
     const p = play(checkJade(h, new ScriptedRng([1, ...OFFER_ROLLS])), [false]);
     expect(texts(p)).toEqual([
       FAILED,
-      "Taipan!! Fat Monkey Ren has escaped the Burmese rebels and is back seeking investment in another expedition to establish a jade mine. Would you like to invest 1,000,000?",
+      "Taipan!! Sir Beaumont-Finch has escaped the Burmese rebels and is back seeking investment in another expedition to establish a jade mine. Would you like to invest 1,000,000?",
     ]);
     expect([h.jade, h.expeditionFailed, h.expedition])
       .toEqual([false, true, { port: SINGAPORE, resolves: 31, invested: false }]);

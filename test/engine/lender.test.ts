@@ -52,9 +52,11 @@ describe("checkLender", () => {
     const h = makeHong(WARNED);
     // chanceOf(4) hits; bodyguards = 3 + randrange(6)
     const p = play(checkLender(h, new ScriptedRng([0, 2])), [false]);
-    expect(texts(p).at(-1)).toBe(
+    // the offer to visit comes first, then the robbery
+    expect(texts(p)).toEqual([
+      "Do you have business with Elder Brother Wu, the moneylender, Taipan?",
       "Bad joss!! 5 of your bodyguards have been killed by cutthroats and you have been robbed of all of your cash, Taipan!!",
-    );
+    ]);
     expect(h.cash).toBe(0);
   });
 

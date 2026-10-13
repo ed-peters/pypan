@@ -1,7 +1,7 @@
 // Save format: the same JSON shape that etc/pypan.py writes to pypan.json, so saves
 // from the Python version can be imported. Keys are snake_case on disk.
 
-import { CITIES, NUM_GOODS } from "./constants";
+import { CITIES, NUM_GOODS, START_YEAR } from "./constants";
 import type { Cargo, Hong } from "./hong";
 
 export class SaveFormatError extends Error {
@@ -54,7 +54,7 @@ export function fromSave(data: unknown): Hong {
     shipGoods: goods(d, "ship_goods"),
     shipGuns: int(d, "ship_guns", 0),
     shipDamage: int(d, "ship_damage"),
-    shipCargo: d.ship_cargo == null ? null : cargo(d.ship_cargo),
+    shipCargo: d.ship_cargo == null ? null : cargo(d.ship_cargo, d),
     pirateChance: int(d, "pirate_chance", 1),
     warehouseSize: int(d, "warehouse_size", 0),
     warehouseGoods: goods(d, "warehouse_goods"),
@@ -123,13 +123,16 @@ function goods(d: Rec, key: string): number[] {
   return [...(v as number[])];
 }
 
-function cargo(v: unknown): Cargo {
+function cargo(v: unknown, d: Rec): Cargo {
   const c = record(v, "ship_cargo");
+  // pypan.py consignments have no deadline: make them due on the next arrival
+  const due = c.due === undefined ? (int(d, "year") - START_YEAR) * 12 + int(d, "month") + 1 : int(c, "due");
   return {
     description: str(c, "description"),
     destination: int(c, "destination", 0, CITIES.length - 1),
     illegal: bool(c, "illegal"),
     size: int(c, "size", 0),
     value: int(c, "value"),
+    due,
   };
 }

@@ -51,7 +51,7 @@ describe("ship and warehouse", () => {
     h.shipGoods = [10, 0, 5, 0, 0];
     expect(totalGoods(h)).toBe(15);
     expect(shipAvailable(h)).toBe(45);
-    h.shipCargo = { description: "iron chest", destination: 2, illegal: false, size: 20, value: 1 };
+    h.shipCargo = { description: "iron chest", destination: 2, illegal: false, size: 20, value: 1, due: 1 };
     expect(shipAvailable(h)).toBe(25);
     h.shipGoods[0] = 40;
     expect(isOverloaded(h)).toBe(true);

@@ -42,7 +42,7 @@ describe("panes", () => {
 
   it("describes special cargo", () => {
     const h = makeHong({
-      shipCargo: { description: "party of 3", destination: NAGASAKI, illegal: false, size: 9, value: 1 },
+      shipCargo: { description: "party of 3", destination: NAGASAKI, illegal: false, size: 9, value: 1, due: 19 },
     });
     expect(cargoLines(h)).toEqual(["Party Of 3", "Bound for Nagasaki"]);
   });

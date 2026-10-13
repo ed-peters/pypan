@@ -21,6 +21,14 @@ export const WAREHOUSE_SIZE_INCREMENT = 5000;
 export const DEBT_THREAT_LEVEL = 10000;
 export const DEBT_MULTIPLIER = 2;
 export const ROBBERY_CASH_LIMIT = 20000;
+/** A consignment filling the whole hold pays this share of your money (pypan-48). */
+export const CONSIGNMENT_RATE = 0.15;
+/** No consignments are offered once your money is over this. */
+export const CONSIGNMENT_MONEY_LIMIT = 100000;
+/** Each month late takes this share off a consignment's pay. */
+export const CONSIGNMENT_LATE_PENALTY = 0.2;
+/** Months late before a consignment is offloaded unpaid. */
+export const CONSIGNMENT_LATE_LIMIT = 5;
 export const ENEMY_HEALTH_START = 20;
 export const ENEMY_HEALTH_BUMP = 10;
 export const ENEMY_DAMAGE_START = 0.5;

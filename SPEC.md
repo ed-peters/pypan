@@ -411,12 +411,30 @@ The player has a warehouse in Hong Kong (10000 capacity) used to stockpile goods
 
 ## 12. Special Cargo / Consignments (`check_cargo`, from month 18)
 
-Occasionally (1-in-20) the player is offered a one-off consignment to carry to a
-specific city for a fee, occupying some hold space. A `Cargo` has a description
-(e.g. "bronze statue", "jade statue", "party of 3", "secret document"), a
-destination (any other city), a size (5–30% of ship size), and a payout value.
-Delivering the cargo to its destination city automatically pays out and frees the
-space. Only one special cargo can be carried at a time.
+Occasionally the player is offered a one-off consignment to carry to a specific
+city for a fee, occupying some hold space. A `Cargo` has a description (e.g.
+"bronze statue", "jade statue", "party of 3", "secret document"), a destination
+(any other city), a size (5–30% of ship size), a payout value, and a `due` month
+(the month after it was offered, as `current_time`). Only one special cargo can be
+carried at a time, and it can't be dumped in battle.
+
+Consignments are a small, guaranteed boost rather than a rival to trading (pypan-48).
+They're priced on the player's **money**, `cash + bank - debt` (goods don't count):
+
+- **Odds of an offer:** 1-in-20 on each arrival; 1-in-3 if money is 0 or less (a
+  life line); never if money is over 100,000 (`CONSIGNMENT_MONEY_LIMIT`).
+- **Value**, fixed when offered: `CONSIGNMENT_RATE` (0.15) ± 20%, times money, times
+  `size / ship_size`. It's never less than the original fee: a pay rate of 35, 350
+  or 3,500 per unit of space, times the size, plus 0–99.
+- **Good joss:** 1-in-15 offers pay triple, and the offer begins "Good joss!!".
+- **Delivery:** arriving at the destination pays out and frees the space. Each
+  month past `due` takes 20% of the value off the pay
+  (`CONSIGNMENT_LATE_PENALTY`). Arriving anywhere else, the compradore reminds you
+  of the commitment; at 5 months late (`CONSIGNMENT_LATE_LIMIT`) the cargo is
+  offloaded unpaid.
+
+Saves from pypan.py have no `due`; on loading, such a consignment is due the month
+after the save's date.
 
 ---
 
@@ -451,6 +469,10 @@ space. Only one special cargo can be carried at a time.
 | `DEBT_THREAT_LEVEL` | 10000 | Debt at which Wu threatens (and can have you robbed) |
 | `DEBT_MULTIPLIER` | 2 | (declared; borrow-against-cash factor) |
 | `ROBBERY_CASH_LIMIT` | 20000 | Cash above which mugging can occur |
+| `CONSIGNMENT_RATE` | 0.15 | Share of money a hold-filling consignment pays (§12) |
+| `CONSIGNMENT_MONEY_LIMIT` | 100000 | Money above which no consignments are offered |
+| `CONSIGNMENT_LATE_PENALTY` | 0.2 | Share of a consignment's pay lost per month late |
+| `CONSIGNMENT_LATE_LIMIT` | 5 | Months late before a consignment is offloaded |
 | `BASED_PRICES` | true | Port-based prices (§4.1); false for fully random |
 | `ENEMY_HEALTH_START` / `_BUMP` | 20 / 10 | Pirate health base + per-year growth |
 | `ENEMY_DAMAGE_START` / `_BUMP` | 0.5 / 0.5 | Pirate damage base + per-year growth |

@@ -14,7 +14,10 @@ export interface Cargo {
   destination: number;
   illegal: boolean;
   size: number;
+  /** Pay on delivery, fixed when offered; reduced if delivered late. */
   value: number;
+  /** The month (as currentTime) it's due; later arrivals are late. */
+  due: number;
 }
 
 export interface Hong {

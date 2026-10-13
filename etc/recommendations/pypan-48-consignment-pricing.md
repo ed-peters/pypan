@@ -40,51 +40,35 @@ not. That's a real choice, unlike today.
 
 The fee doesn't depend on the player's wealth, so it's large early and trivial later.
 
-## Recommendation
+## Parameters
 
-Adopt the formula, with a few guards:
-
-- **Fixed at offer time:** the value is set when the consignment is offered and doesn't
+* Value is fixed at offer time: set when the consignment is offered and doesn't
   change before delivery.
-- **A minimum** so poor or indebted players still get a sensible offer. For example,
-  the current formula, or a flat 100 per unit of space.
-- **Optional variation** of ±20% around 15%, so offers aren't identical. It keeps the
-  average at 15%.
-- **Rate as a constant:** `CONSIGNMENT_RATE = 0.15` in `src/engine/constants.ts`, for
-  tuning.
 
-## Questions to answer before implementing
+* Value has a minimum, so poor or indebted players still get a sensible offer. Use
+  the current formula.
 
-1. **What counts as "your money"?** Options:
-   - **Cash on hand:** simplest. But a player can raise offers by carrying cash
-     instead of banking it, which goes against the mugging risk.
-   - **Cash + bank − debt** (the cash position used for the score): stable and matches
-     how the game scores. Recommended.
-   - **The cash position plus goods aboard at local prices** (`netWorthOnHand` plus the
-     bank): closest to "your money" while trading. But goods prices swing with shocks.
-2. **What does a player with little or negative money get?** A minimum (what amount?),
-   or no offers until they're solvent?
-3. **Should there be a maximum?** At a cash position of 10 million, a 30% consignment
-   pays 450,000 for one voyage. That's fine if it really is "a month's income", but
-   check it against the score scale.
-4. **Should the 15% vary** per offer, or be exact?
-5. **The one-month assumption:** every voyage takes a month, but a storm can blow you
-   off course, and the player may choose to go elsewhere first. Should pay drop if
-   delivery is late, or is the lost month the cost?
-6. **Should a consignment ever be lost:** if the ship sinks (the game ends anyway),
-   dumped in battle, or seized?
-7. **Should the hold-size range (5–30%) and the frequency** (1-in-20 from month 18)
-   change too? Now that consignments are worth taking, offering them earlier or more
-   often matters more.
-8. **Should illegal consignments** (`Cargo.illegal` exists but is never used) pay a
-   higher rate, with a risk of seizure? Or file that separately?
+* Value varies +/- 20% around a base rate of 15%, which is stored as a constant:
+  `CONSIGNMENT_RATE = 0.15` in `src/engine/constants.ts`, for tuning.
 
-## What changes in the code
+* Values are subject to a "price shock" just like goods. If offering a consignment,
+  on a random chance of 1 in 15, the computed value is tripled. The message offering
+  the consignment should be prepended with "Good joss!!".
 
-- `src/engine/cargo.ts`: `randomCargo` uses the new formula. If the base is the cash
-  position, it uses `cashPosition` from `src/engine/score.ts` (or a shared helper).
-- `src/engine/constants.ts`: `CONSIGNMENT_RATE`, and the minimum.
-- No saved-game change, since the value is stored in `Cargo` when offered.
-- `test/engine/cargo.test.ts`: value as a share of money and of the hold, and the
-  minimum.
-- SPEC.md §12.
+* For calculating the value, use "cash + bank - debt" as the player's money,
+  and ignore current goods in the hold or the warehouse.
+
+* If a player has >100,000 in money, they will not be offered consignments. If a player 
+  has no  or negative money, the chance of being offered a consignment should raise to 
+  1 in 3, as a "life line".
+
+* Pay should drop if delivery is late. When holding a consignment, if the player
+  arrives at a port other than the target, the compradore should say "Taipan, we
+  are still committed to deliver ((good)) to ((port))". For each month it's late,
+  the value reduced by 20%. After 5 months, the compradore should report, "Taipan,
+  we have missed the deliver window, and offloaded the ((good)) that was bound for
+  ((port))."
+
+* Consignments cannot be dumped.
+
+* Let's create a new feature for later called "Illegal consigments".

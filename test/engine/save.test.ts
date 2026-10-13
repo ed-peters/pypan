@@ -25,9 +25,15 @@ describe("save format", () => {
   it("round-trips through a string, including special cargo", () => {
     const h = newHong(new SeededRng(4), false);
     h.shipGoods = [1, 2, 3, 4, 5];
-    h.shipCargo = { description: "party of 3", destination: 5, illegal: false, size: 9, value: 3171 };
+    h.shipCargo = { description: "party of 3", destination: 5, illegal: false, size: 9, value: 3171, due: 20 };
     h.transfer = -1;
     expect(fromSaveString(toSaveString(h))).toEqual(h);
+  });
+
+  it("makes pypan.py consignments due on the next arrival", () => {
+    const cargo = { description: "party of 3", destination: 5, illegal: false, size: 9, value: 3171 };
+    const h = fromSave({ ...pythonSave, year: 1861, month: 6, ship_cargo: cargo });
+    expect(h.shipCargo).toEqual({ ...cargo, due: 19 });
   });
 
   it("round-trips the bank's representative", () => {

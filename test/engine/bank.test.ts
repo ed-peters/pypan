@@ -93,9 +93,9 @@ describe("visitBank robbery", () => {
 });
 
 describe("accrueInterest", () => {
-  it("adds 10% to debt and 5% to the bank, truncated", () => {
-    const h = makeHong({ debt: 5000, bank: 333 });
+  it("adds 10% to debt and 0.5% to the bank, truncated", () => {
+    const h = makeHong({ debt: 5000, bank: 3333 });
     accrueInterest(h);
-    expect([h.debt, h.bank]).toEqual([5500, 349]);
+    expect([h.debt, h.bank]).toEqual([5500, 3349]);
   });
 });

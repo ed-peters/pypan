@@ -15,7 +15,8 @@ export const START_SHIP_SIZE = 60;
 export const START_WAREHOUSE_SIZE = 10000;
 export const GUN_SIZE = 10;
 export const LOAN_RATE = 0.1;
-export const BANK_RATE = 0.05;
+/** Bank interest per voyage: 0.5% (pypan.py paid 5%). */
+export const BANK_RATE = 0.005;
 export const SHIP_SIZE_INCREMENT = 50;
 export const WAREHOUSE_SIZE_INCREMENT = 5000;
 export const DEBT_THREAT_LEVEL = 10000;

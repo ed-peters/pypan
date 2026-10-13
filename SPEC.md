@@ -209,7 +209,7 @@ Deposit cash into or withdraw from the bank. The bank is in Hong Kong, but on
 arrival at a foreign port after month 12 there is a 1-in-6 chance (the lorcha's
 odds) that a representative from the bank is there for the month: "Good joss!! A
 representative from your bank is in Shanghai for the month. You may transact with
-him as normal." While he's in port, the menu offers **Visit the bank**. The bank balance **earns 5% interest
+him as normal." While he's in port, the menu offers **Visit the bank**. The bank balance **earns 0.5% interest
 per voyage** (`BANK_RATE`), applied on arrival at any port.
 
 Leaving the bank carries the same mugging risk as arriving at a foreign harbor
@@ -512,7 +512,7 @@ after the save's date.
 | `START_WAREHOUSE_SIZE` | 10000 | Warehouse capacity |
 | `GUN_SIZE` | 10 | Hold space a gun occupies |
 | `LOAN_RATE` | 0.10 | Debt interest per voyage |
-| `BANK_RATE` | 0.05 | Bank interest per voyage |
+| `BANK_RATE` | 0.005 | Bank interest per voyage (§4.4) |
 | `SHIP_SIZE_INCREMENT` | 50 | Capacity added by a new ship |
 | `WAREHOUSE_SIZE_INCREMENT` | 5000 | Capacity added by a warehouse upgrade |
 | `DEBT_THREAT_LEVEL` | 10000 | Debt at which Wu threatens (and can have you robbed) |
@@ -602,6 +602,8 @@ Fixes to bugs in `etc/pypan.py`:
 - **Negative price shocks** keep the good's price granularity (a crashed silk price
   could come out as e.g. 71).
 - **Storm damage** stops at 80% of ship size (it stopped at 80 raw damage points).
+- **Bank interest** is 0.5% per voyage (it was 5%, which outpaced every other way of
+  making money late in the game).
 
 Additions:
 

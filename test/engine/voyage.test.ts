@@ -38,7 +38,7 @@ describe("sailAway", () => {
       ["Where shall we sail to, Taipan?", undefined],
       ["Arriving at Shanghai ... ", "boat"],
     ]);
-    expect(h).toMatchObject({ location: SHANGHAI, month: 2, debt: 5500, bank: 1050, transfer: -1 });
+    expect(h).toMatchObject({ location: SHANGHAI, month: 2, debt: 5500, bank: 1005, transfer: -1 });
     expect(h.prices).toEqual([5, 80, 700, 8000, 70000]); // Shanghai
     expect(rng.remaining).toBe(0);
   });

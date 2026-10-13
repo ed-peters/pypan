@@ -68,6 +68,8 @@ export function* pay(h: Hong, n: number): Flow {
 
 /** Debt and bank interest for one voyage. */
 export function accrueInterest(h: Hong): void {
-  h.debt = Math.trunc(h.debt * (1 + LOAN_RATE));
-  h.bank = Math.trunc(h.bank * (1 + BANK_RATE));
+  // add the truncated interest, rather than truncating balance * (1 + rate), which
+  // can lose a unit to rounding (1000 * 1.005 is 1004.999...)
+  h.debt += Math.trunc(h.debt * LOAN_RATE);
+  h.bank += Math.trunc(h.bank * BANK_RATE);
 }

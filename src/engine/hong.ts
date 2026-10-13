@@ -43,6 +43,8 @@ export interface Hong {
   location: number;
   /** Warehouse transfer fee percent; -1 means transfers are unavailable here. */
   transfer: number;
+  /** Whether a representative from the bank is in this (foreign) port. */
+  banker: boolean;
   prices: number[];
 }
 
@@ -68,6 +70,7 @@ export function newHong(rng: Rng, guns: boolean, name: string = "Rising Sun"): H
     bailout: 1,
     location: HONG_KONG,
     transfer: 0,
+    banker: false,
     prices: setPrices(rng, HONG_KONG),
   };
 }

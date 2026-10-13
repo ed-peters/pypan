@@ -30,6 +30,8 @@ export function toSave(h: Hong): Record<string, unknown> {
     bailout: h.bailout,
     location: h.location,
     transfer: h.transfer,
+    // our own addition, written only when set so saves otherwise match pypan.py's
+    ...(h.banker ? { banker: true } : {}),
     prices: [...h.prices],
   };
 }
@@ -61,6 +63,8 @@ export function fromSave(data: unknown): Hong {
     bailout: int(d, "bailout"),
     location: int(d, "location", 0, CITIES.length),
     transfer: int(d, "transfer", -1),
+    // not in pypan.py saves
+    banker: d.banker === undefined ? false : bool(d, "banker"),
     prices: goods(d, "prices"),
   };
 }

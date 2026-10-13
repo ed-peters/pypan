@@ -30,6 +30,13 @@ describe("save format", () => {
     expect(fromSaveString(toSaveString(h))).toEqual(h);
   });
 
+  it("round-trips the bank's representative", () => {
+    const h = newHong(new SeededRng(4), false);
+    expect(toSave(h)).not.toHaveProperty("banker");
+    h.banker = true;
+    expect(fromSaveString(toSaveString(h)).banker).toBe(true);
+  });
+
   it("copies arrays rather than sharing them", () => {
     const h = newHong(new SeededRng(4), false);
     const back = fromSave(toSave(h));

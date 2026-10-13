@@ -74,6 +74,7 @@ house). It is fully serializable to JSON for save/load. Key fields:
 | `bailout` | Multiplier for emergency loan cost (see §4.5) | 1 |
 | `location` | Current city index (or AT_SEA) | Hong Kong |
 | `transfer` | Warehouse transfer fee %; `-1` means unavailable | 0 |
+| `banker` | Whether the bank's representative is in this foreign port (§4.4); saved only when true | false |
 | `prices[5]` | Current local price of each good | set for Hong Kong |
 
 ### 2.2 Starting Choices
@@ -92,7 +93,8 @@ Seven tradeable ports, indexed 0–6:
 `Singapore` (5), `Batavia` (6).
 
 An eighth pseudo-location, **At Sea** (7), is used while traveling. **Hong Kong is
-the home port**: it is the only place with a bank, the moneylender (Elder Brother Wu),
+the home port**: it is the only place with a bank (barring a visit from its
+representative, §4.4), the moneylender (Elder Brother Wu),
 ship repair (McHenry), warehouse upgrades, and free warehouse transfers.
 
 ### 2.4 Goods
@@ -128,7 +130,8 @@ unlock only after certain thresholds:
 - **> 1 month**: price shocks and emergency bailout loans can occur.
 - **> 6 months**: new-ship and new-gun offers appear.
 - **> 12 months**: Wu robbery risk, larger Li Yuen demands, warehouse upgrades,
-  warehouse transfers (away from home), and harbor-police / mugging / fire events.
+  warehouse transfers and the bank's representative (away from home), and
+  harbor-police / mugging / fire events.
 - **>= 18 months**: special cargo consignments begin to appear.
 
 ---
@@ -187,9 +190,13 @@ Each shock prints a themed flavor message (see `MSG_POS_SHOCK` / `MSG_NEG_SHOCK`
 Both show a condition report listing the current price of all five goods, in two
 columns.
 
-### 4.4 Banking (Hong Kong only)
+### 4.4 Banking (Hong Kong, or with the bank's representative)
 
-Deposit cash into or withdraw from the bank. The bank balance **earns 5% interest
+Deposit cash into or withdraw from the bank. The bank is in Hong Kong, but on
+arrival at a foreign port after month 12 there is a 1-in-6 chance (the lorcha's
+odds) that a representative from the bank is there for the month: "Good joss!! A
+representative from your bank is in Shanghai for the month. You may transact with
+him as normal." While he's in port, the menu offers **Visit the bank**. The bank balance **earns 5% interest
 per voyage** (`BANK_RATE`), applied on arrival at any port.
 
 Leaving the bank carries the same mugging risk as arriving at a foreign harbor
@@ -233,7 +240,8 @@ and the lender, then repeatedly presents the port action menu. The menu
 - **Buy goods**
 - **Sell goods**
 - **Transfer goods** (only if `transfer >= 0`)
-- In Hong Kong only: **Visit Elder Brother Wu**, **Visit the bank**
+- In Hong Kong only: **Visit Elder Brother Wu**
+- In Hong Kong, or abroad when the bank's representative is in port: **Visit the bank**
 - **Leave port**
 - In Hong Kong only, and only when out of debt: **Retire**. It asks "Are you sure you
   want to retire, Taipan?" before ending the game (§1.1).
@@ -251,7 +259,7 @@ The game auto-saves at the top of every menu iteration.
 6. Arrives; **debt and bank interest are applied**.
 7. Runs the arrival event sequence:
    `check_lender` → `check_extortion` → `check_upgrades` → `check_warehouse`
-   → `check_cargo` → `check_safety` → `establish_prices`.
+   → `check_banker` → `check_cargo` → `check_safety` → `establish_prices`.
 
 ---
 
@@ -528,6 +536,7 @@ Additions:
 - **Retiring and scoring** (§1.1): Retire replaces Exit; the game ends with a score
   and rank.
 - **Mugging on leaving the bank** (§4.4), at the harbor odds.
+- **The bank's representative** (§4.4) can turn up in foreign ports.
 - **McHenry** says "Aye, she'll be right as rain for ye!!" after a repair, and when
   Wu covers a partial repair he pays only the amount you asked for (he used to pay
   the full cost).

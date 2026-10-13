@@ -92,6 +92,12 @@ describe("the port menu", () => {
       "Buy goods", "Sell goods", "Transfer goods", "Leave port",
     ]);
   });
+
+  it("offers the bank elsewhere when its representative is in port", () => {
+    expect(labels(makeHong({ location: SHANGHAI, transfer: -1, banker: true }))).toEqual([
+      "Buy goods", "Sell goods", "Visit the bank", "Leave port",
+    ]);
+  });
 });
 
 describe("game endings", () => {

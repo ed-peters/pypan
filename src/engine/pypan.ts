@@ -1,7 +1,7 @@
 // The whole game: the opening choice, the comprador's port menu until the player
 // retires or sinks, then the final score (SPEC.md sections 2.2, 5 and 1).
 
-import { visitBank } from "./bank";
+import { bankAvailable, visitBank } from "./bank";
 import { HONG_KONG } from "./constants";
 import { checkExtortion } from "./extortion";
 import { Game } from "./game";
@@ -88,6 +88,8 @@ export function establishOpts(h: Hong, rng: Rng): [string, Action][] {
   }
   if (h.location === HONG_KONG) {
     opts.push(["Visit Elder Brother Wu", () => visitWu(h, rng)]);
+  }
+  if (bankAvailable(h)) {
     opts.push(["Visit the bank", () => visitBank(h, rng)]);
   }
   opts.push(["Leave port", () => sailAway(h, rng)]);

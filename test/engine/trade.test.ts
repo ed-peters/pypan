@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GENERAL, SILK } from "../../src/engine/constants";
+import { ARMS, GENERAL, JADE, SILK } from "../../src/engine/constants";
 import { currentTime } from "../../src/engine/hong";
 import { ScriptedRng } from "../../src/engine/rng";
 import {
@@ -25,6 +25,34 @@ describe("conditionReport", () => {
 });
 
 describe("establishPrices", () => {
+  it("keeps a crashed price at its good's granularity", () => {
+    const h = makeHong({ time: 2 });
+    // shock; silk; factor = 7; negative: 500 / 7 = 71.4 -> 0 -> at least 100
+    play(establishPrices(h, new ScriptedRng([...MIN_PRICES, 0, SILK, 2, 1])));
+    expect(h.prices[SILK]).toBe(100);
+  });
+
+  it("rounds a crashed price down to its good's granularity", () => {
+    const h = makeHong({ time: 2 });
+    // jade rolled x3 = 180000; shock; jade; factor = 7; negative: 25714 -> 20000
+    play(establishPrices(h, new ScriptedRng([0, 0, 0, 0, 2, 0, JADE, 2, 1])));
+    expect(h.prices[JADE]).toBe(20000);
+  });
+
+  it("keeps every shocked price a whole multiple of its granularity", () => {
+    for (let g = GENERAL; g <= JADE; g++) {
+      for (let f = 0; f < 5; f++) {
+        for (const dir of [0, 1]) {
+          const h = makeHong({ time: 2 });
+          play(establishPrices(h, new ScriptedRng([2, 2, 2, 2, 2, 0, g, f, dir])));
+          const m = 10 ** g;
+          expect(h.prices[g]! % m).toBe(0);
+          expect(h.prices[g]!).toBeGreaterThanOrEqual(m);
+        }
+      }
+    }
+  });
+
   it("never shocks prices in the first month", () => {
     const h = makeHong({ time: 1 });
     const rng = new ScriptedRng(MIN_PRICES);

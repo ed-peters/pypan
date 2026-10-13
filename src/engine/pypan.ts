@@ -88,7 +88,7 @@ export function establishOpts(h: Hong, rng: Rng): [string, Action][] {
   }
   if (h.location === HONG_KONG) {
     opts.push(["Visit Elder Brother Wu", () => visitWu(h, rng)]);
-    opts.push(["Visit the bank", () => visitBank(h)]);
+    opts.push(["Visit the bank", () => visitBank(h, rng)]);
   }
   opts.push(["Leave port", () => sailAway(h, rng)]);
   // only a player who is out of debt can retire

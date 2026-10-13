@@ -3,8 +3,10 @@
 import { BANK_RATE, LOAN_RATE } from "./constants";
 import type { Hong } from "./hong";
 import { askNum, say, type Flow } from "./prompts";
+import type { Rng } from "./rng";
+import { checkRobbery } from "./safety";
 
-export function* visitBank(h: Hong): Flow {
+export function* visitBank(h: Hong, rng: Rng): Flow {
   if (h.cash === 0 && h.bank === 0) {
     yield* say("You have no reason to go to the bank, Taipan.");
     return;
@@ -29,6 +31,9 @@ export function* visitBank(h: Hong): Flow {
       h.bank -= n;
     }
   }
+
+  // walking out of the bank with lots of cash invites trouble
+  yield* checkRobbery(h, rng);
 }
 
 /** Debt and bank interest for one voyage. */

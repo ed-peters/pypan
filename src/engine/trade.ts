@@ -1,6 +1,6 @@
 // Trading: local prices, price shocks, buying and selling (SPEC.md sections 4.1-4.3).
 
-import { GOODS, NUM_GOODS, good } from "./constants";
+import { GOODS, NUM_GOODS, good, mult } from "./constants";
 import { money } from "./format";
 import { currentTime, type Hong } from "./hong";
 import { setPrices } from "./prices";
@@ -55,8 +55,11 @@ export function* establishPrices(h: Hong, rng: Rng): Flow {
       h.prices[g]! *= f;
     } else {
       yield* say(MSG_NEG_SHOCK[g]!);
-      h.prices[g] = Math.max(1, Math.trunc(h.prices[g]! / f));
+      h.prices[g] = h.prices[g]! / f;
     }
+    // keep the good's usual granularity: whole, tens, hundreds, ...
+    const m = mult(g);
+    h.prices[g] = Math.max(m, Math.trunc(h.prices[g]! / m) * m);
   }
 }
 

@@ -51,8 +51,8 @@ describe("offerRepair", () => {
       text: "Och, 'tis a pity to be 16% damaged. We can fix yer whole ship for 301, or make partial repairs if you wish. How much will ye spend?",
       max: 301,
     });
-    // no stray messages after the repair
-    expect(p.transcript).toHaveLength(2);
+    expect(texts(p).at(-1)).toBe("Aye, she'll be right as rain for ye!!");
+    expect(p.transcript).toHaveLength(3);
   });
 
   it("charges you for repairs and fixes everything when paid in full", () => {
@@ -77,8 +77,16 @@ describe("offerRepair", () => {
 
   it("fixes nothing if you pay nothing", () => {
     const h = makeHong({ shipDamage: 10 });
-    play(offerRepair(h, new ScriptedRng(REPAIR_ROLL)), [true, 0]);
+    const p = play(offerRepair(h, new ScriptedRng(REPAIR_ROLL)), [true, 0]);
     expect([h.cash, h.shipDamage]).toEqual([400, 10]);
+    expect(texts(p)).not.toContain("Aye, she'll be right as rain for ye!!");
+  });
+
+  it("charges Wu only for the partial repair you asked for", () => {
+    const h = makeHong({ cash: 100, debt: 5000, shipDamage: 10 });
+    play(offerRepair(h, new ScriptedRng(REPAIR_ROLL)), [true, 150, true]);
+    // 150 spent: 100 cash plus 50 from Wu; 4 of 10 points fixed
+    expect([h.cash, h.debt, h.shipDamage]).toEqual([0, 5050, 6]);
   });
 
   it("lets Wu pay the difference", () => {

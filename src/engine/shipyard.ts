@@ -4,7 +4,7 @@ import { GUN_SIZE, HONG_KONG, SHIP_SIZE_INCREMENT } from "./constants";
 import { money } from "./format";
 import { currentTime, repairPercent, type Hong } from "./hong";
 import { wuCoversShortfall } from "./lender";
-import { askNum, askYn, type Flow } from "./prompts";
+import { askNum, askYn, say, type Flow } from "./prompts";
 import type { Rng } from "./rng";
 
 /** On arrival: repairs at home, then (after six months) offers of a new ship or gun. */
@@ -47,12 +47,16 @@ export function* offerRepair(h: Hong, rng: Rng): Flow {
     Math.min(h.cash, cost),
   ));
 
+  // paying nothing gets you nothing
+  if (n <= 0) {
+    return;
+  }
+
   // if you don't have enough, EBW can make up the difference for you
   if (n > h.cash) {
-    if (!(yield* wuCoversShortfall(h, cost, "McHenry"))) {
+    if (!(yield* wuCoversShortfall(h, n, "McHenry"))) {
       return;
     }
-    n = cost;
   } else {
     h.cash -= n;
   }
@@ -63,6 +67,7 @@ export function* offerRepair(h: Hong, rng: Rng): Flow {
   } else {
     h.shipDamage -= Math.trunc(h.shipDamage * n / cost);
   }
+  yield* say("Aye, she'll be right as rain for ye!!");
 }
 
 export function* offerShip(h: Hong, rng: Rng): Flow {

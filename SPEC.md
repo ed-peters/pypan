@@ -170,7 +170,11 @@ After month 1, there is a 1-in-10 chance per arrival of a market shock on a rand
 good. A coin flip decides direction:
 
 - **Positive shock** (e.g. famine, rebellion): price multiplied by a factor of 5–9.
-- **Negative shock** (e.g. a glut, dumping): price divided by that factor (min 1).
+- **Negative shock** (e.g. a glut, dumping): price divided by that factor.
+
+Either way the result keeps the good's usual granularity: it is rounded down to a
+multiple of its magnitude (General 1, Arms 10, Silk 100, ...), and is at least one
+magnitude.
 
 Each shock prints a themed flavor message (see `MSG_POS_SHOCK` / `MSG_NEG_SHOCK`).
 
@@ -187,6 +191,9 @@ columns.
 
 Deposit cash into or withdraw from the bank. The bank balance **earns 5% interest
 per voyage** (`BANK_RATE`), applied on arrival at any port.
+
+Leaving the bank carries the same mugging risk as arriving at a foreign harbor
+(§11): after month 12, a 1-in-20 chance if cash on hand exceeds 20000.
 
 ### 4.5 Debt & the Moneylender (Elder Brother Wu, Hong Kong only)
 
@@ -356,8 +363,8 @@ very start of a game that begins with cash (the debt start).
   gives the damage as a percent of ship size and a cost that scales with elapsed
   time, damage, and ship size. You pay what you choose, up to the full cost; damage
   is fixed in proportion to what you pay, and paying the full cost fixes everything.
-  If you enter more than your cash, Wu can cover the difference (added to debt) and
-  the ship is fully repaired.
+  If you enter more than your cash, Wu can cover the difference (added to debt).
+  Any repair ends with McHenry's "Aye, she'll be right as rain for ye!!"
 - **New ship** (after month 6, 1-in-4): buy a larger ship (`+50` capacity,
   `SHIP_SIZE_INCREMENT`) which also clears all damage. Cost scales with time/size.
 - **New gun** (after month 6, 1-in-4): buy a cannon. A gun costs
@@ -385,7 +392,8 @@ The player has a warehouse in Hong Kong (10000 capacity) used to stockpile goods
 - **Opium confiscation** (1-in-10 if carrying opium away from home): harbor police
   seize all opium and, if you have cash, levy a fine of up to ~`cash/1.8`.
 - **Mugging** (1-in-20 away from home if cash > 20000, `ROBBERY_CASH_LIMIT`):
-  bodyguards beaten, you lose up to ~`cash/1.4`.
+  bodyguards beaten, you lose up to ~`cash/1.4`. The same check runs on leaving
+  the bank (§4.4).
 - **Warehouse fire** (1-in-50 if the warehouse holds anything): a fire destroys a
   large random fraction of each stored good (each good reduced to `qty / (1.3+rand)`,
   minimum 1).
@@ -504,6 +512,8 @@ Fixes to bugs in `etc/pypan.py`:
   shock factors 5–9 as intended; storm damage (5–20) and cargo size (5–30%) were
   adjusted to match.
 - **Hazards** (police, muggers, fire) start after month 12 (they started in month 12).
+- **Negative price shocks** keep the good's price granularity (a crashed silk price
+  could come out as e.g. 71).
 - **Storm damage** stops at 80% of ship size (it stopped at 80 raw damage points).
 
 Additions:
@@ -517,6 +527,10 @@ Additions:
 - **Sinking** (§7.3): the ship can now be lost in battle, ending the game.
 - **Retiring and scoring** (§1.1): Retire replaces Exit; the game ends with a score
   and rank.
+- **Mugging on leaving the bank** (§4.4), at the harbor odds.
+- **McHenry** says "Aye, she'll be right as rain for ye!!" after a repair, and when
+  Wu covers a partial repair he pays only the amount you asked for (he used to pay
+  the full cost).
 
 Interface changes:
 

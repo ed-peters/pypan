@@ -25,12 +25,8 @@ export function* checkSafety(h: Hong, rng: Rng): Flow {
   }
 
   // you might get beat up and robbed
-  if (h.location !== HONG_KONG && h.cash > ROBBERY_CASH_LIMIT && rng.chanceOf(20)) {
-    const cost = Math.trunc((h.cash / 1.4) * rng.float());
-    if (cost > 0) {
-      yield* say(`Bad joss! Your bodyguards were beaten up and you were robbed of ${money(cost)}, Taipan!`);
-      h.cash -= cost;
-    }
+  if (h.location !== HONG_KONG) {
+    yield* checkRobbery(h, rng);
   }
 
   // your warehouse might catch fire
@@ -41,6 +37,20 @@ export function* checkSafety(h: Hong, rng: Rng): Flow {
         const f = 1.3 + rng.float();
         h.warehouseGoods[g] = Math.max(Math.trunc(h.warehouseGoods[g]! / f), 1);
       }
+    }
+  }
+}
+
+/**
+ * A 1-in-20 chance of being robbed when carrying lots of cash, after the first
+ * year. Checked on arriving at a foreign harbor, and on leaving the bank.
+ */
+export function* checkRobbery(h: Hong, rng: Rng): Flow {
+  if (currentTime(h) > 12 && h.cash > ROBBERY_CASH_LIMIT && rng.chanceOf(20)) {
+    const cost = Math.trunc((h.cash / 1.4) * rng.float());
+    if (cost > 0) {
+      yield* say(`Bad joss! Your bodyguards were beaten up and you were robbed of ${money(cost)}, Taipan!`);
+      h.cash -= cost;
     }
   }
 }

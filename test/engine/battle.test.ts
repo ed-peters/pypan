@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { GENERAL, SILK } from "../../src/engine/constants";
 import { PIRATE_KING, PirateBattle, checkPirates } from "../../src/engine/battle";
 import { newHong, type Hong } from "../../src/engine/hong";
-import { ScriptedRng } from "../../src/engine/rng";
+import { ScriptedRng, SeededRng } from "../../src/engine/rng";
 import { makeHong } from "../helpers/hong";
 import { play, texts } from "../helpers/play";
 
@@ -313,5 +313,34 @@ describe("checkPirates", () => {
     const h = makeHong({ shipDamage: 59 });
     const p = play(checkPirates(h, new ScriptedRng([0, ...SETUP, NO_LI_YUEN, 0, 2, 1, 0.5])), [0]);
     expect(p.game.result).toBe("sunk");
+  });
+});
+
+describe("cannon fire", () => {
+  // average ships sunk by one volley against an endless fleet
+  function killsPerVolley(guns: number, time: number): number {
+    const rng = new SeededRng(42);
+    const n = 1000;
+    let kills = 0;
+    for (let t = 0; t < n; t++) {
+      const b = new PirateBattle(makeHong({ shipGuns: guns, shipSize: 1000, time }), rng);
+      b.pirates = 1000;
+      const [, fire] = b.getOpts().find(([l]) => l === "Fire cannons")!;
+      play(fire());
+      kills += 1000 - b.pirates;
+    }
+    return kills / n;
+  }
+
+  it("sinks ships in proportion to the number of guns", () => {
+    for (const time of [1, 37]) {
+      const k10 = killsPerVolley(10, time);
+      const k20 = killsPerVolley(20, time);
+      const k40 = killsPerVolley(40, time);
+      expect(k20 / k10).toBeGreaterThan(1.9);
+      expect(k20 / k10).toBeLessThan(2.2);
+      expect(k40 / k20).toBeGreaterThan(1.9);
+      expect(k40 / k20).toBeLessThan(2.2);
+    }
   });
 });

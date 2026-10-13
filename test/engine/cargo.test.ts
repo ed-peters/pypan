@@ -122,6 +122,12 @@ describe("randomCargo", () => {
     }
   });
 
+  it("has no jade statues until there's jade", () => {
+    // description roll 1 is "jade statue" with jade on the market
+    const c = randomCargo(makeHong({ jade: false }), new ScriptedRng([1, 0, NAGASAKI, 0, 0, 0]));
+    expect(c.description).toBe("iron chest");
+  });
+
   it("scales with money and share of the hold, +/- 20%", () => {
     const h = makeHong({ cash: 100000, debt: 0 });
     // size = trunc(60 * 30 / 100) = 18, a 30% share: 15% * 100,000 * 30% = 4,500

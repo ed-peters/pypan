@@ -36,6 +36,23 @@ describe("save format", () => {
     expect(h.shipCargo).toEqual({ ...cargo, due: 19 });
   });
 
+  it("loads Python saves with jade on the market", () => {
+    const h = fromSave(pythonSave);
+    expect([h.jade, h.expedition, h.expeditionFailed, h.jadeDeal]).toEqual([true, null, false, null]);
+  });
+
+  it("round-trips the jade expedition", () => {
+    const h = newHong(new SeededRng(4), false);
+    expect(toSave(h)).toMatchObject({ jade: false });
+    expect(toSave(h)).not.toHaveProperty("expedition");
+    expect(toSave(h)).not.toHaveProperty("jade_deal");
+    expect(toSave(h)).not.toHaveProperty("expedition_failed");
+    h.expedition = { port: 5, resolves: 28, invested: true };
+    h.expeditionFailed = true;
+    h.jadeDeal = { port: 6, until: 31 };
+    expect(fromSaveString(toSaveString(h))).toEqual(h);
+  });
+
   it("round-trips the bank's representative", () => {
     const h = newHong(new SeededRng(4), false);
     expect(toSave(h)).not.toHaveProperty("banker");
@@ -63,6 +80,9 @@ describe("save format", () => {
     ["bad month", JSON.stringify({ ...pythonSave, month: 13 })],
     ["short goods list", JSON.stringify({ ...pythonSave, ship_goods: [0, 0] })],
     ["bad cargo", JSON.stringify({ ...pythonSave, ship_cargo: { description: "x" } })],
+    ["bad jade flag", JSON.stringify({ ...pythonSave, jade: "no" })],
+    ["bad expedition", JSON.stringify({ ...pythonSave, expedition: { port: 5 } })],
+    ["bad jade deal", JSON.stringify({ ...pythonSave, jade_deal: { port: 99, until: 3 } })],
   ])("rejects a save with %s", (_, json) => {
     expect(() => fromSaveString(json)).toThrow(SaveFormatError);
   });

@@ -76,6 +76,10 @@ house). It is fully serializable to JSON for save/load. Key fields:
 | `transfer` | Warehouse transfer fee %; `-1` means unavailable | 0 |
 | `banker` | Whether the bank's representative is in this foreign port (§4.4); saved only when true | false |
 | `prices[5]` | Current local price of each good | set for Hong Kong |
+| `jade` | Whether jade is on the market (§4.6); saved only when false, and missing means true | false |
+| `expedition` | The jade expedition under way: `port`, `resolves` (month), `invested`; saved only when set | none |
+| `expedition_failed` | Whether a jade expedition has failed, so later offers say Fat Monkey Ren escaped; saved only when true | false |
+| `jade_deal` | Backers' cheap jade: `port`, `until` (month); saved only when set | none |
 
 ### 2.2 Starting Choices
 
@@ -133,6 +137,7 @@ unlock only after certain thresholds:
   warehouse transfers and the bank's representative (away from home), and
   harbor-police / mugging / fire events.
 - **>= 18 months**: special cargo consignments begin to appear.
+- **> 24 months**: the jade expedition can be offered (§4.6).
 
 ---
 
@@ -162,7 +167,8 @@ routes improve the odds rather than guarantee a profit.
 | Jade (×10000) | 6 | 7 | 8 | 6 | 7 | 5 | 5 |
 
 The General, Arms, Silk and Opium rows are taipan.c's. It has no Jade, so Jade's row
-is our own: cheap in Singapore and Batavia, dear in Nagasaki.
+is our own: cheap in Singapore and Batavia, dear in Nagasaki. Jade prices are set
+even before jade is on the market (§4.6); they just aren't shown.
 
 With the `BASED_PRICES` flag turned off, prices are fully random instead:
 `in_range(5, 31) * 10^good_index`, i.e. 5–30× the magnitude in every port.
@@ -170,7 +176,8 @@ With the `BASED_PRICES` flag turned off, prices are fully random instead:
 ### 4.2 Price Shocks
 
 After month 1, there is a 1-in-10 chance per arrival of a market shock on a random
-good. A coin flip decides direction:
+good on the market (jade only once it's been introduced, §4.6). A coin flip decides
+direction:
 
 - **Positive shock** (e.g. famine, rebellion): price multiplied by a factor of 5–9.
 - **Negative shock** (e.g. a glut, dumping): price divided by that factor.
@@ -187,8 +194,8 @@ Each shock prints a themed flavor message (see `MSG_POS_SHOCK` / `MSG_NEG_SHOCK`
   No explicit capacity check at purchase time — overload is caught when sailing.
 - **Sell**: limited by the quantity in the ship's hold. Proceeds added to cash.
 
-Both show a condition report listing the current price of all five goods, in two
-columns.
+Both show a condition report listing the current price of each good on the market
+(four goods until jade is introduced, §4.6), in two columns.
 
 ### 4.4 Banking (Hong Kong, or with the bank's representative)
 
@@ -230,6 +237,32 @@ Debt pressure (`check_lender`, Hong Kong only, triggered on arrival):
 
 Wu can also cover a shortfall when you can't afford a repair (§9) or Li Yuen's
 "donation" (§8), adding the difference to your debt.
+
+### 4.6 Jade (pypan-33)
+
+A new game starts without jade. Until it's introduced, jade is left out of the
+condition report, the buy, sell, transfer and dump menus, price shocks, the hold
+and warehouse panes, and consignment descriptions ("jade statue"). Saves without a
+`jade` key (including pypan.py's) load with jade already on the market.
+
+Jade arrives with a Burmese mining expedition (`check_jade`, on arrival, before
+consignments):
+
+- **Offer:** after month 24, if jade isn't on the market, no expedition is under
+  way, the bank holds over 2,000,000 (`JADE_BANK_LEVEL`; cash on hand doesn't
+  count) and the port is Singapore or Batavia, there's a 1-in-3 chance the Burmese
+  merchant Fat Monkey Ren seeks backers. The compradore asks whether to invest 1,000,000 ± 10%
+  (`JADE_INVESTMENT`, rounded to the thousand). If you accept, the funds are
+  arranged from Hong Kong and taken from the bank. Either way the expedition goes
+  ahead from that port, due 3 months later (`JADE_EXPEDITION_MONTHS`).
+- **Outcome:** on the first arrival once it's due, it succeeds 1-in-3; otherwise
+  Fat Monkey Ren is captured by rebels, and a new expedition can be offered later:
+  he has escaped and is back seeking investment.
+- **Success** brings jade onto the market everywhere. Backers also get cheap jade
+  at the port where the expedition was offered, through the 3rd month after the
+  success (`JADE_DISCOUNT_MONTHS`): after setting prices (and any shock), jade
+  there costs a fifth of the price (`JADE_DISCOUNT`), rounded down to a multiple
+  of 10,000 and at least 10,000.
 
 ---
 
@@ -473,6 +506,12 @@ after the save's date.
 | `CONSIGNMENT_MONEY_LIMIT` | 100000 | Money above which no consignments are offered |
 | `CONSIGNMENT_LATE_PENALTY` | 0.2 | Share of a consignment's pay lost per month late |
 | `CONSIGNMENT_LATE_LIMIT` | 5 | Months late before a consignment is offloaded |
+| `JADE_MIN_MONTHS` | 24 | Months before the jade expedition can be offered (§4.6) |
+| `JADE_BANK_LEVEL` | 2000000 | Bank balance above which the jade expedition can be offered |
+| `JADE_INVESTMENT` | 1000000 | The investment asked for, ± 10% |
+| `JADE_EXPEDITION_MONTHS` | 3 | Months from the offer until the expedition resolves |
+| `JADE_DISCOUNT_MONTHS` | 3 | Months of cheap jade for backers |
+| `JADE_DISCOUNT` | 0.2 | Fraction of the price backers pay for jade |
 | `BASED_PRICES` | true | Port-based prices (§4.1); false for fully random |
 | `ENEMY_HEALTH_START` / `_BUMP` | 20 / 10 | Pirate health base + per-year growth |
 | `ENEMY_DAMAGE_START` / `_BUMP` | 0.5 / 0.5 | Pirate damage base + per-year growth |

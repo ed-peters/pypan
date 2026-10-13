@@ -2,7 +2,7 @@
 // (SPEC.md section 2.1). It is plain data; behavior lives in functions.
 
 import {
-  HONG_KONG, NUM_GOODS, START_CASH, START_DEBT, START_GUNS, START_MONTH,
+  GOODS, HONG_KONG, NUM_GOODS, START_CASH, START_DEBT, START_GUNS, START_MONTH,
   START_SHIP_SIZE, START_WAREHOUSE_SIZE, START_YEAR,
 } from "./constants";
 import { setPrices } from "./prices";
@@ -18,6 +18,21 @@ export interface Cargo {
   value: number;
   /** The month (as currentTime) it's due; later arrivals are late. */
   due: number;
+}
+
+/** The Burmese jade expedition, from its offer until it succeeds or fails (pypan-33). */
+export interface Expedition {
+  /** The port where it was offered. */
+  port: number;
+  /** The month (as currentTime) when it succeeds or fails. */
+  resolves: number;
+  invested: boolean;
+}
+
+/** Cheap jade for the expedition's backers, at one port until some month. */
+export interface JadeDeal {
+  port: number;
+  until: number;
 }
 
 export interface Hong {
@@ -49,6 +64,12 @@ export interface Hong {
   /** Whether a representative from the bank is in this (foreign) port. */
   banker: boolean;
   prices: number[];
+  /** Whether jade has come onto the market; until then it's hidden. */
+  jade: boolean;
+  expedition: Expedition | null;
+  /** Whether an expedition has failed, so Fat Monkey Ren is back after escaping. */
+  expeditionFailed: boolean;
+  jadeDeal: JadeDeal | null;
 }
 
 /** A new game in Hong Kong, starting with either guns or debt. */
@@ -75,6 +96,10 @@ export function newHong(rng: Rng, guns: boolean, name: string = "Rising Sun"): H
     transfer: 0,
     banker: false,
     prices: setPrices(rng, HONG_KONG),
+    jade: false,
+    expedition: null,
+    expeditionFailed: false,
+    jadeDeal: null,
   };
 }
 
@@ -100,6 +125,11 @@ export function repairPercent(h: Hong): number {
 /** Cash plus the local value of goods aboard ship. */
 export function netWorthOnHand(h: Hong): number {
   return h.shipGoods.reduce((sum, n, g) => sum + n * h.prices[g]!, h.cash);
+}
+
+/** The goods on the market: jade, the last, only once it's been introduced. */
+export function knownGoods(h: Hong): readonly string[] {
+  return h.jade ? GOODS : GOODS.slice(0, -1);
 }
 
 export function totalGoods(h: Hong): number {

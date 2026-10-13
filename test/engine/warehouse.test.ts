@@ -50,6 +50,11 @@ describe("checkWarehouse", () => {
 });
 
 describe("transfer", () => {
+  it("doesn't offer jade until it's on the market", () => {
+    const p = play(transfer(makeHong({ jade: false })));
+    expect(p.transcript[0]!.prompt).toMatchObject({ options: ["General", "Arms", "Silk", "Opium"] });
+  });
+
   it("can be cancelled", () => {
     expect(play(transfer(makeHong()), [null]).game.done).toBe(true);
   });

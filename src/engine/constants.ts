@@ -29,6 +29,18 @@ export const CONSIGNMENT_MONEY_LIMIT = 100000;
 export const CONSIGNMENT_LATE_PENALTY = 0.2;
 /** Months late before a consignment is offloaded unpaid. */
 export const CONSIGNMENT_LATE_LIMIT = 5;
+/** The jade expedition is offered only after this many months (pypan-33). */
+export const JADE_MIN_MONTHS = 24;
+/** ... and only to a player with more than this much in the bank. */
+export const JADE_BANK_LEVEL = 2000000;
+/** The investment asked for, give or take 10%. */
+export const JADE_INVESTMENT = 1000000;
+/** Months from the offer until the expedition succeeds or fails. */
+export const JADE_EXPEDITION_MONTHS = 3;
+/** Months that backers get jade cheaply at the expedition's port. */
+export const JADE_DISCOUNT_MONTHS = 3;
+/** Backers' jade costs this fraction of the market price. */
+export const JADE_DISCOUNT = 0.2;
 export const ENEMY_HEALTH_START = 20;
 export const ENEMY_HEALTH_BUMP = 10;
 export const ENEMY_DAMAGE_START = 0.5;

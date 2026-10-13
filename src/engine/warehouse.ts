@@ -1,8 +1,8 @@
 // The Hong Kong warehouse, transfers and the lorcha (SPEC.md section 10).
 
-import { GOODS, HONG_KONG, WAREHOUSE_SIZE_INCREMENT, good } from "./constants";
+import { HONG_KONG, WAREHOUSE_SIZE_INCREMENT, good } from "./constants";
 import { money } from "./format";
-import { currentTime, hasAny, warehouseAvailable, type Hong } from "./hong";
+import { currentTime, hasAny, knownGoods, warehouseAvailable, type Hong } from "./hong";
 import { askNum, askOptOrCancel, askYn, say, type Flow } from "./prompts";
 import type { Rng } from "./rng";
 
@@ -32,7 +32,7 @@ export function* checkWarehouse(h: Hong, rng: Rng): Flow {
 /** Move one good between ship and warehouse; the fee skims what arrives. */
 export function* transfer(h: Hong): Flow {
   // decide what good we're going to transfer; if we have none, there's no point
-  const g = yield* askOptOrCancel("What shall I transfer, Taipan?", GOODS);
+  const g = yield* askOptOrCancel("What shall I transfer, Taipan?", knownGoods(h));
   if (g === null) {
     return;
   }

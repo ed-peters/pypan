@@ -84,7 +84,8 @@ export function latePay(c: Cargo, late: number): number {
  * money, scaled by its share of the hold, but never less than the old per-space fee.
  */
 export function randomCargo(h: Hong, rng: Rng): Cargo {
-  const description = rng.choice(CARGO_DESCRIPTIONS);
+  // no jade statues until there's jade
+  const description = rng.choice(CARGO_DESCRIPTIONS.filter((d) => h.jade || d !== "jade statue"));
   const unit = Math.trunc(35 * 10 ** rng.randrange(NUM_GOODS - 2));
   const destination = randomOtherCity(rng, h.location);
   const size = Math.trunc(h.shipSize * rng.inRange(5, 31) / 100);

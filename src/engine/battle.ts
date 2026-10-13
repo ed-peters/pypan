@@ -4,10 +4,10 @@
 
 import {
   ENEMY_DAMAGE_BUMP, ENEMY_DAMAGE_START, ENEMY_HEALTH_BUMP, ENEMY_HEALTH_START,
-  GOODS, GUN_SIZE, START_YEAR, good,
+  GUN_SIZE, START_YEAR, good,
 } from "./constants";
 import { money } from "./format";
-import { currentTime, totalGoods, type Hong } from "./hong";
+import { currentTime, knownGoods, totalGoods, type Hong } from "./hong";
 import { askNum, askOpt, pick, say, withArt, type Flow } from "./prompts";
 import type { Rng } from "./rng";
 
@@ -176,7 +176,7 @@ export class PirateBattle {
   }
 
   private *dumpCargo(): Flow {
-    const g = yield* askOpt("What shall I toss overboard, Taipan?", GOODS);
+    const g = yield* askOpt("What shall I toss overboard, Taipan?", knownGoods(this.h));
     if (this.h.shipGoods[g] === 0) {
       yield* say("We don't have any, Taipan!");
       return;

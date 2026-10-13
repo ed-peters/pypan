@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ARMS, GENERAL, JADE, SILK } from "../../src/engine/constants";
+import { ARMS, GENERAL, HONG_KONG, JADE, SILK } from "../../src/engine/constants";
 import { currentTime } from "../../src/engine/hong";
 import { ScriptedRng } from "../../src/engine/rng";
 import {
@@ -19,6 +19,16 @@ describe("conditionReport", () => {
       "General - 10     Opium - 10,000\n" +
       "   Arms - 100     Jade - 100,000\n" +
       "   Silk - 1,000\n\n" +
+      "What shall I buy, Taipan?",
+    );
+  });
+
+  it("leaves out jade until it's on the market", () => {
+    const text = conditionReport(makeHong({ jade: false }), "What shall I buy, Taipan?");
+    expect(text).toBe(
+      "Current market conditions are as follows:\n\n" +
+      "General - 10    Silk - 1,000\n" +
+      "   Arms - 100  Opium - 10,000\n\n" +
       "What shall I buy, Taipan?",
     );
   });
@@ -51,6 +61,19 @@ describe("establishPrices", () => {
         }
       }
     }
+  });
+
+  it("doesn't shock jade until it's on the market", () => {
+    const h = makeHong({ time: 2, jade: false });
+    // shock; good roll 4 is out of range for four goods, so wraps round to general
+    const p = play(establishPrices(h, new ScriptedRng([...MIN_PRICES, 0, JADE, 2, 1])));
+    expect(texts(p)).toEqual([MSG_NEG_SHOCK[GENERAL]]);
+  });
+
+  it("gives the jade expedition's backers cheap jade", () => {
+    const h = makeHong({ time: 1, jadeDeal: { port: HONG_KONG, until: 1 } });
+    play(establishPrices(h, new ScriptedRng(MIN_PRICES)));
+    expect(h.prices).toEqual([5, 60, 500, 5000, 10000]);
   });
 
   it("never shocks prices in the first month", () => {
@@ -87,6 +110,11 @@ describe("establishPrices", () => {
 });
 
 describe("buyGoods", () => {
+  it("doesn't offer jade until it's on the market", () => {
+    const p = play(buyGoods(makeHong({ jade: false })));
+    expect(p.transcript[0]!.prompt).toMatchObject({ options: ["General", "Arms", "Silk", "Opium"] });
+  });
+
   it("can be cancelled", () => {
     const h = makeHong();
     play(buyGoods(h), [null]);

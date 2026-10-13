@@ -22,6 +22,7 @@ describe("panes", () => {
   it("shows placeholders before the game starts", () => {
     expect(statusRows(null).every(([, v]) => v === "-")).toBe(true);
     expect(holdRows(null).every(([, v]) => v === "-")).toBe(true);
+    expect(holdRows(null).map(([g]) => g)).toEqual(["General", "Arms", "Silk", "Opium", "Capacity"]);
     expect(cargoLines(null)).toEqual(["(none)"]);
   });
 
@@ -32,6 +33,12 @@ describe("panes", () => {
     ]);
     expect(warehouseRows(h).at(-1)).toEqual(["Capacity", "8,500"]);
     expect(cargoSummary(h)).toBe("HOLD 48 free · WAREHOUSE 8,500 free");
+  });
+
+  it("leaves out jade until it's on the market", () => {
+    const h = makeHong({ jade: false });
+    expect(holdRows(h).map(([g]) => g)).toEqual(["General", "Arms", "Silk", "Opium", "Capacity"]);
+    expect(warehouseRows(h).map(([g]) => g)).toEqual(["General", "Arms", "Silk", "Opium", "Capacity"]);
   });
 
   it("flags an overloaded hold", () => {

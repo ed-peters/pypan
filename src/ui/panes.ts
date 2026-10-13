@@ -3,7 +3,7 @@
 import { AT_SEA, GOODS, city } from "../engine/constants";
 import { gameDate, money } from "../engine/format";
 import {
-  repairPercent, shipAvailable, warehouseAvailable, type Hong,
+  knownGoods, repairPercent, shipAvailable, warehouseAvailable, type Hong,
 } from "../engine/hong";
 
 export type Row = [label: string, value: string];
@@ -28,19 +28,21 @@ export function statusRows(h: Hong | null): Row[] {
   ];
 }
 
-function goodsRows(goods: readonly number[] | undefined, capacity: number | undefined): Row[] {
-  const rows: Row[] = GOODS.map((g, i) => [g, goods ? money(goods[i]!) : "-"]);
+/** Before a game, show the goods a new game starts with: no jade. */
+function goodsRows(h: Hong | null, goods: readonly number[] | undefined, capacity: number | undefined): Row[] {
+  const names = h ? knownGoods(h) : GOODS.slice(0, -1);
+  const rows: Row[] = names.map((g, i) => [g, goods ? money(goods[i]!) : "-"]);
   const cap = capacity === undefined ? "-" : capacity < 0 ? "Overloaded" : money(capacity);
   rows.push(["Capacity", cap]);
   return rows;
 }
 
 export function warehouseRows(h: Hong | null): Row[] {
-  return goodsRows(h?.warehouseGoods, h ? warehouseAvailable(h) : undefined);
+  return goodsRows(h, h?.warehouseGoods, h ? warehouseAvailable(h) : undefined);
 }
 
 export function holdRows(h: Hong | null): Row[] {
-  return goodsRows(h?.shipGoods, h ? shipAvailable(h) : undefined);
+  return goodsRows(h, h?.shipGoods, h ? shipAvailable(h) : undefined);
 }
 
 /** The special consignment aboard, as display lines. */

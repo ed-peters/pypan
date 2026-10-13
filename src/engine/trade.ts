@@ -1,8 +1,9 @@
 // Trading: local prices, price shocks, buying and selling (SPEC.md sections 4.1-4.3).
 
-import { GOODS, NUM_GOODS, good, mult } from "./constants";
+import { good, mult } from "./constants";
 import { money } from "./format";
-import { currentTime, type Hong } from "./hong";
+import { currentTime, knownGoods, type Hong } from "./hong";
+import { applyJadeDeal } from "./jade";
 import { setPrices } from "./prices";
 import { askNum, askOptOrCancel, say, type Flow } from "./prompts";
 import type { Rng } from "./rng";
@@ -28,7 +29,7 @@ export const MSG_NEG_SHOCK = [
  * are in two columns to leave room for the menu below on small screens.
  */
 export function conditionReport(h: Hong, message: string): string {
-  const entries = GOODS.map((g, i) => [g, money(h.prices[i]!)] as const);
+  const entries = knownGoods(h).map((g, i) => [g, money(h.prices[i]!)] as const);
   const rows = Math.ceil(entries.length / 2);
   const columns = [entries.slice(0, rows), entries.slice(rows)].map((col, c) => {
     const lw = Math.max(...col.map(([g]) => g.length));
@@ -43,12 +44,15 @@ export function conditionReport(h: Hong, message: string): string {
   return `Current market conditions are as follows:\n\n${lines.join("\n")}\n\n${message}`;
 }
 
-/** Set prices on arrival, with a 1-in-10 chance of a shock after the first month. */
+/**
+ * Set prices on arrival, with a 1-in-10 chance of a shock after the first month to
+ * a good on the market, then any cheap jade for the jade expedition's backers.
+ */
 export function* establishPrices(h: Hong, rng: Rng): Flow {
   h.prices = setPrices(rng, h.location);
 
   if (currentTime(h) > 1 && rng.chanceOf(10)) {
-    const g = rng.randrange(NUM_GOODS);
+    const g = rng.randrange(knownGoods(h).length);
     const f = rng.inRange(0, 5) + 5;
     if (rng.chanceOf(2)) {
       yield* say(MSG_POS_SHOCK[g]!);
@@ -61,10 +65,12 @@ export function* establishPrices(h: Hong, rng: Rng): Flow {
     const m = mult(g);
     h.prices[g] = Math.max(m, Math.trunc(h.prices[g]! / m) * m);
   }
+
+  applyJadeDeal(h);
 }
 
 export function* buyGoods(h: Hong): Flow {
-  const g = yield* askOptOrCancel(conditionReport(h, "What shall I buy, Taipan?"), GOODS);
+  const g = yield* askOptOrCancel(conditionReport(h, "What shall I buy, Taipan?"), knownGoods(h));
   if (g === null) {
     return;
   }
@@ -86,7 +92,7 @@ export function* buyGoods(h: Hong): Flow {
 }
 
 export function* sellGoods(h: Hong): Flow {
-  const g = yield* askOptOrCancel(conditionReport(h, "What shall I sell, Taipan?"), GOODS);
+  const g = yield* askOptOrCancel(conditionReport(h, "What shall I sell, Taipan?"), knownGoods(h));
   if (g === null) {
     return;
   }

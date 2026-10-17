@@ -27,7 +27,7 @@ describe("panes", () => {
   });
 
   it("shows goods and free space", () => {
-    const h = makeHong({ shipGoods: [10, 0, 2, 0], warehouseGoods: [0, 0, 0, 1500] });
+    const h = makeHong({ shipGoods: [10, 0, 2, 0, 0], warehouseGoods: [0, 0, 0, 1500, 0] });
     expect(holdRows(h)).toEqual([
       ["General", "10"], ["Arms", "0"], ["Silk", "2"], ["Opium", "0"], ["Capacity", "48"],
     ]);
@@ -35,8 +35,14 @@ describe("panes", () => {
     expect(cargoSummary(h)).toBe("HOLD 48 free · WAREHOUSE 8,500 free");
   });
 
+  it("shows porcelain once we're in the porcelain trade", () => {
+    const h = makeHong({ porcelain: true, shipGoods: [0, 0, 0, 0, 4] });
+    expect(holdRows(h).at(-2)).toEqual(["Porcelain", "4"]);
+    expect(warehouseRows(makeHong()).map(([g]) => g)).toEqual(["General", "Arms", "Silk", "Opium", "Capacity"]);
+  });
+
   it("flags an overloaded hold", () => {
-    const h = makeHong({ shipGoods: [61, 0, 0, 0] });
+    const h = makeHong({ shipGoods: [61, 0, 0, 0, 0] });
     expect(holdRows(h).at(-1)).toEqual(["Capacity", "Overloaded"]);
     expect(cargoSummary(h)).toMatch(/^HOLD OVERLOADED/);
   });

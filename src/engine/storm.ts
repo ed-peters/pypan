@@ -1,13 +1,24 @@
 // Storms at sea (SPEC.md section 6).
 
-import { city, randomOtherCity } from "./constants";
+import {
+  PORCELAIN, ROUGH_SEAS_BREAKAGE, ROUGH_SEAS_CHANCE, STORM_BREAKAGE, city, randomOtherCity,
+} from "./constants";
+import { money } from "./format";
 import type { Hong } from "./hong";
+import { breakPorcelain } from "./porcelain";
 import { say, withArt, type Flow } from "./prompts";
 import type { Rng } from "./rng";
 
-/** A 1-in-10 chance of a storm; returns the (possibly changed) destination. */
+/**
+ * A 1-in-10 chance of a storm; returns the (possibly changed) destination. With
+ * porcelain aboard, a storm breaks some, and so (more often) do rough seas.
+ */
 export function* checkStorm(h: Hong, rng: Rng, destination: number): Flow<number> {
   if (!rng.chanceOf(10)) {
+    if (h.shipGoods[PORCELAIN]! > 0 && rng.chanceOf(ROUGH_SEAS_CHANCE)) {
+      const n = breakPorcelain(h, rng, ROUGH_SEAS_BREAKAGE);
+      yield* withArt("storm", say(`Rough seas, Taipan! ${money(n)} of our porcelain was broken.`));
+    }
     return destination;
   }
 
@@ -25,5 +36,9 @@ export function* checkStorm(h: Hong, rng: Rng, destination: number): Flow<number
     msg = `${msg}!`;
   }
   yield* withArt("storm", say(msg));
+  if (h.shipGoods[PORCELAIN]! > 0) {
+    const n = breakPorcelain(h, rng, STORM_BREAKAGE);
+    yield* withArt("storm", say(`The storm broke ${money(n)} of our porcelain, Taipan!`));
+  }
   return destination;
 }

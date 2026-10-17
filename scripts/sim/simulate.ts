@@ -10,7 +10,7 @@ import { currentTime, type Hong } from "../../src/engine/hong";
 import { newGame } from "../../src/engine/pypan";
 import { SeededRng } from "../../src/engine/rng";
 import { rank } from "../../src/engine/score";
-import { GOODS } from "../../src/engine/constants";
+import { GOODS, PORCELAIN } from "../../src/engine/constants";
 import { Bot, worth, type Ledger } from "./bot";
 
 const STAGES = [
@@ -110,7 +110,9 @@ export interface Summary {
   afloat: Record<number, number>;
   position: Record<number, { p25: number; p50: number; p90: number }>;
   /** Median share of each source in gross income, and losses against it. */
-  shares: { trading: number; shocks: number; bank: number; booty: number; consignments: number; jade: number; losses: number };
+  shares: { trading: number; shocks: number; bank: number; booty: number; consignments: number; jade: number; losses: number; porcelain: number };
+  /** Share of games in the porcelain trade, the median month they bought in, and the share of porcelain profit lost to breakage. */
+  porcelain: { owned: number; month: number; broken: number };
   shocks: { perGame: number; upSold: number; downBought: number; gain: number };
   windfall: { median: number; over10: number; over25: number; late: number; lateOver10: number };
   risk: { drawdown: number; over25: number; over50: number; late: number; lateOver25: number };
@@ -137,8 +139,14 @@ function summarize(results: Run[], runs: number, start: string): Summary {
       booty: l.booty, consignments: l.consignments, jade: l.jadeGain,
     };
     const gross = Object.values(parts).reduce((a, b) => a + Math.max(0, b), 0) || 1;
-    const losses = l.robbery + l.liYuen + l.fines + l.seized + l.repairs + l.debtInterest + l.jadeLost;
-    return { ...Object.fromEntries(Object.entries(parts).map(([k, v]) => [k, v / gross])), losses: losses / gross } as Summary["shares"];
+    const losses = l.robbery + l.liYuen + l.fines + l.seized + l.repairs + l.debtInterest + l.jadeLost
+      + l.porcelainFee + l.porcelainBroken;
+    return {
+      ...Object.fromEntries(Object.entries(parts).map(([k, v]) => [k, v / gross])),
+      losses: losses / gross,
+      // porcelain trading profit, a part of trading
+      porcelain: l.byGood[PORCELAIN]! / gross,
+    } as Summary["shares"];
   });
   const share = (k: keyof Summary["shares"]) => med(income.map((x) => x[k]));
   const ledgers = last.map((x) => x.ledger);
@@ -151,6 +159,12 @@ function summarize(results: Run[], runs: number, start: string): Summary {
     shares: {
       trading: share("trading"), shocks: share("shocks"), bank: share("bank"), booty: share("booty"),
       consignments: share("consignments"), jade: share("jade"), losses: share("losses"),
+      porcelain: share("porcelain"),
+    },
+    porcelain: {
+      owned: frac(ledgers.filter((l) => l.porcelainMonth !== null)),
+      month: med(ledgers.flatMap((l) => (l.porcelainMonth === null ? [] : [l.porcelainMonth]))),
+      broken: med(ledgers.flatMap((l) => (l.porcelainMonth === null ? [] : [l.porcelainBroken / Math.max(1, l.byGood[PORCELAIN]! + l.porcelainBroken)]))),
     },
     shocks: {
       perGame: med(ledgers.map((l) => l.shocksUp + l.shocksDown)),
@@ -330,7 +344,7 @@ function main(): void {
   const pct = (x: number) => `${(100 * x).toFixed(1)}%`;
   out.push("Income at 10 years: median share of gross income per game (losses against it):\n");
   out.push(table(
-    ["Trading (not shocks)", "Price shocks", "Bank interest", "Booty", "Consignments", "Jade (gain over stake)", "Losses (with jade stakes lost)"],
+    ["Trading (not shocks)", "Price shocks", "Bank interest", "Booty", "Consignments", "Jade (gain over stake)", "Losses (with jade stakes lost, the porcelain fee and breakage)"],
     [[sum.shares.trading, sum.shares.shocks, sum.shares.bank, sum.shares.booty, sum.shares.consignments, sum.shares.jade, sum.shares.losses].map(pct)],
   ));
   out.push("");
@@ -344,6 +358,12 @@ function main(): void {
   out.push(table(
     ["Sunk by 10 years", "Median worst drawdown", "Games with a drawdown >= 25%", ">= 50%", "After year 5: median worst", ">= 25%"],
     [[pct(1 - sum.afloat[LAST]!), pct(sum.risk.drawdown), pct(sum.risk.over25), pct(sum.risk.over50), pct(sum.risk.late), pct(sum.risk.lateOver25)]],
+  ));
+  out.push("");
+  out.push("Porcelain, among ships afloat at 10 years (breakage against porcelain profit plus breakage):\n");
+  out.push(table(
+    ["In the trade", "Bought in (median month)", "Porcelain profit (share of income)", "Lost to breakage"],
+    [[pct(sum.porcelain.owned), fmt(sum.porcelain.month), pct(sum.shares.porcelain), pct(sum.porcelain.broken)]],
   ));
   out.push("");
   out.push("The jade expedition (moonshot), among ships afloat at 10 years:\n");

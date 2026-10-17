@@ -66,6 +66,8 @@ export interface Hong {
   expeditionFailed: boolean;
   /** How many times Sir Beaumont-Finch has sought backers, up to JADE_MAX_OFFERS. */
   jadeOffers: number;
+  /** Whether we own a share in the porcelain trade; until then porcelain is hidden. */
+  porcelain: boolean;
 }
 
 /** A new game in Hong Kong, starting with either guns or debt. */
@@ -96,6 +98,7 @@ export function newHong(rng: Rng, guns: boolean, name: string = "Rising Sun"): H
     expedition: null,
     expeditionFailed: false,
     jadeOffers: 0,
+    porcelain: false,
   };
 }
 
@@ -123,9 +126,9 @@ export function netWorthOnHand(h: Hong): number {
   return h.shipGoods.reduce((sum, n, g) => sum + n * h.prices[g]!, h.cash);
 }
 
-/** The goods on the market. */
-export function knownGoods(_h: Hong): readonly string[] {
-  return GOODS;
+/** The goods on the market: porcelain, the last, only once we've bought into it. */
+export function knownGoods(h: Hong): readonly string[] {
+  return h.porcelain ? GOODS : GOODS.slice(0, -1);
 }
 
 export function totalGoods(h: Hong): number {

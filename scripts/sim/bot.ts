@@ -12,6 +12,8 @@
 //   never borrows except for a bailout when broke.
 // - Banks everything above that, and enough cash to afford a new ship.
 // - Pays Li Yuen, repairs fully, buys bigger ships, and guns up to a target.
+// - Backs the jade expedition with twice the stake in the bank, and buys into the
+//   porcelain trade whenever it's offered. It doesn't allow for porcelain breaking.
 // - Fights when it has guns to match the pirates, otherwise runs.
 //
 // Any prompt it doesn't recognize is an error, so new game events can't quietly
@@ -24,7 +26,7 @@
 
 import { bankAvailable, spendable } from "../../src/engine/bank";
 import {
-  BANK_RATE, BASE_PRICES, CITIES, GOODS, HONG_KONG, LOAN_RATE, OPIUM,
+  BANK_RATE, BASE_PRICES, CITIES, GOODS, HONG_KONG, LOAN_RATE, OPIUM, PORCELAIN,
 } from "../../src/engine/constants";
 import {
   currentTime, isBroke, knownGoods, repairPercent, shipAvailable, type Hong,
@@ -73,6 +75,10 @@ export interface Ledger {
   /** What successes paid beyond their stakes, and the stakes lost on failures. */
   jadeGain: number;
   jadeLost: number;
+  /** The porcelain share: when it was bought (month), its fee, and what was paid for porcelain broken. */
+  porcelainMonth: number | null;
+  porcelainFee: number;
+  porcelainBroken: number;
 }
 
 export function newLedger(): Ledger {
@@ -81,7 +87,7 @@ export function newLedger(): Ledger {
     robbery: 0, fines: 0, seized: 0, repairs: 0, ships: 0, guns: 0, bailouts: 0,
     shockGain: 0, shocksUp: 0, shocksUpSold: 0, shocksDown: 0, shocksDownBought: 0,
     biggestWindfall: 0, biggestLateWindfall: 0, jadeOffers: 0, jadeStake: 0, jadeStakeShare: 0, jadeOutcome: null, jadeBacked: 0, jadeWins: 0,
-    jadeGain: 0, jadeLost: 0,
+    jadeGain: 0, jadeLost: 0, porcelainMonth: null, porcelainFee: 0, porcelainBroken: 0,
   };
 }
 
@@ -250,6 +256,12 @@ export class Bot {
         this.ledger.jadeStakeShare = Math.max(this.ledger.jadeStakeShare, stake / this.worthAtCost(h));
       }
       return this.backing > 0;
+    }
+    m = /offers us a share in the porcelain trade for ([\d,]+)\./.exec(text);
+    if (m) {
+      this.ledger.porcelainMonth = currentTime(h);
+      this.ledger.porcelainFee = num(m[1]!);
+      return true;
     }
 
     // ---------------------------------------------------------------- battle
@@ -448,6 +460,15 @@ export class Bot {
       this.backing = 0;
     } else if (/met with success/.test(text)) {
       this.backing = 0;
+    }
+    m = /(?:broke|smashed|Rough seas, Taipan!) ([\d,]+) of our porcelain/.exec(text);
+    if (m) {
+      // the share of what we paid for the porcelain aboard that just broke
+      const n = num(m[1]!);
+      const lost = Math.round(this.cost[PORCELAIN]! * n / (h.shipGoods[PORCELAIN]! + n));
+      this.ledger.porcelainBroken += lost;
+      this.cost[PORCELAIN]! -= lost;
+      this.discount[PORCELAIN] = Math.round(this.discount[PORCELAIN]! * h.shipGoods[PORCELAIN]! / (h.shipGoods[PORCELAIN]! + n));
     }
     m = /so we were paid only ([\d,]+)/.exec(text);
     if (m) this.ledger.consignments += num(m[1]!);

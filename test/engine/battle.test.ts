@@ -16,7 +16,7 @@ const NO_LI_YUEN = 1;
 const LI_YUEN = 0;
 
 function gunHong(overrides: Partial<Hong> = {}): Hong {
-  return Object.assign(newHong(new ScriptedRng([0, 0, 0, 0]), true), { cash: 0 }, overrides);
+  return Object.assign(newHong(new ScriptedRng([0, 0, 0, 0, 0]), true), { cash: 0 }, overrides);
 }
 
 function battle(h: Hong, rolls: number[], against?: number): { b: PirateBattle; rng: ScriptedRng } {
@@ -44,7 +44,7 @@ describe("PirateBattle setup", () => {
   it("offers only the actions that make sense", () => {
     const labels = (h: Hong) => battle(h, []).b.getOpts().map(([l]) => l);
     expect(labels(gunHong())).toEqual(["Fire cannons", "Run away"]);
-    expect(labels(makeHong({ shipGoods: [1, 0, 0, 0] }))).toEqual(["Dump cargo", "Run away"]);
+    expect(labels(makeHong({ shipGoods: [1, 0, 0, 0, 0] }))).toEqual(["Dump cargo", "Run away"]);
     expect(labels(makeHong())).toEqual(["Run away"]);
   });
 });
@@ -92,6 +92,15 @@ describe("fighting", () => {
       "3 enemies remaining ... What shall we do, Taipan?",
     ]);
     expect(h.shipDamage).toBe(2);
+  });
+
+  it("smashes 2-10% of the porcelain aboard with every volley", () => {
+    const h = gunHong({ shipGuns: 1, shipGoods: [0, 0, 0, 0, 50] });
+    // as above, then inRange(2, 11) = 2 + 3: 5% of 50
+    const rng = new ScriptedRng([2, 0.5, 100, NO_LI_YUEN, 0, 50, 0.5, 3, NO_LI_YUEN]);
+    const p = play(new PirateBattle(h, rng).execute(), [0]);
+    expect(texts(p)).toContain("They're firing on us, Taipan!\n\nThey hit us!\n\nThey smashed 2 of our porcelain!");
+    expect(h.shipGoods[4]).toBe(48);
   });
 
   it("always hits a gun when the ship is over 80% damaged", () => {
@@ -189,7 +198,7 @@ describe("dumping cargo", () => {
   const ROUND = [NO_LI_YUEN, 0.5, NO_LI_YUEN];
 
   it("throws goods overboard, improving escape odds by 1 per 10 units", () => {
-    const h = makeHong({ shipGoods: [50, 0, 0, 0] });
+    const h = makeHong({ shipGoods: [50, 0, 0, 0, 0] });
     const { b } = battle(h, ROUND);
     const p = play(b.execute(), [0, GENERAL, 50]);
     expect(p.transcript[3]?.prompt).toEqual({
@@ -200,14 +209,14 @@ describe("dumping cargo", () => {
   });
 
   it("helps escape odds by at least 1 for any cargo dumped", () => {
-    const h = makeHong({ shipGoods: [50, 0, 0, 0] });
+    const h = makeHong({ shipGoods: [50, 0, 0, 0, 0] });
     const { b } = battle(h, ROUND);
     play(b.execute(), [0, GENERAL, 3]);
     expect(b.runOk).toBe(3 + 1);
   });
 
   it("does nothing when dumping none", () => {
-    const h = makeHong({ shipGoods: [50, 0, 0, 0] });
+    const h = makeHong({ shipGoods: [50, 0, 0, 0, 0] });
     const { b } = battle(h, ROUND);
     play(b.execute(), [0, GENERAL, 0]);
     expect(b.runOk).toBe(3);
@@ -215,13 +224,13 @@ describe("dumping cargo", () => {
   });
 
   it("won't dump what isn't aboard", () => {
-    const h = makeHong({ shipGoods: [50, 0, 0, 0] });
+    const h = makeHong({ shipGoods: [50, 0, 0, 0, 0] });
     const p = play(battle(h, ROUND).b.execute(), [0, SILK]);
     expect(texts(p)).toContain("We don't have any, Taipan!");
   });
 
   it("won't dump more than is aboard", () => {
-    const h = makeHong({ shipGoods: [50, 0, 0, 0] });
+    const h = makeHong({ shipGoods: [50, 0, 0, 0, 0] });
     const p = play(battle(h, ROUND).b.execute(), [0, GENERAL, 51]);
     expect(texts(p)).toContain("We don't have enough on board, Taipan!");
     expect(h.shipGoods[GENERAL]).toBe(50);

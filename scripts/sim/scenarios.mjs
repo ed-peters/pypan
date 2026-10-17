@@ -66,6 +66,22 @@ const smallStakes = {
   to: "export const JADE_STAKE_SHARE = 0;",
 };
 
+const noPorcelain = {
+  file: "src/engine/constants.ts",
+  // the porcelain share is never offered, as before pypan-87
+  from: "export const PORCELAIN_WORTH_LEVEL = 2000000;",
+  to: "export const PORCELAIN_WORTH_LEVEL = Infinity;",
+};
+
+const C = (from, to) => ({ file: "src/engine/constants.ts", from: `export const ${from};`, to: `export const ${to};` });
+const fragilePorcelain = [
+  // about twice the breakage, and rough seas 1-in-3
+  C("STORM_BREAKAGE = [10, 30] as const", "STORM_BREAKAGE = [20, 50] as const"),
+  C("ROUGH_SEAS_BREAKAGE = [5, 15] as const", "ROUGH_SEAS_BREAKAGE = [10, 30] as const"),
+  C("VOLLEY_BREAKAGE = [2, 10] as const", "VOLLEY_BREAKAGE = [5, 20] as const"),
+  C("ROUGH_SEAS_CHANCE = 5", "ROUGH_SEAS_CHANCE = 3"),
+];
+
 export const SCENARIOS = [
   { name: "baseline", title: "Baseline", aim: "-", patches: [] },
   { name: "old-li-yuen", title: "Li Yuen before pypan-88", aim: "-", patches: [oldLiYuen] },
@@ -77,6 +93,8 @@ export const SCENARIOS = [
   { name: "dear-shocks", title: "Shocks on dear goods", aim: "windfall", patches: [dearShocks] },
   { name: "boom", title: "Boom markets", aim: "windfall", patches: [frequentShocks, dearShocks] },
   { name: "small-stakes", title: "Small jade stakes", aim: "moonshot", patches: [smallStakes] },
+  { name: "no-porcelain", title: "No porcelain", aim: "-", patches: [noPorcelain] },
+  { name: "fragile-porcelain", title: "Fragile porcelain", aim: "risk", patches: fragilePorcelain },
   {
     name: "balanced", title: "Balanced", aim: "all",
     patches: [...tougherPirates, dearShocks],

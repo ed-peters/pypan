@@ -6,8 +6,9 @@ wealth simulation, and ten tuning scenarios for (a) making risks feel riskier,
 fortune.
 
 **Calculated on commit 81f21de,** except for the sections "Li Yuen reworked"
-(after pypan-88) and "Jade as a payout" (after pypan-86, which took jade off the
-market, so its figures aren't comparable with the rest). The figures go out of date when the game engine
+(after pypan-88), "Jade as a payout" (after pypan-86, which took jade off the
+market) and "Porcelain" (after pypan-87, which added porcelain as the top good).
+Each later section changes the game under the earlier ones. The figures go out of date when the game engine
 changes (`git log --oneline 81f21de.. -- src/engine`). Rerun with:
 
     npm run sim -- --compare --runs 1000 --start guns    # and --start debt
@@ -285,6 +286,51 @@ count as losses.
 - **For a real player,** the bot overstates the gamble: it never declines, even
   after two failures. A cautious player can skip it at no cost, which is the point
   of making it a choice.
+
+## Porcelain (pypan-87)
+
+Porcelain is the new top good (×10,000, dearer than opium everywhere). It's hidden
+until a Jingdezhen merchant house sells you a share in the trade, in Hong Kong after
+month 24, for half your cash position. The offer is 1-in-20 per Hong Kong arrival at
+first, improving to 1-in-3 by month 76. Porcelain aboard ship breaks: 10–30% in a
+storm, 5–15% in rough seas (1-in-5 voyages without a storm), and 2–10% with each
+enemy volley (SPEC.md §4.7). Two new scenarios: **No porcelain** (never offered,
+the game after pypan-86) and **Fragile porcelain** (about twice the breakage, and
+rough seas 1-in-3).
+
+1,000 games per start, guns start first and the debt start in parentheses; ships
+afloat at 10 years. Losses include the porcelain fee and what was paid for broken
+porcelain.
+
+| Scenario | P25 / P50 / P90 at 10 years | Porcelain (share of income) | Bank | Losses | Lost to breakage | Worst drawdown after year 5 (median) | Sunk |
+|---|---|---|---|---|---|---|---|
+| No porcelain | 60M / 100M / 232M (45M / 81M / 195M) | - | 9.1% (8.5%) | 34% (34%) | - | 43% (45%) | 7.1% (7.2%) |
+| **pypan-87 (the game now)** | 167M / 525M / 1.45B (119M / 432M / 1.21B) | 71% (69%) | 5.6% (5.6%) | 26% (27%) | 5.1% (4.3%) | 56% (56%) | 6.8% (7.7%) |
+| Fragile porcelain | 134M / 406M / 1.16B (101M / 351M / 1.11B) | 68% (67%) | 5.4% (5.4%) | 33% (31%) | 11.8% (9.9%) | 61% (61%) | 8.0% (8.0%) |
+
+85% of guns-start games (82% from the debt start) buy in, at a median of month 81
+(83).
+
+- **Porcelain restores the late game.** The middling fortune at 10 years is back to
+  525M, from 100M without it (and 510M when jade was a good). Porcelain is about 70%
+  of income by 10 years, and the bank's share falls from 9% to 6%.
+- **The fee is the biggest single cut in the game.** Half the cash position in one
+  payment shows as a fall of half of worth, which is most of why the median worst
+  drawdown after year 5 rises from 43% to 56%. It's a cut the player chooses and sees
+  coming, and it pays back within a couple of years.
+- **Breakage is a leak, not a risk.** At these rates the bot loses about 5% of its
+  porcelain profit to breakage. Doubling it (Fragile porcelain) costs about 12% and a
+  fifth of the median fortune, and adds 5 points to late drawdowns. Neither makes a
+  single voyage frightening: at most 30% of the porcelain aboard breaks at once.
+- **It arrives late.** Year 7 is the median buy-in, so porcelain shapes only the last
+  few years of a 10-year game. A faster ramp would bring it forward; this is the
+  main tuning lever left.
+- **The jade moonshot shrinks next to it.** Jade payouts fall to 1.5% of income, and
+  players who win it are about 1.6× as rich as those who never do (down from 1.8×
+  without porcelain).
+- **Not simulated:** the bot doesn't use the warehouse, where porcelain is safe, and
+  never declines the share. Pirates and storms don't change their odds when you
+  carry porcelain.
 
 ## Caveats
 

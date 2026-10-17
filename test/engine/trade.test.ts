@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ARMS, GENERAL, OPIUM, SHANGHAI, SILK } from "../../src/engine/constants";
+import { ARMS, GENERAL, OPIUM, PORCELAIN, SHANGHAI, SILK } from "../../src/engine/constants";
 import { currentTime } from "../../src/engine/hong";
 import { ScriptedRng } from "../../src/engine/rng";
 import {
@@ -8,8 +8,8 @@ import {
 import { makeHong } from "../helpers/hong";
 import { play, texts } from "../helpers/play";
 
-// Four price rolls of 0 (x1) give the Hong Kong prices [5, 60, 500, 5000].
-const MIN_PRICES = [0, 0, 0, 0];
+// Five price rolls of 0 (x1) give the Hong Kong prices [5, 60, 500, 5000, 50000].
+const MIN_PRICES = [0, 0, 0, 0, 0];
 
 describe("conditionReport", () => {
   it("lists every price in two aligned columns, then the message", () => {
@@ -18,6 +18,17 @@ describe("conditionReport", () => {
       "Current market conditions are as follows:\n\n" +
       "General - 10    Silk - 1,000\n" +
       "   Arms - 100  Opium - 10,000\n\n" +
+      "What shall I buy, Taipan?",
+    );
+  });
+
+  it("lists porcelain once we're in the porcelain trade", () => {
+    const text = conditionReport(makeHong({ porcelain: true }), "What shall I buy, Taipan?");
+    expect(text).toBe(
+      "Current market conditions are as follows:\n\n" +
+      "General - 10         Opium - 10,000\n" +
+      "   Arms - 100    Porcelain - 100,000\n" +
+      "   Silk - 1,000\n\n" +
       "What shall I buy, Taipan?",
     );
   });
@@ -34,16 +45,16 @@ describe("establishPrices", () => {
   it("rounds a crashed price down to its good's granularity", () => {
     const h = makeHong({ time: 2 });
     // opium rolled x3 = 15000; shock; opium; factor = 7; negative: 2142 -> 2000
-    play(establishPrices(h, new ScriptedRng([0, 0, 0, 2, 0, OPIUM, 2, 1])));
+    play(establishPrices(h, new ScriptedRng([0, 0, 0, 2, 0, 0, OPIUM, 2, 1])));
     expect(h.prices[OPIUM]).toBe(2000);
   });
 
   it("keeps every shocked price a whole multiple of its granularity", () => {
-    for (let g = GENERAL; g <= OPIUM; g++) {
+    for (let g = GENERAL; g <= PORCELAIN; g++) {
       for (let f = 0; f < 5; f++) {
         for (const dir of [0, 1]) {
-          const h = makeHong({ time: 2 });
-          play(establishPrices(h, new ScriptedRng([2, 2, 2, 2, 0, g, f, dir])));
+          const h = makeHong({ time: 2, porcelain: true });
+          play(establishPrices(h, new ScriptedRng([2, 2, 2, 2, 2, 0, g, f, dir])));
           const m = 10 ** g;
           expect(h.prices[g]! % m).toBe(0);
           expect(h.prices[g]!).toBeGreaterThanOrEqual(m);
@@ -52,19 +63,20 @@ describe("establishPrices", () => {
     }
   });
 
-  it("shocks only the four goods", () => {
-    expect([MSG_POS_SHOCK.length, MSG_NEG_SHOCK.length]).toEqual([4, 4]);
+  it("doesn't shock porcelain until we're in the porcelain trade", () => {
     const h = makeHong({ time: 2 });
     // shock; good roll 4 is out of range for four goods, so wraps round to general
-    const p = play(establishPrices(h, new ScriptedRng([...MIN_PRICES, 0, 4, 2, 1])));
+    const p = play(establishPrices(h, new ScriptedRng([...MIN_PRICES, 0, PORCELAIN, 2, 1])));
     expect(texts(p)).toEqual([MSG_NEG_SHOCK[GENERAL]]);
+    const q = play(establishPrices(makeHong({ time: 2, porcelain: true }), new ScriptedRng([...MIN_PRICES, 0, PORCELAIN, 2, 0])));
+    expect(texts(q)).toEqual([MSG_POS_SHOCK[PORCELAIN]]);
   });
 
   it("never shocks prices in the first month", () => {
     const h = makeHong({ time: 1 });
     const rng = new ScriptedRng(MIN_PRICES);
     const p = play(establishPrices(h, rng));
-    expect(h.prices).toEqual([5, 60, 500, 5000]);
+    expect(h.prices).toEqual([5, 60, 500, 5000, 50000]);
     expect(p.transcript).toEqual([]);
     expect(rng.remaining).toBe(0);
   });
@@ -72,7 +84,7 @@ describe("establishPrices", () => {
   it("usually leaves new prices alone after the first month", () => {
     const h = makeHong({ time: 2 });
     const p = play(establishPrices(h, new ScriptedRng([...MIN_PRICES, 1])));
-    expect(h.prices).toEqual([5, 60, 500, 5000]);
+    expect(h.prices).toEqual([5, 60, 500, 5000, 50000]);
     expect(p.transcript).toEqual([]);
   });
 
@@ -81,7 +93,7 @@ describe("establishPrices", () => {
     // shock; silk; factor = 5 + randrange(5) = 9; positive
     const p = play(establishPrices(h, new ScriptedRng([...MIN_PRICES, 0, SILK, 4, 0])));
     expect(texts(p)).toEqual([MSG_POS_SHOCK[SILK]]);
-    expect(h.prices).toEqual([5, 60, 4500, 5000]);
+    expect(h.prices).toEqual([5, 60, 4500, 5000, 50000]);
   });
 
   it("can divide a price by 5-9, but not below 1", () => {
@@ -89,14 +101,16 @@ describe("establishPrices", () => {
     // shock; general; factor = 5; negative
     const p = play(establishPrices(h, new ScriptedRng([...MIN_PRICES, 0, GENERAL, 0, 1])));
     expect(texts(p)).toEqual([MSG_NEG_SHOCK[GENERAL]]);
-    expect(h.prices).toEqual([1, 60, 500, 5000]);
+    expect(h.prices).toEqual([1, 60, 500, 5000, 50000]);
   });
 });
 
 describe("buyGoods", () => {
-  it("offers the four goods", () => {
+  it("doesn't offer porcelain until we're in the porcelain trade", () => {
     const p = play(buyGoods(makeHong()));
     expect(p.transcript[0]!.prompt).toMatchObject({ options: ["General", "Arms", "Silk", "Opium"] });
+    const q = play(buyGoods(makeHong({ porcelain: true, cash: 1000000 })));
+    expect(q.transcript[0]!.prompt).toMatchObject({ options: ["General", "Arms", "Silk", "Opium", "Porcelain"] });
   });
 
   it("can be cancelled", () => {
@@ -170,7 +184,7 @@ describe("buyGoods", () => {
 
 describe("sellGoods", () => {
   it("offers to sell the lot when only one good is aboard", () => {
-    const h = makeHong({ shipGoods: [0, 0, 3, 0] });
+    const h = makeHong({ shipGoods: [0, 0, 3, 0, 0] });
     const p = play(sellGoods(h), [true]);
     expect(p.transcript[0]?.prompt).toMatchObject({ kind: "yn" });
     expect(texts(p)[0]).toMatch(/Would you like to sell all of your silk, Taipan\?$/);
@@ -179,7 +193,7 @@ describe("sellGoods", () => {
   });
 
   it("asks how much when you won't sell the lot", () => {
-    const h = makeHong({ shipGoods: [0, 0, 3, 0] });
+    const h = makeHong({ shipGoods: [0, 0, 3, 0, 0] });
     const p = play(sellGoods(h), [false, 1]);
     expect(p.transcript[1]?.prompt).toMatchObject({ kind: "number", max: 3 });
     expect(texts(p)[1]).toMatch(/How much silk shall I sell, Taipan\?$/);
@@ -194,13 +208,13 @@ describe("sellGoods", () => {
   });
 
   it("disables goods that aren't aboard", () => {
-    const p = play(sellGoods(makeHong({ shipGoods: [1, 0, 3, 0] })));
+    const p = play(sellGoods(makeHong({ shipGoods: [1, 0, 3, 0, 0] })));
     expect(p.transcript[0]!.prompt).toMatchObject({ kind: "choose", disabled: [ARMS, 3] });
     expect(() => p.game.answer(ARMS)).toThrow();
   });
 
   it("sells goods from the hold", () => {
-    const h = makeHong({ shipGoods: [1, 0, 3, 0] });
+    const h = makeHong({ shipGoods: [1, 0, 3, 0, 0] });
     const p = play(sellGoods(h), [SILK, 2]);
     expect(p.transcript[1]?.prompt).toMatchObject({ kind: "number", max: 3 });
     expect(h.cash).toBe(2400);
@@ -208,7 +222,7 @@ describe("sellGoods", () => {
   });
 
   it("refuses to sell more than is aboard", () => {
-    const h = makeHong({ shipGoods: [1, 0, 3, 0] });
+    const h = makeHong({ shipGoods: [1, 0, 3, 0, 0] });
     const p = play(sellGoods(h), [SILK, 4]);
     expect(texts(p).at(-1)).toBe("You do not have that much in your ship's hold, Taipan.");
     expect(h.shipGoods[SILK]).toBe(3);

@@ -2,7 +2,7 @@ import { newHong, type Hong } from "../../src/engine/hong";
 import { SeededRng } from "../../src/engine/rng";
 
 /** Fixed prices so tests don't depend on the starting roll. */
-export const PRICES = [10, 100, 1000, 10000];
+export const PRICES = [10, 100, 1000, 10000, 100000];
 
 /**
  * A debt-start Hong in Hong Kong with known prices, plus

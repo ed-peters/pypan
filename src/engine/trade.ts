@@ -13,6 +13,7 @@ export const MSG_POS_SHOCK = [
   "An agent for the Moro rebels has been spotted in the area, Taipan! Arms are sky-high here!",
   "Taipan! The wharves here have been burned by rebel samurai! All the silk was destroyed!",
   "Taipan! A fire has swept the area! The price of opium has leaped because of hospital use!",
+  "European buyers have been paying a fortune for porcelain here, Taipan! Prices are sky-high!",
 ] as const;
 
 export const MSG_NEG_SHOCK = [
@@ -20,6 +21,7 @@ export const MSG_NEG_SHOCK = [
   "Taipan! A period of relative peace has resulted in surplus arms being made available on the local market!",
   "A rival hong has dumped surplus silk on the market here, Taipan! Prices have crashed!",
   "Taipan, a Yankee captain is selling Turkish opium at below-market prices here!",
+  "Taipan! A Jingdezhen kiln has flooded the market here with cheap porcelain!",
 ] as const;
 
 /**

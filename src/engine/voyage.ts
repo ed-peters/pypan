@@ -8,6 +8,7 @@ import { checkExtortion } from "./extortion";
 import { checkJade } from "./jade";
 import { advanceTime, isOverloaded, type Hong } from "./hong";
 import { checkLender } from "./lender";
+import { checkPorcelain } from "./porcelain";
 import { askOptOrCancel, say, withArt, type Flow } from "./prompts";
 import { checkSafety } from "./safety";
 import { checkUpgrades } from "./shipyard";
@@ -52,6 +53,7 @@ export function* sailAway(h: Hong, rng: Rng): Flow<"sunk" | void> {
   yield* checkWarehouse(h, rng);
   yield* checkBanker(h, rng);
   yield* checkJade(h, rng);
+  yield* checkPorcelain(h, rng);
   yield* checkCargo(h, rng);
   yield* checkSafety(h, rng);
   yield* establishPrices(h, rng);

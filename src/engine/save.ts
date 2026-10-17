@@ -1,14 +1,18 @@
 // Save format: the same JSON shape that etc/pypan.py writes to pypan.json, so saves
 // from the Python version can be imported. Keys are snake_case on disk.
 
-import { CITIES, JADE_INVESTMENT, LI_YUEN_MAX_GRUDGE, NUM_GOODS, START_YEAR } from "./constants";
+import {
+  BASE_PRICES, CITIES, HONG_KONG, JADE_INVESTMENT, LI_YUEN_MAX_GRUDGE, NUM_GOODS, PORCELAIN,
+  START_YEAR,
+} from "./constants";
 import type { Cargo, Expedition, Hong } from "./hong";
 
 /**
- * Older saves (and pypan.py's) have a fifth good, jade, which pypan-86 took off the
- * market. Any jade aboard or in the warehouse is sold for its usual Hong Kong price.
+ * Saves from before pypan-87 have no porcelain. Those written between pypan-86 and
+ * pypan-87 have four goods. Older ones (and pypan.py's) have five, but the fifth is
+ * jade, which pypan-86 took off the market: any jade aboard or in the warehouse is
+ * sold for its usual Hong Kong price.
  */
-const OLD_NUM_GOODS = 5;
 const JADE_SALVAGE_PRICE = 120000;
 
 export class SaveFormatError extends Error {
@@ -45,6 +49,7 @@ export function toSave(h: Hong): Record<string, unknown> {
     ...(h.expedition ? { expedition: { ...h.expedition } } : {}),
     ...(h.expeditionFailed ? { expedition_failed: true } : {}),
     ...(h.jadeOffers ? { jade_offers: h.jadeOffers } : {}),
+    ...(h.porcelain ? { porcelain: true } : {}),
   };
 }
 
@@ -55,8 +60,15 @@ export function toSaveString(h: Hong): string {
 /** Parse and validate a pypan.json-format object. Unknown keys are ignored. */
 export function fromSave(data: unknown): Hong {
   const d = record(data, "save");
-  const [shipGoods, shipJade] = goods(d, "ship_goods");
-  const [warehouseGoods, warehouseJade] = goods(d, "warehouse_goods");
+  const porcelain = d.porcelain === undefined ? false : bool(d, "porcelain");
+  const location = int(d, "location", 0, CITIES.length);
+  const [shipGoods, shipJade] = goods(d, "ship_goods", porcelain);
+  const [warehouseGoods, warehouseJade] = goods(d, "warehouse_goods", porcelain);
+  const prices = goods(d, "prices", true, true)[0];
+  if (prices.length < NUM_GOODS) {
+    // a four-good save: porcelain is hidden, and priced afresh on the next arrival
+    prices.push(usualPorcelainPrice(location));
+  }
   return {
     name: str(d, "name"),
     year: int(d, "year"),
@@ -75,15 +87,16 @@ export function fromSave(data: unknown): Hong {
     threatened: bool(d, "threatened"),
     extorted: int(d, "extorted"),
     bailout: int(d, "bailout"),
-    location: int(d, "location", 0, CITIES.length),
+    location,
     transfer: int(d, "transfer", -1),
     // not in pypan.py saves
     banker: d.banker === undefined ? false : bool(d, "banker"),
     grudge: d.grudge === undefined ? 0 : int(d, "grudge", 0, LI_YUEN_MAX_GRUDGE),
-    prices: goods(d, "prices")[0],
+    prices,
     expedition: d.expedition == null ? null : expedition(d.expedition),
     expeditionFailed: d.expedition_failed === undefined ? false : bool(d, "expedition_failed"),
     jadeOffers: d.jade_offers === undefined ? 0 : int(d, "jade_offers", 0),
+    porcelain,
   };
 }
 
@@ -133,14 +146,31 @@ function bool(d: Rec, key: string): boolean {
   return v;
 }
 
-/** A list of goods, and the jade in it if it's from an older save (else 0). */
-function goods(d: Rec, key: string): [number[], number] {
+/**
+ * A list of goods, with porcelain last, and the jade in it. Without porcelain, the
+ * fifth entry of a five-good list is jade from an older save: it's taken out and
+ * returned separately. `short` keeps a four-good list as it is (for prices).
+ */
+function goods(d: Rec, key: string, porcelain: boolean, short = false): [number[], number] {
   const v = d[key];
-  if (!Array.isArray(v) || (v.length !== NUM_GOODS && v.length !== OLD_NUM_GOODS) || !v.every((x) => Number.isInteger(x))) {
+  const ok = porcelain && !short ? [NUM_GOODS] : [NUM_GOODS - 1, NUM_GOODS];
+  if (!Array.isArray(v) || !ok.includes(v.length) || !v.every((x) => Number.isInteger(x))) {
     throw new SaveFormatError(`${key} must be a list of ${NUM_GOODS} integers`);
   }
-  const all = v as number[];
-  return [all.slice(0, NUM_GOODS), all[NUM_GOODS] ?? 0];
+  const all = [...(v as number[])];
+  if (porcelain) {
+    return [all, 0];
+  }
+  const jade = all[PORCELAIN] ?? 0;
+  all[PORCELAIN] = 0;
+  return [all, jade];
+}
+
+/** Porcelain's usual price at a port (Hong Kong's at sea): its level times 2. */
+function usualPorcelainPrice(location: number): number {
+  const row = BASE_PRICES[PORCELAIN]!;
+  const port = location < CITIES.length ? location : HONG_KONG;
+  return Math.trunc(row[port + 1]! / 2) * 2 * row[0]!;
 }
 
 function cargo(v: unknown, d: Rec): Cargo {

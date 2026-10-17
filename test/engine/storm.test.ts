@@ -51,4 +51,28 @@ describe("checkStorm", () => {
     play(checkStorm(h, new ScriptedRng([0, 0, 3]), SHANGHAI));
     expect(h.shipDamage).toBe(88);
   });
+
+  it("breaks 10-30% of the porcelain aboard", () => {
+    const h = makeHong({ shipGoods: [0, 0, 0, 0, 100] });
+    // storm; no damage; not blown off course; inRange(10, 31) = 10 + 0
+    const p = play(checkStorm(h, new ScriptedRng([0, 1, 1, 0]), SHANGHAI));
+    expect(p.transcript.map((e) => e.prompt)).toEqual([
+      { kind: "say", text: "Storm, Taipan!" },
+      { kind: "say", text: "We made it!", art: "storm" },
+      { kind: "say", text: "The storm broke 10 of our porcelain, Taipan!", art: "storm" },
+    ]);
+    expect(h.shipGoods[4]).toBe(90);
+  });
+
+  it("has rough seas 1-in-5 voyages without a storm, breaking 5-15% of the porcelain", () => {
+    const h = makeHong({ shipGoods: [0, 0, 0, 0, 100] });
+    // no storm; rough seas; inRange(5, 16) = 5 + 10
+    const p = play(checkStorm(h, new ScriptedRng([1, 0, 10]), SHANGHAI));
+    expect(p.transcript.map((e) => e.prompt)).toEqual([
+      { kind: "say", text: "Rough seas, Taipan! 15 of our porcelain was broken.", art: "storm" },
+    ]);
+    expect([h.shipGoods[4], p.game.result]).toEqual([85, SHANGHAI]);
+    // calm seas
+    expect(play(checkStorm(h, new ScriptedRng([1, 1]), SHANGHAI)).transcript).toEqual([]);
+  });
 });

@@ -6,12 +6,12 @@ import { sailAway } from "../../src/engine/voyage";
 import { makeHong } from "../helpers/hong";
 import { play, texts } from "../helpers/play";
 
-// Four price rolls of 0 (x1) give each port's lowest prices; then no price shock.
-const PRICES = [0, 0, 0, 0, 1];
+// Five price rolls of 0 (x1) give each port's lowest prices; then no price shock.
+const PRICES = [0, 0, 0, 0, 0, 1];
 
 describe("sailAway", () => {
   it("won't sail overloaded", () => {
-    const h = makeHong({ shipGoods: [61, 0, 0, 0] });
+    const h = makeHong({ shipGoods: [61, 0, 0, 0, 0] });
     const p = play(sailAway(h, new ScriptedRng()));
     expect(texts(p)).toEqual(["Your ship is overloaded, Taipan."]);
     expect(h.location).toBe(HONG_KONG);
@@ -39,7 +39,7 @@ describe("sailAway", () => {
       ["Arriving at Shanghai ... ", "boat"],
     ]);
     expect(h).toMatchObject({ location: SHANGHAI, month: 2, debt: 5500, bank: 1005, transfer: -1 });
-    expect(h.prices).toEqual([5, 80, 700, 8000]); // Shanghai
+    expect(h.prices).toEqual([5, 80, 700, 8000, 50000]); // Shanghai
     expect(rng.remaining).toBe(0);
   });
 

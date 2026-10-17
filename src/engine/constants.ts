@@ -45,6 +45,22 @@ export const JADE_PAYOUT_MIN = 2;
 export const JADE_PAYOUT_MAX = 5;
 /** Sir Beaumont-Finch seeks backers at most this many times a game. */
 export const JADE_MAX_OFFERS = 3;
+/** A share in the porcelain trade is offered in Hong Kong only after this many months (pypan-87) ... */
+export const PORCELAIN_MIN_MONTHS = 24;
+/** ... to a player whose cash position (cash + bank - debt) is over this ... */
+export const PORCELAIN_WORTH_LEVEL = 2000000;
+/** ... for this share of the cash position. */
+export const PORCELAIN_FEE_SHARE = 0.5;
+/** The offer comes 1-in-N arrivals in Hong Kong: 1-in-20 at first, one better every few months, to 1-in-3. */
+export const PORCELAIN_ODDS_START = 20;
+export const PORCELAIN_ODDS_MIN = 3;
+export const PORCELAIN_RAMP_MONTHS = 3;
+/** Percent of the porcelain aboard broken by a storm, rough seas and each enemy volley. */
+export const STORM_BREAKAGE = [10, 30] as const;
+export const ROUGH_SEAS_BREAKAGE = [5, 15] as const;
+export const VOLLEY_BREAKAGE = [2, 10] as const;
+/** 1-in-N voyages without a storm have rough seas (when there's porcelain aboard). */
+export const ROUGH_SEAS_CHANCE = 5;
 /** Li Yuen's patience runs out 1-in-N arrivals, three times between demands (pypan-88). */
 export const LI_YUEN_PATIENCE = 20;
 /** After month 12 he asks this share of your cash position, plus up to as much again. */
@@ -98,12 +114,13 @@ export function randomOtherCity(rng: Rng, n: number): number {
 // ------------------------------------------------------------------------------------
 // Goods
 
-export const GOODS = ["General", "Arms", "Silk", "Opium"] as const;
+export const GOODS = ["General", "Arms", "Silk", "Opium", "Porcelain"] as const;
 
 export const GENERAL = 0;
 export const ARMS = 1;
 export const SILK = 2;
 export const OPIUM = 3;
+export const PORCELAIN = 4;
 export const NUM_GOODS = GOODS.length;
 
 export function good(n: number): string {
@@ -123,6 +140,7 @@ export function mult(n: number): number {
  * Per-good base prices for the "based" pricing mode, from taipan.c. Column 0 is the
  * good's magnitude; columns 1..7 are how dear the good is in each city (indexed by
  * city + 1: Hong Kong, Shanghai, Nagasaki, Saigon, Manila, Singapore, Batavia).
+ * taipan.c has no Porcelain; its row is our own.
  */
 export const BASE_PRICES: readonly (readonly number[])[] = [
   // magnitude, HK  Sha Nag Sai Man Sin Bat
@@ -130,4 +148,5 @@ export const BASE_PRICES: readonly (readonly number[])[] = [
   [10,          12, 16, 10, 11, 13, 14, 15], // Arms: cheap in Nagasaki/Saigon, dear in Shanghai
   [100,         11, 14, 15, 16, 10, 13, 12], // Silk: cheap in Hong Kong/Manila, dear in Saigon
   [1000,        11, 16, 15, 14, 12, 10, 13], // Opium: cheap in Hong Kong/Singapore, dear in Shanghai
+  [10000,       10, 11, 14, 15, 13, 16, 16], // Porcelain: cheap near Canton, dear in Singapore/Batavia
 ];

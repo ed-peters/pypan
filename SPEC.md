@@ -62,13 +62,13 @@ house). It is fully serializable to JSON for save/load. Key fields:
 | `debt` | Owed to Elder Brother Wu | 5000 (or 0 in "guns" start) |
 | `bank` | Savings on deposit | 0 |
 | `ship_size` | Total cargo capacity (units) | 60 |
-| `ship_goods[4]` | Goods carried aboard, by type | all 0 |
+| `ship_goods[5]` | Goods carried aboard, by type | all 0 |
 | `ship_guns` | Number of cannons | 0 (or 5 in "guns" start) |
 | `ship_damage` | Accumulated hull damage | 0 |
 | `ship_cargo` | Optional special consignment (`Cargo`) | none |
 | `pirate_chance` | 1-in-N chance of pirate encounter per voyage | 10 (or 7 with guns) |
 | `warehouse_size` | Hong Kong warehouse capacity | 10000 |
-| `warehouse_goods[4]` | Goods stored in warehouse | all 0 |
+| `warehouse_goods[5]` | Goods stored in warehouse | all 0 |
 | `threatened` | Whether Wu has issued his debt threat | false |
 | `extorted` | Li Yuen extortion counter (0–3) | 0 |
 | `grudge` | Times you've refused Li Yuen since you last paid him (0–3, §8); saved only when not 0 | 0 |
@@ -76,16 +76,20 @@ house). It is fully serializable to JSON for save/load. Key fields:
 | `location` | Current city index (or AT_SEA) | Hong Kong |
 | `transfer` | Warehouse transfer fee %; `-1` means unavailable | 0 |
 | `banker` | Whether the bank's representative is in this foreign port (§4.4); saved only when true | false |
-| `prices[4]` | Current local price of each good | set for Hong Kong |
+| `prices[5]` | Current local price of each good | set for Hong Kong |
 | `expedition` | The jade expedition under way: `port`, `resolves` (month), `stake` (0 if you didn't back it); saved only when set | none |
 | `expedition_failed` | Whether a jade expedition has failed, so later offers say Sir Beaumont-Finch escaped; saved only when true | false |
 | `jade_offers` | How many times the jade expedition has been offered (§4.6); saved only when not 0 | 0 |
+| `porcelain` | Whether you own a share in the porcelain trade (§4.7); saved only when true | false |
 
-**Older saves** (and pypan.py's) have five goods, the fifth being jade. They load
-with jade's price dropped and any jade aboard or in the warehouse sold for 120,000 a
-unit (its usual Hong Kong price), added to cash. Their `jade` and `jade_deal` keys
-are ignored, and an expedition saved with `invested` gets a stake of 1,000,000 if
-it was true (0 if not).
+**Older saves.** Saves without `porcelain` come from before porcelain:
+- Those written between pypan-86 and pypan-87 have four goods. They load with no
+  porcelain, priced at its usual price in that port (Hong Kong's at sea).
+- Older ones (and pypan.py's) have five goods, but the fifth is jade. Any jade aboard
+  or in the warehouse is sold for 120,000 a unit (its usual Hong Kong price) and
+  added to cash; jade's price stands in for porcelain's, which is hidden until the
+  next arrival sets prices. Their `jade` and `jade_deal` keys are ignored, and an
+  expedition saved with `invested` gets a stake of 1,000,000 if it was true (0 if not).
 
 ### 2.2 Starting Choices
 
@@ -109,9 +113,10 @@ ship repair (McHenry), warehouse upgrades, and free warehouse transfers.
 
 ### 2.4 Goods
 
-Four tradeable commodities, indexed 0–3, each in a different price tier (the tier
-sets the order of magnitude via `mult(n) = 10^n`). (Jade was a fifth until pypan-86
-made the jade expedition pay out instead, §4.6.)
+Five tradeable commodities, indexed 0–4, each in a different price tier (the tier
+sets the order of magnitude via `mult(n) = 10^n`). Porcelain, the dearest, is hidden
+until you buy a share in the porcelain trade (§4.7). (Jade held its tier until
+pypan-86 made the jade expedition pay out instead, §4.6.)
 
 | Index | Good | Price magnitude |
 |---|---|---|
@@ -119,6 +124,7 @@ made the jade expedition pay out instead, §4.6.)
 | 1 | Arms | ~10× (hundreds) |
 | 2 | Silk | ~100× (thousands) |
 | 3 | Opium | ~1000× (tens of thousands) |
+| 4 | Porcelain | ~10000× (hundreds of thousands) |
 
 ### 2.5 Randomness
 
@@ -143,7 +149,8 @@ unlock only after certain thresholds:
   warehouse transfers and the bank's representative (away from home), and
   harbor-police / mugging / fire events.
 - **>= 18 months**: special cargo consignments begin to appear.
-- **> 24 months**: the jade expedition can be offered (§4.6).
+- **> 24 months**: the jade expedition (§4.6) and the porcelain share (§4.7) can be
+  offered.
 
 ---
 
@@ -170,8 +177,13 @@ routes improve the odds rather than guarantee a profit.
 | Arms (×10) | 6 | 8 | 5 | 5 | 6 | 7 | 7 |
 | Silk (×100) | 5 | 7 | 7 | 8 | 5 | 6 | 6 |
 | Opium (×1000) | 5 | 8 | 7 | 7 | 6 | 5 | 6 |
+| Porcelain (×10000) | 5 | 5 | 7 | 7 | 6 | 8 | 8 |
 
-The rows are taipan.c's.
+The General, Arms, Silk and Opium rows are taipan.c's. It has no Porcelain, so
+Porcelain's row is our own: cheap near Canton (Hong Kong and Shanghai), dear in
+Singapore and Batavia, where it ships for Europe. Its cheapest price (50,000) is above
+opium's dearest (24,000) everywhere. Porcelain prices are set even before you're in
+the trade (§4.7); they just aren't shown.
 
 With the `BASED_PRICES` flag turned off, prices are fully random instead:
 `in_range(5, 31) * 10^good_index`, i.e. 5–30× the magnitude in every port.
@@ -179,7 +191,7 @@ With the `BASED_PRICES` flag turned off, prices are fully random instead:
 ### 4.2 Price Shocks
 
 After month 1, there is a 1-in-10 chance per arrival of a market shock on a random
-good. A coin flip decides
+good on the market (porcelain only once you're in the trade, §4.7). A coin flip decides
 direction:
 
 - **Positive shock** (e.g. famine, rebellion): price multiplied by a factor of 5–9.
@@ -203,8 +215,8 @@ Each shock prints a themed flavor message (see `MSG_POS_SHOCK` / `MSG_NEG_SHOCK`
   only one good aboard, there's no menu: "Would you like to sell all of your
   ((good)), Taipan?" Yes sells it all; No asks how much.
 
-Both show a condition report listing the current price of each good, in two
-columns.
+Both show a condition report listing the current price of each good on the market
+(four goods until you're in the porcelain trade, §4.7), in two columns.
 
 ### 4.4 Banking (Hong Kong, or with the bank's representative)
 
@@ -275,6 +287,30 @@ tradeable good.
 On average a stake returns about 1.17 times itself, but two expeditions in three
 lose it all.
 
+### 4.7 Porcelain (pypan-87)
+
+The late game's top good. A new game starts without it. Until you're in the trade,
+porcelain is left out of the condition report, the buy, sell, transfer and dump
+menus, price shocks, and the hold and warehouse panes.
+
+- **The offer** (`check_porcelain`, on arrival, after the jade expedition): in Hong
+  Kong after month 24, while your cash position (cash + bank − debt) is over
+  2,000,000 (`PORCELAIN_WORTH_LEVEL`), a merchant house from Jingdezhen offers a
+  share in the porcelain trade. The chance is 1-in-20 per arrival at first, one
+  better every 3 months (1-in-19 from month 28, 1-in-18 from month 31, ...), down to
+  1-in-3 from month 76 (`PORCELAIN_ODDS_START`, `_MIN`, `PORCELAIN_RAMP_MONTHS`).
+- **The fee** is half your cash position (`PORCELAIN_FEE_SHARE`, rounded to the
+  thousand), paid from cash and then the bank. Declining costs nothing, and the
+  offer comes again on a later arrival.
+- **Owning it** makes porcelain a regular good at every port for the rest of the
+  game. It can be stored in the warehouse, where it's safe.
+- **Breakage:** porcelain aboard ship breaks. A storm breaks 10–30% of it
+  (`STORM_BREAKAGE`, §6); rough seas break 5–15% on 1-in-5 voyages without a storm
+  (`ROUGH_SEAS_BREAKAGE`, `ROUGH_SEAS_CHANCE`); and each enemy volley in a pirate
+  battle breaks 2–10% (`VOLLEY_BREAKAGE`, §7.2). Each break is at least one unit, and
+  each is reported ("The storm broke 12 of our porcelain, Taipan!"). The rolls are
+  made only when there's porcelain aboard.
+
 ---
 
 ## 5. The Voyage Loop
@@ -309,7 +345,8 @@ The game auto-saves at the top of every menu iteration.
 6. Arrives; **debt and bank interest are applied**.
 7. Runs the arrival event sequence:
    `check_lender` → `check_extortion` → `check_upgrades` → `check_warehouse`
-   → `check_banker` → `check_cargo` → `check_safety` → `establish_prices`.
+   → `check_banker` → `check_jade` → `check_porcelain` → `check_cargo`
+   → `check_safety` → `establish_prices`.
 
 ---
 
@@ -323,7 +360,10 @@ A 1-in-10 chance per voyage. When a storm hits, one of three outcomes:
   city than intended (any of the other six).
 - **Safe passage**: otherwise, "We made it!"
 
-Storms can't sink the ship.
+Storms can't sink the ship. With porcelain aboard, a storm also breaks 10–30% of it.
+A voyage without a storm has rough seas 1-in-5, breaking 5–15% of the porcelain
+aboard ("Rough seas, Taipan! ((n)) of our porcelain was broken."), with the storm
+art (§4.7). Without porcelain aboard, there are no rough seas.
 
 ---
 
@@ -370,7 +410,9 @@ never interrupts its own battle.
 
 **Enemy turn** (`their_turn`): pirates fire; a hit may destroy one of your guns
 (raising capacity by the gun's size since a gun occupies 10 units) or damage the
-hull. Gun-hit probability rises with existing damage (certain above 80%).
+hull. Gun-hit probability rises with existing damage (certain above 80%). Every
+volley also breaks 2–10% of any porcelain aboard: "They smashed ((n)) of our
+porcelain!" (§4.7).
 
 ### 7.3 Resolution
 
@@ -551,6 +593,14 @@ after the save's date.
 | `JADE_EXPEDITION_MONTHS` | 3 | Months from the offer until the expedition resolves |
 | `JADE_PAYOUT_MIN` / `_MAX` | 2 / 5 | A success pays backers this many times their stake |
 | `JADE_MAX_OFFERS` | 3 | Times the expedition can be offered in a game |
+| `PORCELAIN_MIN_MONTHS` | 24 | Months before the porcelain share can be offered (§4.7) |
+| `PORCELAIN_WORTH_LEVEL` | 2000000 | Cash position above which it can be offered |
+| `PORCELAIN_FEE_SHARE` | 0.5 | Share of the cash position it costs |
+| `PORCELAIN_ODDS_START` / `_MIN` | 20 / 3 | 1-in-N per Hong Kong arrival, from first to best |
+| `PORCELAIN_RAMP_MONTHS` | 3 | Months for each step from 1-in-20 toward 1-in-3 |
+| `STORM_BREAKAGE` | 10–30 | Percent of the porcelain aboard a storm breaks |
+| `ROUGH_SEAS_BREAKAGE` / `ROUGH_SEAS_CHANCE` | 5–15 / 5 | Rough seas: percent broken, and 1-in-N voyages without a storm |
+| `VOLLEY_BREAKAGE` | 2–10 | Percent broken by each enemy volley |
 | `BASED_PRICES` | true | Port-based prices (§4.1); false for fully random |
 | `ENEMY_HEALTH_START` / `_BUMP` | 20 / 10 | Pirate health base + per-year growth |
 | `ENEMY_DAMAGE_START` / `_BUMP` | 0.5 / 0.5 | Pirate damage base + per-year growth |
@@ -643,6 +693,8 @@ Additions:
 - **Li Yuen's pirate fleet** (§7.4), which was defined but never used.
 - **The jade expedition** (§4.6) replaces jade as a good: a stake of a quarter to
   half of the bank, which pays its backers 2–5 times over if it succeeds.
+- **Porcelain** (§4.7), a fragile top good unlocked by buying a share in the trade
+  for half your fortune. Storms, rough seas and cannon fire break it.
 - **Li Yuen's demand tracks your fortune** (§8, pypan-88) rather than only the
   calendar, and refusing him earns a grudge: his fleet hunts you more often and in
   greater numbers, and his next demand is larger, until you pay.

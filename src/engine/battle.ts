@@ -4,10 +4,11 @@
 
 import {
   ENEMY_DAMAGE_BUMP, ENEMY_DAMAGE_START, ENEMY_HEALTH_BUMP, ENEMY_HEALTH_START,
-  GUN_SIZE, LI_YUEN_GRUDGE_SHIPS, LI_YUEN_SIGHTING, START_YEAR, good,
+  GUN_SIZE, LI_YUEN_GRUDGE_SHIPS, LI_YUEN_SIGHTING, START_YEAR, VOLLEY_BREAKAGE, good,
 } from "./constants";
 import { money } from "./format";
 import { currentTime, knownGoods, totalGoods, type Hong } from "./hong";
+import { breakPorcelain } from "./porcelain";
 import { askNum, askOpt, pick, say, withArt, type Flow } from "./prompts";
 import type { Rng } from "./rng";
 
@@ -106,6 +107,11 @@ export class PirateBattle {
       text = `${text}\n\nThey hit us!`;
     }
     this.h.shipDamage += this.calculateDamage();
+    // every volley breaks some of the porcelain aboard
+    const broken = breakPorcelain(this.h, this.rng, VOLLEY_BREAKAGE);
+    if (broken > 0) {
+      text = `${text}\n\nThey smashed ${money(broken)} of our porcelain!`;
+    }
     yield* say(text);
   }
 

@@ -97,14 +97,19 @@ function compare(rows) {
   ));
   out.push("\nIncome at 10 years (median share of gross income; losses against it):\n");
   out.push(table(
-    ["Scenario", "Trading", "Shocks", "Bank", "Booty", "Jade", "Losses"],
-    rows.map(({ s, sum }) => [s.title, ...["trading", "shocks", "bank", "booty", "jade", "losses"].map((k) => pct(sum.shares[k]))]),
+    ["Scenario", "Trading", "of which porcelain", "Shocks", "Bank", "Booty", "Jade", "Losses"],
+    rows.map(({ s, sum }) => [s.title, ...["trading", "porcelain", "shocks", "bank", "booty", "jade", "losses"].map((k) => pct(sum.shares[k]))]),
   ));
   out.push("\nRisk and windfalls (ships afloat; worth at cost):\n");
   out.push(table(
     ["Scenario", "Sunk", "Worst drawdown (median)", "after year 5", "after year 5 >= 25%", "Biggest windfall after year 5 (median)", "after year 5 >= 10%"],
     rows.map(({ s, sum }) => [s.title, pct(1 - sum.afloat[120]), pct(sum.risk.drawdown), pct(sum.risk.late), pct(sum.risk.lateOver25),
       pct(sum.windfall.late), pct(sum.windfall.lateOver10)]),
+  ));
+  out.push("\nPorcelain (ships afloat at 10 years):\n");
+  out.push(table(
+    ["Scenario", "In the trade", "Bought in (median month)", "Porcelain profit lost to breakage"],
+    rows.map(({ s, sum }) => [s.title, pct(sum.porcelain.owned), fmt(sum.porcelain.month), pct(sum.porcelain.broken)]),
   ));
   out.push("\nThe jade moonshot (ships afloat at 10 years):\n");
   out.push(table(

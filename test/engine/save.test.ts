@@ -13,30 +13,45 @@ describe("save format", () => {
       name: "Rising Sun", year: 1860, month: 1, cash: 0, debt: 0, shipGuns: 5,
       shipSize: 60, pirateChance: 7, shipCargo: null, location: 0, transfer: 0,
     });
-    // jade's price is dropped with jade (pypan-86)
-    expect(h.prices).toEqual([6, 170, 2200, 26000]);
+    // the fifth price was jade's: porcelain's now, but hidden until we buy in
+    expect(h.prices).toEqual([6, 170, 2200, 26000, 200000]);
+    expect(h.porcelain).toBe(false);
   });
 
-  it("writes the same keys as the Python version, with four goods", () => {
+  it("writes the same keys as the Python version", () => {
     const h = fromSave(pythonSave);
     expect(Object.keys(toSave(h)).sort()).toEqual(Object.keys(pythonSave).sort());
-    const four = (xs: number[]) => xs.slice(0, 4);
-    expect(toSave(h)).toEqual({
-      ...pythonSave,
-      ship_goods: four(pythonSave.ship_goods),
-      warehouse_goods: four(pythonSave.warehouse_goods),
-      prices: four(pythonSave.prices),
-    });
+    expect(toSave(h)).toEqual(pythonSave);
   });
 
   it("sells the jade in older saves for 120,000 a unit", () => {
     const h = fromSave({ ...pythonSave, cash: 400, ship_goods: [1, 2, 3, 4, 2], warehouse_goods: [0, 0, 0, 5, 1] });
-    expect([h.cash, h.shipGoods, h.warehouseGoods]).toEqual([400 + 3 * 120000, [1, 2, 3, 4], [0, 0, 0, 5]]);
+    expect([h.cash, h.shipGoods, h.warehouseGoods]).toEqual([400 + 3 * 120000, [1, 2, 3, 4, 0], [0, 0, 0, 5, 0]]);
+  });
+
+  it("loads four-good saves (before porcelain), pricing porcelain at its usual price", () => {
+    const four = (xs: number[]) => xs.slice(0, 4);
+    const h = fromSave({
+      ...pythonSave, location: 5, ship_goods: [1, 2, 3, 4], warehouse_goods: four(pythonSave.warehouse_goods), prices: four(pythonSave.prices),
+    });
+    // Singapore: level 16/2 = 8, times 2, times 10000
+    expect([h.shipGoods, h.warehouseGoods, h.prices]).toEqual([[1, 2, 3, 4, 0], [0, 0, 0, 0, 0], [6, 170, 2200, 26000, 160000]]);
+    expect(h.cash).toBe(0);
+  });
+
+  it("round-trips the porcelain share and porcelain aboard, written only once we've bought in", () => {
+    const h = newHong(new SeededRng(4), false);
+    expect(toSave(h)).not.toHaveProperty("porcelain");
+    h.porcelain = true;
+    h.shipGoods = [0, 0, 0, 0, 7];
+    h.warehouseGoods = [0, 0, 0, 0, 3];
+    expect(toSave(h)).toMatchObject({ porcelain: true, ship_goods: [0, 0, 0, 0, 7] });
+    expect(fromSaveString(toSaveString(h))).toEqual(h);
   });
 
   it("round-trips through a string, including special cargo", () => {
     const h = newHong(new SeededRng(4), false);
-    h.shipGoods = [1, 2, 3, 4];
+    h.shipGoods = [1, 2, 3, 4, 0];
     h.shipCargo = { description: "party of 3", destination: 5, illegal: false, size: 9, value: 3171, due: 20 };
     h.transfer = -1;
     expect(fromSaveString(toSaveString(h))).toEqual(h);
@@ -108,6 +123,8 @@ describe("save format", () => {
     ["fractional number", JSON.stringify({ ...pythonSave, cash: 1.5 })],
     ["bad month", JSON.stringify({ ...pythonSave, month: 13 })],
     ["short goods list", JSON.stringify({ ...pythonSave, ship_goods: [0, 0] })],
+    ["four goods with porcelain", JSON.stringify({ ...pythonSave, porcelain: true, ship_goods: [0, 0, 0, 0] })],
+    ["bad porcelain flag", JSON.stringify({ ...pythonSave, porcelain: "yes" })],
     ["bad cargo", JSON.stringify({ ...pythonSave, ship_cargo: { description: "x" } })],
     ["bad expedition", JSON.stringify({ ...pythonSave, expedition: { port: 5 } })],
     ["negative stake", JSON.stringify({ ...pythonSave, expedition: { port: 5, resolves: 28, stake: -1 } })],

@@ -70,6 +70,9 @@ export interface Ledger {
   /** Expeditions backed, and how many succeeded. */
   jadeBacked: number;
   jadeWins: number;
+  /** What successes paid beyond their stakes, and the stakes lost on failures. */
+  jadeGain: number;
+  jadeLost: number;
 }
 
 export function newLedger(): Ledger {
@@ -78,6 +81,7 @@ export function newLedger(): Ledger {
     robbery: 0, fines: 0, seized: 0, repairs: 0, ships: 0, guns: 0, bailouts: 0,
     shockGain: 0, shocksUp: 0, shocksUpSold: 0, shocksDown: 0, shocksDownBought: 0,
     biggestWindfall: 0, biggestLateWindfall: 0, jadeOffers: 0, jadeStake: 0, jadeStakeShare: 0, jadeOutcome: null, jadeBacked: 0, jadeWins: 0,
+    jadeGain: 0, jadeLost: 0,
   };
 }
 
@@ -110,7 +114,8 @@ export class Bot {
   /** Whether we've counted the current shock as sold into or bought into. */
   private shockUsed = false;
   /** Whether we backed the expedition that's under way. */
-  private backing = false;
+  /** Our stake in the expedition under way; 0 if we didn't back it. */
+  private backing = 0;
 
   constructor(private readonly start: "guns" | "debt") {}
 
@@ -237,13 +242,14 @@ export class Bot {
     m = /Would you like to invest ([\d,]+)\?$/.exec(text);
     if (m) {
       this.ledger.jadeOffers += 1;
-      this.backing = h.bank > 2 * num(m[1]!);
+      const stake = num(m[1]!);
+      this.backing = h.bank > 2 * stake ? stake : 0;
       if (this.backing) {
         this.ledger.jadeBacked += 1;
-        this.ledger.jadeStake += num(m[1]!);
-        this.ledger.jadeStakeShare = Math.max(this.ledger.jadeStakeShare, num(m[1]!) / this.worthAtCost(h));
+        this.ledger.jadeStake += stake;
+        this.ledger.jadeStakeShare = Math.max(this.ledger.jadeStakeShare, stake / this.worthAtCost(h));
       }
-      return this.backing;
+      return this.backing > 0;
     }
 
     // ---------------------------------------------------------------- battle
@@ -429,13 +435,19 @@ export class Bot {
       this.pendingShock = { good: down, up: false };
       this.ledger.shocksDown += 1;
     }
-    if (/reports the success of his jade mining effort/.test(text)) {
+    m = /reports the success of his jade mining effort.* our share of ([\d,]+) has been deposited/.exec(text);
+    if (m) {
       this.ledger.jadeOutcome = "success";
       this.ledger.jadeWins += 1;
-      this.backing = false;
+      this.ledger.jadeGain += num(m[1]!) - this.backing;
+      this.windfall(num(m[1]!) - this.backing, this.worthAtCost(h), h);
+      this.backing = 0;
     } else if (/has been captured by rebels/.test(text) && this.backing) {
       this.ledger.jadeOutcome = "failure";
-      this.backing = false;
+      this.ledger.jadeLost += this.backing;
+      this.backing = 0;
+    } else if (/met with success/.test(text)) {
+      this.backing = 0;
     }
     m = /so we were paid only ([\d,]+)/.exec(text);
     if (m) this.ledger.consignments += num(m[1]!);

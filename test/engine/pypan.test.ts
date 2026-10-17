@@ -5,7 +5,7 @@ import { establishOpts, newGame } from "../../src/engine/pypan";
 import { ScriptedRng } from "../../src/engine/rng";
 import { makeHong } from "../helpers/hong";
 
-const MIN_PRICES = [0, 0, 0, 0, 0];
+const MIN_PRICES = [0, 0, 0, 0];
 
 /** Answer prompts in order, continuing past says; returns the prompt texts seen. */
 function drive(game: ReturnType<typeof newGame>["game"], answers: unknown[]): string[] {
@@ -106,8 +106,8 @@ describe("the port menu", () => {
       ["Buy goods", true], ["Sell goods", false], ["Transfer goods", false],
       ["Visit the bank", true], ["Leave port", true],
     ]);
-    expect(enabled(makeHong({ warehouseGoods: [1, 0, 0, 0, 0] }))).toContainEqual(["Transfer goods", true]);
-    expect(enabled(makeHong({ shipGoods: [1, 0, 0, 0, 0] }))).toEqual(expect.arrayContaining([
+    expect(enabled(makeHong({ warehouseGoods: [1, 0, 0, 0] }))).toContainEqual(["Transfer goods", true]);
+    expect(enabled(makeHong({ shipGoods: [1, 0, 0, 0] }))).toEqual(expect.arrayContaining([
       ["Sell goods", true], ["Transfer goods", true],
     ]));
   });
@@ -174,7 +174,7 @@ describe("a whole game", () => {
       0.5, //                      Li Yuen asks 81
       1, 1, 1, //                  to Shanghai: no pirates, no Li Yuen (1-in-10), no storm
       //                           (he holds a grudge, so no counter roll) -> lieutenant
-      2, 0, 0, 0, 0, 1, //         Shanghai prices: general at 5 x 3 = 15; no shock
+      2, 0, 0, 0, 1, //            Shanghai prices: general at 5 x 3 = 15; no shock
       1, 1, 1, //                  back home: no pirates, no Li Yuen, no storm
       0.5, //                      Li Yuen asks 201 x 1.5 = 301
       ...MIN_PRICES, 1, //         Hong Kong prices; no shock
@@ -200,7 +200,7 @@ describe("a whole game", () => {
     expect(rng.remaining).toBe(0);
     expect(session.hong).toMatchObject({
       location: HONG_KONG, month: 3, cash: 699, debt: 6050, extorted: 1, grudge: 0,
-      shipGoods: [0, 0, 0, 0, 0],
+      shipGoods: [0, 0, 0, 0],
     });
     // saved at each menu: HK, HK, Shanghai, Shanghai, HK
     expect(saves).toEqual([400, 100, 100, 1000, 699]);

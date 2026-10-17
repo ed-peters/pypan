@@ -132,7 +132,7 @@ describe("visitWu", () => {
   });
 
   it("brushes you off if you have no cash but still have goods", () => {
-    const h = makeHong({ time: 5, cash: 0, shipGoods: [1, 0, 0, 0, 0] });
+    const h = makeHong({ time: 5, cash: 0, shipGoods: [1, 0, 0, 0] });
     const p = play(visitWu(h, new ScriptedRng()));
     expect(texts(p)).toEqual([
       "Elder Brother is aware of your plight, Taipan. He urges you to exercise all the means at your disposal to correct it.",

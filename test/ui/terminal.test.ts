@@ -6,7 +6,7 @@ import { ScriptedRng } from "../../src/engine/rng";
 import { Terminal } from "../../src/ui/terminal";
 
 // Guns start at the minimum prices: no extortion (no cash), then Wu offers business.
-const rolls = () => new ScriptedRng([0, 0, 0, 0, 0]);
+const rolls = () => new ScriptedRng([0, 0, 0, 0]);
 
 let root: HTMLElement;
 let onNewGame: () => void;
@@ -178,7 +178,7 @@ describe("Terminal", () => {
     const term = new Terminal(root, { onNewGame, onEnd });
     // a guns start with a nearly wrecked ship; pirates: 3 ships; no Li Yuen;
     // run fails, no partial escape; return fire sinks us
-    const rng = new ScriptedRng([0, 0, 0, 0, 0, 0, 2, 0.5, 100, 1, 0, 2, 1, 0.99]);
+    const rng = new ScriptedRng([0, 0, 0, 0, 0, 2, 0.5, 100, 1, 0, 2, 1, 0.99]);
     const { game, session } = newGame({ rng });
     term.attach(game, session);
     tap("Guns");

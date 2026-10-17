@@ -2,7 +2,7 @@
 
 import {
   CONSIGNMENT_LATE_LIMIT, CONSIGNMENT_LATE_PENALTY, CONSIGNMENT_MONEY_LIMIT, CONSIGNMENT_RATE,
-  NUM_GOODS, city, randomOtherCity,
+  city, randomOtherCity,
 } from "./constants";
 import { money } from "./format";
 import { currentTime, type Cargo, type Hong } from "./hong";
@@ -11,7 +11,6 @@ import type { Rng } from "./rng";
 
 export const CARGO_DESCRIPTIONS = [
   "bronze statue",
-  "jade statue",
   "iron chest",
   "party of 3",
   "secret document",
@@ -84,9 +83,9 @@ export function latePay(c: Cargo, late: number): number {
  * money, scaled by its share of the hold, but never less than the old per-space fee.
  */
 export function randomCargo(h: Hong, rng: Rng): Cargo {
-  // no jade statues until there's jade
-  const description = rng.choice(CARGO_DESCRIPTIONS.filter((d) => h.jade || d !== "jade statue"));
-  const unit = Math.trunc(35 * 10 ** rng.randrange(NUM_GOODS - 2));
+  const description = rng.choice(CARGO_DESCRIPTIONS);
+  // the old per-space fee: 35, 350 or 3500
+  const unit = Math.trunc(35 * 10 ** rng.randrange(3));
   const destination = randomOtherCity(rng, h.location);
   const size = Math.trunc(h.shipSize * rng.inRange(5, 31) / 100);
   const minimum = unit * size + rng.randrange(100);

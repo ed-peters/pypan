@@ -16,9 +16,9 @@ describe("newHong", () => {
       shipSize: 60, shipGuns: 0, pirateChance: 10, warehouseSize: 10000,
       location: HONG_KONG, transfer: 0, shipCargo: null,
     });
-    expect(h.shipGoods).toEqual([0, 0, 0, 0, 0]);
-    expect(h.warehouseGoods).toEqual([0, 0, 0, 0, 0]);
-    expect(h.prices).toHaveLength(5);
+    expect(h.shipGoods).toEqual([0, 0, 0, 0]);
+    expect(h.warehouseGoods).toEqual([0, 0, 0, 0]);
+    expect(h.prices).toHaveLength(4);
   });
 
   it("starts with guns and no debt", () => {
@@ -86,8 +86,8 @@ describe("ship and warehouse", () => {
 describe("wealth", () => {
   it("values goods aboard at local prices", () => {
     const h = newHong(rng(), false);
-    h.prices = [10, 100, 1000, 10000, 100000];
-    h.shipGoods = [1, 0, 2, 0, 0];
+    h.prices = [10, 100, 1000, 10000];
+    h.shipGoods = [1, 0, 2, 0];
     expect(netWorthOnHand(h)).toBe(400 + 10 + 2000);
   });
 

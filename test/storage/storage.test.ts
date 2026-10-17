@@ -29,7 +29,7 @@ describe("LocalStorageStore", () => {
   it("saves and loads a game in the pypan.json format", async () => {
     const storage = new MemoryStorage();
     const store = new LocalStorageStore(storage);
-    const h = makeHong({ cash: 1234, shipGoods: [1, 2, 3, 4, 5] });
+    const h = makeHong({ cash: 1234, shipGoods: [1, 2, 3, 4] });
     await store.save(h);
     expect(storage.getItem(SAVE_KEY)).toBe(toSaveString(h));
     expect(await store.load()).toEqual(h);

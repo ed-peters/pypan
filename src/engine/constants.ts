@@ -34,14 +34,17 @@ export const CONSIGNMENT_LATE_LIMIT = 5;
 export const JADE_MIN_MONTHS = 24;
 /** ... and only to a player with more than this much in the bank. */
 export const JADE_BANK_LEVEL = 2000000;
-/** The investment asked for, give or take 10%. */
+/** The stake asked for is 25-50% of the bank (pypan-86) ... */
+export const JADE_STAKE_SHARE = 0.25;
+/** ... but never less than this. */
 export const JADE_INVESTMENT = 1000000;
 /** Months from the offer until the expedition succeeds or fails. */
 export const JADE_EXPEDITION_MONTHS = 3;
-/** Months that backers get jade cheaply at the expedition's port. */
-export const JADE_DISCOUNT_MONTHS = 3;
-/** Backers' jade costs this fraction of the market price. */
-export const JADE_DISCOUNT = 0.2;
+/** A success pays backers 2-5 times their stake. */
+export const JADE_PAYOUT_MIN = 2;
+export const JADE_PAYOUT_MAX = 5;
+/** Sir Beaumont-Finch seeks backers at most this many times a game. */
+export const JADE_MAX_OFFERS = 3;
 /** Li Yuen's patience runs out 1-in-N arrivals, three times between demands (pypan-88). */
 export const LI_YUEN_PATIENCE = 20;
 /** After month 12 he asks this share of your cash position, plus up to as much again. */
@@ -95,13 +98,12 @@ export function randomOtherCity(rng: Rng, n: number): number {
 // ------------------------------------------------------------------------------------
 // Goods
 
-export const GOODS = ["General", "Arms", "Silk", "Opium", "Jade"] as const;
+export const GOODS = ["General", "Arms", "Silk", "Opium"] as const;
 
 export const GENERAL = 0;
 export const ARMS = 1;
 export const SILK = 2;
 export const OPIUM = 3;
-export const JADE = 4;
 export const NUM_GOODS = GOODS.length;
 
 export function good(n: number): string {
@@ -121,7 +123,6 @@ export function mult(n: number): number {
  * Per-good base prices for the "based" pricing mode, from taipan.c. Column 0 is the
  * good's magnitude; columns 1..7 are how dear the good is in each city (indexed by
  * city + 1: Hong Kong, Shanghai, Nagasaki, Saigon, Manila, Singapore, Batavia).
- * taipan.c has no Jade; its row is our own.
  */
 export const BASE_PRICES: readonly (readonly number[])[] = [
   // magnitude, HK  Sha Nag Sai Man Sin Bat
@@ -129,5 +130,4 @@ export const BASE_PRICES: readonly (readonly number[])[] = [
   [10,          12, 16, 10, 11, 13, 14, 15], // Arms: cheap in Nagasaki/Saigon, dear in Shanghai
   [100,         11, 14, 15, 16, 10, 13, 12], // Silk: cheap in Hong Kong/Manila, dear in Saigon
   [1000,        11, 16, 15, 14, 12, 10, 13], // Opium: cheap in Hong Kong/Singapore, dear in Shanghai
-  [10000,       13, 15, 16, 12, 14, 10, 11], // Jade: cheap in Singapore/Batavia, dear in Nagasaki
 ];

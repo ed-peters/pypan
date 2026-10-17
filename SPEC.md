@@ -62,13 +62,13 @@ house). It is fully serializable to JSON for save/load. Key fields:
 | `debt` | Owed to Elder Brother Wu | 5000 (or 0 in "guns" start) |
 | `bank` | Savings on deposit | 0 |
 | `ship_size` | Total cargo capacity (units) | 60 |
-| `ship_goods[5]` | Goods carried aboard, by type | all 0 |
+| `ship_goods[4]` | Goods carried aboard, by type | all 0 |
 | `ship_guns` | Number of cannons | 0 (or 5 in "guns" start) |
 | `ship_damage` | Accumulated hull damage | 0 |
 | `ship_cargo` | Optional special consignment (`Cargo`) | none |
 | `pirate_chance` | 1-in-N chance of pirate encounter per voyage | 10 (or 7 with guns) |
 | `warehouse_size` | Hong Kong warehouse capacity | 10000 |
-| `warehouse_goods[5]` | Goods stored in warehouse | all 0 |
+| `warehouse_goods[4]` | Goods stored in warehouse | all 0 |
 | `threatened` | Whether Wu has issued his debt threat | false |
 | `extorted` | Li Yuen extortion counter (0–3) | 0 |
 | `grudge` | Times you've refused Li Yuen since you last paid him (0–3, §8); saved only when not 0 | 0 |
@@ -76,11 +76,16 @@ house). It is fully serializable to JSON for save/load. Key fields:
 | `location` | Current city index (or AT_SEA) | Hong Kong |
 | `transfer` | Warehouse transfer fee %; `-1` means unavailable | 0 |
 | `banker` | Whether the bank's representative is in this foreign port (§4.4); saved only when true | false |
-| `prices[5]` | Current local price of each good | set for Hong Kong |
-| `jade` | Whether jade is on the market (§4.6); saved only when false, and missing means true | false |
-| `expedition` | The jade expedition under way: `port`, `resolves` (month), `invested`; saved only when set | none |
+| `prices[4]` | Current local price of each good | set for Hong Kong |
+| `expedition` | The jade expedition under way: `port`, `resolves` (month), `stake` (0 if you didn't back it); saved only when set | none |
 | `expedition_failed` | Whether a jade expedition has failed, so later offers say Sir Beaumont-Finch escaped; saved only when true | false |
-| `jade_deal` | Backers' cheap jade: `port`, `until` (month); saved only when set | none |
+| `jade_offers` | How many times the jade expedition has been offered (§4.6); saved only when not 0 | 0 |
+
+**Older saves** (and pypan.py's) have five goods, the fifth being jade. They load
+with jade's price dropped and any jade aboard or in the warehouse sold for 120,000 a
+unit (its usual Hong Kong price), added to cash. Their `jade` and `jade_deal` keys
+are ignored, and an expedition saved with `invested` gets a stake of 1,000,000 if
+it was true (0 if not).
 
 ### 2.2 Starting Choices
 
@@ -104,8 +109,9 @@ ship repair (McHenry), warehouse upgrades, and free warehouse transfers.
 
 ### 2.4 Goods
 
-Five tradeable commodities, indexed 0–4, each in a different price tier (the tier
-sets the order of magnitude via `mult(n) = 10^n`):
+Four tradeable commodities, indexed 0–3, each in a different price tier (the tier
+sets the order of magnitude via `mult(n) = 10^n`). (Jade was a fifth until pypan-86
+made the jade expedition pay out instead, §4.6.)
 
 | Index | Good | Price magnitude |
 |---|---|---|
@@ -113,7 +119,6 @@ sets the order of magnitude via `mult(n) = 10^n`):
 | 1 | Arms | ~10× (hundreds) |
 | 2 | Silk | ~100× (thousands) |
 | 3 | Opium | ~1000× (tens of thousands) |
-| 4 | Jade | ~10000× (hundreds of thousands) |
 
 ### 2.5 Randomness
 
@@ -165,11 +170,8 @@ routes improve the odds rather than guarantee a profit.
 | Arms (×10) | 6 | 8 | 5 | 5 | 6 | 7 | 7 |
 | Silk (×100) | 5 | 7 | 7 | 8 | 5 | 6 | 6 |
 | Opium (×1000) | 5 | 8 | 7 | 7 | 6 | 5 | 6 |
-| Jade (×10000) | 6 | 7 | 8 | 6 | 7 | 5 | 5 |
 
-The General, Arms, Silk and Opium rows are taipan.c's. It has no Jade, so Jade's row
-is our own: cheap in Singapore and Batavia, dear in Nagasaki. Jade prices are set
-even before jade is on the market (§4.6); they just aren't shown.
+The rows are taipan.c's.
 
 With the `BASED_PRICES` flag turned off, prices are fully random instead:
 `in_range(5, 31) * 10^good_index`, i.e. 5–30× the magnitude in every port.
@@ -177,7 +179,7 @@ With the `BASED_PRICES` flag turned off, prices are fully random instead:
 ### 4.2 Price Shocks
 
 After month 1, there is a 1-in-10 chance per arrival of a market shock on a random
-good on the market (jade only once it's been introduced, §4.6). A coin flip decides
+good. A coin flip decides
 direction:
 
 - **Positive shock** (e.g. famine, rebellion): price multiplied by a factor of 5–9.
@@ -201,8 +203,8 @@ Each shock prints a themed flavor message (see `MSG_POS_SHOCK` / `MSG_NEG_SHOCK`
   only one good aboard, there's no menu: "Would you like to sell all of your
   ((good)), Taipan?" Yes sells it all; No asks how much.
 
-Both show a condition report listing the current price of each good on the market
-(four goods until jade is introduced, §4.6), in two columns.
+Both show a condition report listing the current price of each good, in two
+columns.
 
 ### 4.4 Banking (Hong Kong, or with the bank's representative)
 
@@ -245,31 +247,33 @@ Debt pressure (`check_lender`, Hong Kong only, triggered on arrival):
 Wu can also cover a shortfall when you can't afford a repair (§9) or Li Yuen's
 "donation" (§8), adding the difference to your debt.
 
-### 4.6 Jade (pypan-33)
+### 4.6 The Jade Expedition (pypan-33, pypan-86)
 
-A new game starts without jade. Until it's introduced, jade is left out of the
-condition report, the buy, sell, transfer and dump menus, price shocks, the hold
-and warehouse panes, and consignment descriptions ("jade statue"). Saves without a
-`jade` key (including pypan.py's) load with jade already on the market.
+The game's moonshot: a Burmese jade mining expedition that pays its backers once,
+if it succeeds (`check_jade`, on arrival, before consignments). Jade is never a
+tradeable good.
 
-Jade arrives with a Burmese mining expedition (`check_jade`, on arrival, before
-consignments):
-
-- **Offer:** after month 24, if jade isn't on the market, no expedition is under
-  way, the bank holds over 2,000,000 (`JADE_BANK_LEVEL`; cash on hand doesn't
-  count) and the port is Singapore or Batavia, there's a 1-in-3 chance the East India
-  Company man Sir Beaumont-Finch seeks backers. The compradore asks whether to invest 1,000,000 ± 10%
-  (`JADE_INVESTMENT`, rounded to the thousand). If you accept, the funds are
+- **Offer:** after month 24, if no expedition is under way, it has been offered fewer
+  than 3 times this game (`JADE_MAX_OFFERS`, counting declined offers), the bank
+  holds over 2,000,000 (`JADE_BANK_LEVEL`; cash on hand doesn't count) and the port
+  is Singapore or Batavia, there's a 1-in-3 chance the East India Company man Sir
+  Beaumont-Finch seeks backers. The compradore asks whether to invest 25–50% of the
+  bank (`JADE_STAKE_SHARE` times 1 to 2), but at least 1,000,000
+  (`JADE_INVESTMENT`), rounded to the thousand. If you accept, the funds are
   arranged from Hong Kong and taken from the bank. Either way the expedition goes
   ahead from that port, due 3 months later (`JADE_EXPEDITION_MONTHS`).
 - **Outcome:** on the first arrival once it's due, it succeeds 1-in-3; otherwise
   Sir Beaumont-Finch is captured by rebels, and a new expedition can be offered later:
   he has escaped and is back seeking investment.
-- **Success** brings jade onto the market everywhere. Backers also get cheap jade
-  at the port where the expedition was offered, through the 3rd month after the
-  success (`JADE_DISCOUNT_MONTHS`): after setting prices (and any shock), jade
-  there costs a fifth of the price (`JADE_DISCOUNT`), rounded down to a multiple
-  of 10,000 and at least 10,000.
+- **Success** pays backers 2–5 times their stake (`JADE_PAYOUT_MIN`,
+  `JADE_PAYOUT_MAX`, rolled, rounded to the thousand), into the bank: "His jade has
+  fetched a fine price in London, and our share of ((amount)) has been deposited in
+  the bank." Players who didn't back it hear the rumor of a new mine and get nothing.
+  He may be back with another expedition after a success too, up to the limit of
+  three offers.
+
+On average a stake returns about 1.17 times itself, but two expeditions in three
+lose it all.
 
 ---
 
@@ -480,7 +484,7 @@ The player has a warehouse in Hong Kong (10000 capacity) used to stockpile goods
 
 Occasionally the player is offered a one-off consignment to carry to a specific
 city for a fee, occupying some hold space. A `Cargo` has a description (e.g.
-"bronze statue", "jade statue", "party of 3", "secret document"), a destination
+"bronze statue", "party of 3", "secret document"), a destination
 (any other city), a size (5–30% of ship size), a payout value, and a `due` month
 (the month after it was offered, as `current_time`). Only one special cargo can be
 carried at a time, and it can't be dumped in battle.
@@ -542,10 +546,11 @@ after the save's date.
 | `CONSIGNMENT_LATE_LIMIT` | 5 | Months late before a consignment is offloaded |
 | `JADE_MIN_MONTHS` | 24 | Months before the jade expedition can be offered (§4.6) |
 | `JADE_BANK_LEVEL` | 2000000 | Bank balance above which the jade expedition can be offered |
-| `JADE_INVESTMENT` | 1000000 | The investment asked for, ± 10% |
+| `JADE_STAKE_SHARE` | 0.25 | The stake asked for is 1–2 times this share of the bank ... |
+| `JADE_INVESTMENT` | 1000000 | ... but at least this |
 | `JADE_EXPEDITION_MONTHS` | 3 | Months from the offer until the expedition resolves |
-| `JADE_DISCOUNT_MONTHS` | 3 | Months of cheap jade for backers |
-| `JADE_DISCOUNT` | 0.2 | Fraction of the price backers pay for jade |
+| `JADE_PAYOUT_MIN` / `_MAX` | 2 / 5 | A success pays backers this many times their stake |
+| `JADE_MAX_OFFERS` | 3 | Times the expedition can be offered in a game |
 | `BASED_PRICES` | true | Port-based prices (§4.1); false for fully random |
 | `ENEMY_HEALTH_START` / `_BUMP` | 20 / 10 | Pirate health base + per-year growth |
 | `ENEMY_DAMAGE_START` / `_BUMP` | 0.5 / 0.5 | Pirate damage base + per-year growth |
@@ -600,7 +605,6 @@ table (§1.1), with a button to start a new game.
 ## 16. Known Incomplete / TODO Items
 
 - **Escalating bailouts** — the `bailout` multiplier is never increased (pypan-39).
-- **Make jade an event** — jade exists as a tradeable good but has no special event.
 - **Resuming mid-event** — reloading during a battle resumes from the last port menu.
 
 ---
@@ -635,8 +639,10 @@ Additions:
   optional "based" mode drew from a wide normal distribution that washed out most of
   the port differences, and its table had each port profile attached to the wrong
   good (the magnitudes were reversed but the rows weren't). The table is now
-  correctly mapped, with a new row for Jade, and port-based prices are on by default.
+  correctly mapped, and port-based prices are on by default.
 - **Li Yuen's pirate fleet** (§7.4), which was defined but never used.
+- **The jade expedition** (§4.6) replaces jade as a good: a stake of a quarter to
+  half of the bank, which pays its backers 2–5 times over if it succeeds.
 - **Li Yuen's demand tracks your fortune** (§8, pypan-88) rather than only the
   calendar, and refusing him earns a grudge: his fleet hunts you more often and in
   greater numbers, and his next demand is larger, until you pay.

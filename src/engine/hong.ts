@@ -26,13 +26,8 @@ export interface Expedition {
   port: number;
   /** The month (as currentTime) when it succeeds or fails. */
   resolves: number;
-  invested: boolean;
-}
-
-/** Cheap jade for the expedition's backers, at one port until some month. */
-export interface JadeDeal {
-  port: number;
-  until: number;
+  /** What we invested in it; 0 if others backed it. */
+  stake: number;
 }
 
 export interface Hong {
@@ -66,12 +61,11 @@ export interface Hong {
   /** Whether a representative from the bank is in this (foreign) port. */
   banker: boolean;
   prices: number[];
-  /** Whether jade has come onto the market; until then it's hidden. */
-  jade: boolean;
   expedition: Expedition | null;
   /** Whether an expedition has failed, so Sir Beaumont-Finch is back after escaping. */
   expeditionFailed: boolean;
-  jadeDeal: JadeDeal | null;
+  /** How many times Sir Beaumont-Finch has sought backers, up to JADE_MAX_OFFERS. */
+  jadeOffers: number;
 }
 
 /** A new game in Hong Kong, starting with either guns or debt. */
@@ -99,10 +93,9 @@ export function newHong(rng: Rng, guns: boolean, name: string = "Rising Sun"): H
     transfer: 0,
     banker: false,
     prices: setPrices(rng, HONG_KONG),
-    jade: false,
     expedition: null,
     expeditionFailed: false,
-    jadeDeal: null,
+    jadeOffers: 0,
   };
 }
 
@@ -130,9 +123,9 @@ export function netWorthOnHand(h: Hong): number {
   return h.shipGoods.reduce((sum, n, g) => sum + n * h.prices[g]!, h.cash);
 }
 
-/** The goods on the market: jade, the last, only once it's been introduced. */
-export function knownGoods(h: Hong): readonly string[] {
-  return h.jade ? GOODS : GOODS.slice(0, -1);
+/** The goods on the market. */
+export function knownGoods(_h: Hong): readonly string[] {
+  return GOODS;
 }
 
 export function totalGoods(h: Hong): number {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { HONG_KONG, NAGASAKI, SHANGHAI } from "../../src/engine/constants";
-import { checkCargo, latePay, offerOdds, randomCargo } from "../../src/engine/cargo";
+import { CARGO_DESCRIPTIONS, checkCargo, latePay, offerOdds, randomCargo } from "../../src/engine/cargo";
 import { ScriptedRng } from "../../src/engine/rng";
 import { makeHong } from "../helpers/hong";
 import { play, texts } from "../helpers/play";
@@ -8,7 +8,7 @@ import { play, texts } from "../helpers/play";
 // description = "party of 3"; unit = 35 * 10^0; destination rolls Hong Kong
 // (rejected) then Nagasaki; size = trunc(60 * (5 + 10) / 100) = 9; minimum = 35 * 9 + 7;
 // rate = 0.15 * (0.8 + 0.4 * 0.75) = 0.165
-const CARGO_ROLLS = [3, 0, HONG_KONG, NAGASAKI, 10, 7, 0.75];
+const CARGO_ROLLS = [2, 0, HONG_KONG, NAGASAKI, 10, 7, 0.75];
 const NO_JOSS = 1;
 const JOSS = 0;
 
@@ -122,9 +122,9 @@ describe("randomCargo", () => {
     }
   });
 
-  it("has no jade statues until there's jade", () => {
-    // description roll 1 is "jade statue" with jade on the market
-    const c = randomCargo(makeHong({ jade: false }), new ScriptedRng([1, 0, NAGASAKI, 0, 0, 0]));
+  it("has no jade statues, now jade isn't traded", () => {
+    expect(CARGO_DESCRIPTIONS).not.toContain("jade statue");
+    const c = randomCargo(makeHong(), new ScriptedRng([1, 0, NAGASAKI, 0, 0, 0]));
     expect(c.description).toBe("iron chest");
   });
 

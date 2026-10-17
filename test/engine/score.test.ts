@@ -4,7 +4,7 @@ import { makeHong } from "../helpers/hong";
 
 describe("cashPosition", () => {
   it("is cash plus bank, less debt, ignoring goods", () => {
-    const h = makeHong({ cash: 1000, bank: 5000, debt: 2500, shipGoods: [100, 0, 0, 0, 0] });
+    const h = makeHong({ cash: 1000, bank: 5000, debt: 2500, shipGoods: [100, 0, 0, 0] });
     expect(cashPosition(h)).toBe(3500);
   });
 });

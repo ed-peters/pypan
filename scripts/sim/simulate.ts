@@ -36,7 +36,6 @@ interface Snapshot {
   shipSize: number;
   guns: number;
   score: number;
-  jade: boolean;
   /** Cash + bank - debt + what was paid for the goods aboard. */
   atCost: number;
   ledger: Ledger;
@@ -75,7 +74,6 @@ function play(seed: number, start: "debt" | "guns"): Run {
           position, worth: worth(h), cash: h.cash, bank: h.bank, debt: h.debt,
           shipSize: h.shipSize, guns: h.shipGuns,
           score: Math.floor(position / currentTime(h) / 100),
-          jade: h.jade,
           atCost: bot.worthAtCost(h),
           ledger: { ...bot.ledger, byGood: [...bot.ledger.byGood] },
         });
@@ -112,7 +110,7 @@ export interface Summary {
   afloat: Record<number, number>;
   position: Record<number, { p25: number; p50: number; p90: number }>;
   /** Median share of each source in gross income, and losses against it. */
-  shares: { trading: number; shocks: number; bank: number; booty: number; consignments: number; losses: number };
+  shares: { trading: number; shocks: number; bank: number; booty: number; consignments: number; jade: number; losses: number };
   shocks: { perGame: number; upSold: number; downBought: number; gain: number };
   windfall: { median: number; over10: number; over25: number; late: number; lateOver10: number };
   risk: { drawdown: number; over25: number; over50: number; late: number; lateOver25: number };
@@ -121,7 +119,6 @@ export interface Summary {
     offered: number; backed: number; perExpedition: number; expeditions: number; stakeShare: number;
     posSuccess: number; posFailure: number; posNotBacked: number;
   };
-  jadeOnMarket: number;
 }
 
 function summarize(results: Run[], runs: number, start: string): Summary {
@@ -137,10 +134,10 @@ function summarize(results: Run[], runs: number, start: string): Summary {
     const l = x.ledger;
     const parts = {
       trading: l.tradeProfit - l.shockGain, shocks: l.shockGain, bank: l.bankInterest,
-      booty: l.booty, consignments: l.consignments,
+      booty: l.booty, consignments: l.consignments, jade: l.jadeGain,
     };
     const gross = Object.values(parts).reduce((a, b) => a + Math.max(0, b), 0) || 1;
-    const losses = l.robbery + l.liYuen + l.fines + l.seized + l.repairs + l.debtInterest;
+    const losses = l.robbery + l.liYuen + l.fines + l.seized + l.repairs + l.debtInterest + l.jadeLost;
     return { ...Object.fromEntries(Object.entries(parts).map(([k, v]) => [k, v / gross])), losses: losses / gross } as Summary["shares"];
   });
   const share = (k: keyof Summary["shares"]) => med(income.map((x) => x[k]));
@@ -153,7 +150,7 @@ function summarize(results: Run[], runs: number, start: string): Summary {
     position: Object.fromEntries(STAGES.map((st) => [st.months, pos(st.months)])),
     shares: {
       trading: share("trading"), shocks: share("shocks"), bank: share("bank"), booty: share("booty"),
-      consignments: share("consignments"), losses: share("losses"),
+      consignments: share("consignments"), jade: share("jade"), losses: share("losses"),
     },
     shocks: {
       perGame: med(ledgers.map((l) => l.shocksUp + l.shocksDown)),
@@ -185,7 +182,6 @@ function summarize(results: Run[], runs: number, start: string): Summary {
       posFailure: group((x) => x.ledger.jadeStake > 0 && x.ledger.jadeWins === 0),
       posNotBacked: group((x) => x.ledger.jadeStake === 0),
     },
-    jadeOnMarket: frac(last.filter((x) => x.jade)),
   };
 }
 
@@ -307,25 +303,24 @@ function main(): void {
   ));
   out.push("");
 
-  // which goods the trading profit comes from, and whether jade is on the market
-  out.push("Share of all trading profit by good, and games with jade on the market:\n");
+  // which goods the trading profit comes from
+  out.push("Share of all trading profit by good:\n");
   out.push(table(
-    ["Stage", ...GOODS, "Jade on market"],
+    ["Stage", ...GOODS],
     STAGES.map((s) => {
       const ss = snaps(s.months);
       const totals = GOODS.map((_, g) => ss.reduce((t, x) => t + x.ledger.byGood[g]!, 0));
       const all = totals.reduce((a, b) => a + b, 0);
-      const jade = ss.filter((x) => x.jade).length;
-      return [s.label, ...totals.map((t) => `${((100 * t) / all).toFixed(0)}%`), `${((100 * jade) / ss.length).toFixed(0)}%`];
+      return [s.label, ...totals.map((t) => `${((100 * t) / all).toFixed(0)}%`)];
     }),
   ));
   out.push("");
 
-  out.push("Cash position with and without jade on the market:\n");
+  out.push("Cash position with and without a jade win so far:\n");
   out.push(table(
-    ["Stage", "Jade", "Games", ...TIERS.map((t) => `${t.label} (P${t.p})`)],
+    ["Stage", "Won jade", "Games", ...TIERS.map((t) => `${t.label} (P${t.p})`)],
     STAGES.flatMap((s) => [true, false].map((j) => {
-      const pos = sorted(snaps(s.months).filter((x) => x.jade === j).map((x) => x.position));
+      const pos = sorted(snaps(s.months).filter((x) => (x.ledger.jadeWins > 0) === j).map((x) => x.position));
       return [s.label, j ? "yes" : "no", String(pos.length), ...TIERS.map((t) => fmt(percentile(pos, t.p)))];
     })),
   ));
@@ -335,8 +330,8 @@ function main(): void {
   const pct = (x: number) => `${(100 * x).toFixed(1)}%`;
   out.push("Income at 10 years: median share of gross income per game (losses against it):\n");
   out.push(table(
-    ["Trading (not shocks)", "Price shocks", "Bank interest", "Booty", "Consignments", "Losses"],
-    [[sum.shares.trading, sum.shares.shocks, sum.shares.bank, sum.shares.booty, sum.shares.consignments, sum.shares.losses].map(pct)],
+    ["Trading (not shocks)", "Price shocks", "Bank interest", "Booty", "Consignments", "Jade (gain over stake)", "Losses (with jade stakes lost)"],
+    [[sum.shares.trading, sum.shares.shocks, sum.shares.bank, sum.shares.booty, sum.shares.consignments, sum.shares.jade, sum.shares.losses].map(pct)],
   ));
   out.push("");
   out.push("Price shocks over 10 years:\n");

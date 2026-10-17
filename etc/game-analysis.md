@@ -5,8 +5,9 @@ wealth simulation, and ten tuning scenarios for (a) making risks feel riskier,
 (b) making windfalls feel more powerful and (c) making moonshots make or break a
 fortune.
 
-**Calculated on commit 81f21de,** except for "Li Yuen reworked" below, which was
-calculated after pypan-88 changed him. The figures go out of date when the game engine
+**Calculated on commit 81f21de,** except for the sections "Li Yuen reworked"
+(after pypan-88) and "Jade as a payout" (after pypan-86, which took jade off the
+market, so its figures aren't comparable with the rest). The figures go out of date when the game engine
 changes (`git log --oneline 81f21de.. -- src/engine`). Rerun with:
 
     npm run sim -- --compare --runs 1000 --start guns    # and --start debt
@@ -107,8 +108,8 @@ position. Wealth counts ships afloat only.
 | 4 | Frequent shocks | Windfall | A price shock on 1-in-4 arrivals instead of 1-in-10 |
 | 5 | Shocks on dear goods | Windfall | Shocks hit one of the two dearest goods on the market (opium and jade, or silk and opium before jade) |
 | 6 | Boom markets | Windfall | 4 and 5 together |
-| 7 | Backers only | Moonshot | Jade comes to market only if you backed the successful expedition |
-| 8 | Bet the house | Moonshot | 7, plus a stake of 25–50% of the bank (at least the old ~1M), and 12 months of cheap jade instead of 3 |
+| 7 | Backers only (now the game's rule: see "Jade as a payout") | Moonshot | Jade comes to market only if you backed the successful expedition |
+| 8 | Bet the house (the stake is now the game's rule) | Moonshot | 7, plus a stake of 25–50% of the bank (at least the old ~1M), and 12 months of cheap jade instead of 3 |
 | 9 | Balanced | All | 1, milder pirates (health bump 15, damage bump 0.7), 5 and 8 |
 | 10 | Combined | All | 1, 2, 4, 5 and 8 at full strength |
 
@@ -181,7 +182,8 @@ position. Wealth counts ships afloat only.
    improves windfalls. Perhaps weight them by price instead of only picking the top
    two, so cheap goods still get the occasional shock.
 2. **Make the jade expedition backers-only, with a stake that scales with the bank**
-   (scenario 8). This makes it the game's one true moonshot. Consider a lower bound
+   (scenario 8). Done in pypan-86, as a payout of 2–5 times the stake: see "Jade as
+   a payout". This makes it the game's one true moonshot. Consider a lower bound
    on the stake (25–35% of the bank) and keep 12 months of cheap jade.
 3. **Raise pirate danger gradually.** With a health bump of 15, simulated on their
    own, a damage bump of 0.6 sinks about 10% of ships in 10 years, 0.7 about 15%,
@@ -243,6 +245,46 @@ afloat at 10 years.
   the demand. Making Li Yuen feel like a risk to a player who pays would need a
   demand that comes when cash is short (at sea, say), or a separate threat to the
   bank (the "predatory bankers" option in pypan-88).
+
+## Jade as a payout (pypan-86)
+
+Jade is no longer a good. Sir Beaumont-Finch's expedition asks 25–50% of the bank
+(at least 1,000,000), up to three times a game, and a success (1-in-3) pays backers
+2–5 times their stake into the bank (SPEC.md §4.6). Players who don't back it get
+nothing. Scenario 7 and 8's patches are gone. **Small jade stakes** asks about
+1,000,000 whatever the bank, as before, for comparison.
+
+1,000 games per start, guns start first and the debt start in parentheses; ships
+afloat at 10 years. "Jade" is what successes paid beyond their stakes; lost stakes
+count as losses.
+
+| Scenario | P25 / P50 / P90 at 10 years | Jade (share of income) | Losses | Worst drawdown after year 5 (median) | Biggest windfall after year 5 (median) |
+|---|---|---|---|---|---|
+| Before pypan-86 (jade on the market) | 127M / 510M / 1.45B (101M / 369M / 1.16B) | - | 13% (13%) | 20% (23%) | 6% (4%) |
+| **pypan-86 (the game now)** | 60M / 100M / 223M (43M / 78M / 181M) | 4.7% (5.4%) | 35% (36%) | 43% (46%) | 59% (63%) |
+| Small jade stakes | 71M / 106M / 198M (54M / 87M / 172M) | 1.2% (1.3%) | 25% (25%) | 23% (25%) | 11% (13%) |
+
+| | Stake (median share of worth) | Expeditions backed (median) | Won per expedition | Position: won at least once | backed, never won | Gap |
+|---|---|---|---|---|---|---|
+| pypan-86 | 40% | 3 | 33% | 121M | 67M | 1.8× |
+| Small jade stakes | 7% | 3 | 33% | 112M | 95M | 1.2× |
+
+- **Late-game wealth falls by about four-fifths.** Without jade, opium is the top
+  good and saturates: the middling fortune at 10 years is 100M, down from 510M. This
+  is the gap pypan-87's porcelain is meant to fill.
+- **The moonshot is now the late game's main swing.** A win is the biggest
+  windfall after year 5 (about 60% of worth at the median), and a loss is the worst
+  late drawdown (about 43%, up from 20%). Two-thirds of games lose a quarter or more
+  of their worth after year 5.
+- **It's a bet that pays over a game, not every time.** The bot backs all three
+  offers. Two in three of them fail, but the 62% of players who win at least once
+  end up about twice as rich as those who never do. Lost stakes push losses to a
+  third of income.
+- **The stake is what makes it a moonshot.** With the old ~1M stake, jade is 1% of
+  income, late drawdowns stay at about a fifth, and winners are only 20% richer.
+- **For a real player,** the bot overstates the gamble: it never declines, even
+  after two failures. A cautious player can skip it at no cost, which is the point
+  of making it a choice.
 
 ## Caveats
 

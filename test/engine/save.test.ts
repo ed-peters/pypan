@@ -13,18 +13,30 @@ describe("save format", () => {
       name: "Rising Sun", year: 1860, month: 1, cash: 0, debt: 0, shipGuns: 5,
       shipSize: 60, pirateChance: 7, shipCargo: null, location: 0, transfer: 0,
     });
-    expect(h.prices).toEqual([6, 170, 2200, 26000, 200000]);
+    // jade's price is dropped with jade (pypan-86)
+    expect(h.prices).toEqual([6, 170, 2200, 26000]);
   });
 
-  it("writes the same keys as the Python version", () => {
+  it("writes the same keys as the Python version, with four goods", () => {
     const h = fromSave(pythonSave);
     expect(Object.keys(toSave(h)).sort()).toEqual(Object.keys(pythonSave).sort());
-    expect(toSave(h)).toEqual(pythonSave);
+    const four = (xs: number[]) => xs.slice(0, 4);
+    expect(toSave(h)).toEqual({
+      ...pythonSave,
+      ship_goods: four(pythonSave.ship_goods),
+      warehouse_goods: four(pythonSave.warehouse_goods),
+      prices: four(pythonSave.prices),
+    });
+  });
+
+  it("sells the jade in older saves for 120,000 a unit", () => {
+    const h = fromSave({ ...pythonSave, cash: 400, ship_goods: [1, 2, 3, 4, 2], warehouse_goods: [0, 0, 0, 5, 1] });
+    expect([h.cash, h.shipGoods, h.warehouseGoods]).toEqual([400 + 3 * 120000, [1, 2, 3, 4], [0, 0, 0, 5]]);
   });
 
   it("round-trips through a string, including special cargo", () => {
     const h = newHong(new SeededRng(4), false);
-    h.shipGoods = [1, 2, 3, 4, 5];
+    h.shipGoods = [1, 2, 3, 4];
     h.shipCargo = { description: "party of 3", destination: 5, illegal: false, size: 9, value: 3171, due: 20 };
     h.transfer = -1;
     expect(fromSaveString(toSaveString(h))).toEqual(h);
@@ -36,21 +48,30 @@ describe("save format", () => {
     expect(h.shipCargo).toEqual({ ...cargo, due: 19 });
   });
 
-  it("loads Python saves with jade on the market", () => {
+  it("loads Python saves with no expedition", () => {
     const h = fromSave(pythonSave);
-    expect([h.jade, h.expedition, h.expeditionFailed, h.jadeDeal]).toEqual([true, null, false, null]);
+    expect([h.expedition, h.expeditionFailed, h.jadeOffers]).toEqual([null, false, 0]);
   });
 
   it("round-trips the jade expedition", () => {
     const h = newHong(new SeededRng(4), false);
-    expect(toSave(h)).toMatchObject({ jade: false });
     expect(toSave(h)).not.toHaveProperty("expedition");
-    expect(toSave(h)).not.toHaveProperty("jade_deal");
     expect(toSave(h)).not.toHaveProperty("expedition_failed");
-    h.expedition = { port: 5, resolves: 28, invested: true };
+    expect(toSave(h)).not.toHaveProperty("jade_offers");
+    h.expedition = { port: 5, resolves: 28, stake: 1500000 };
     h.expeditionFailed = true;
-    h.jadeDeal = { port: 6, until: 31 };
+    h.jadeOffers = 2;
     expect(fromSaveString(toSaveString(h))).toEqual(h);
+  });
+
+  it("loads older expeditions, and ignores jade on the market and cheap jade", () => {
+    const old = (invested: boolean) => fromSave({
+      ...pythonSave, jade: false, jade_deal: { port: 6, until: 31 }, expedition: { port: 5, resolves: 28, invested },
+    });
+    expect(old(true).expedition).toEqual({ port: 5, resolves: 28, stake: 1000000 });
+    expect(old(false).expedition).toEqual({ port: 5, resolves: 28, stake: 0 });
+    expect(toSave(old(true))).not.toHaveProperty("jade");
+    expect(toSave(old(true))).not.toHaveProperty("jade_deal");
   });
 
   it("round-trips the bank's representative", () => {
@@ -88,9 +109,9 @@ describe("save format", () => {
     ["bad month", JSON.stringify({ ...pythonSave, month: 13 })],
     ["short goods list", JSON.stringify({ ...pythonSave, ship_goods: [0, 0] })],
     ["bad cargo", JSON.stringify({ ...pythonSave, ship_cargo: { description: "x" } })],
-    ["bad jade flag", JSON.stringify({ ...pythonSave, jade: "no" })],
     ["bad expedition", JSON.stringify({ ...pythonSave, expedition: { port: 5 } })],
-    ["bad jade deal", JSON.stringify({ ...pythonSave, jade_deal: { port: 99, until: 3 } })],
+    ["negative stake", JSON.stringify({ ...pythonSave, expedition: { port: 5, resolves: 28, stake: -1 } })],
+    ["bad jade offers", JSON.stringify({ ...pythonSave, jade_offers: -1 })],
   ])("rejects a save with %s", (_, json) => {
     expect(() => fromSaveString(json)).toThrow(SaveFormatError);
   });

@@ -4,7 +4,6 @@ import { pay, spendable } from "./bank";
 import { good, mult } from "./constants";
 import { money } from "./format";
 import { currentTime, knownGoods, type Hong } from "./hong";
-import { applyJadeDeal } from "./jade";
 import { setPrices } from "./prices";
 import { askNum, askOptOrCancel, askYn, say, type Flow } from "./prompts";
 import type { Rng } from "./rng";
@@ -14,7 +13,6 @@ export const MSG_POS_SHOCK = [
   "An agent for the Moro rebels has been spotted in the area, Taipan! Arms are sky-high here!",
   "Taipan! The wharves here have been burned by rebel samurai! All the silk was destroyed!",
   "Taipan! A fire has swept the area! The price of opium has leaped because of hospital use!",
-  "A British trading company has been buying all the local jade, Taipan! Prices are sky-high!",
 ] as const;
 
 export const MSG_NEG_SHOCK = [
@@ -22,7 +20,6 @@ export const MSG_NEG_SHOCK = [
   "Taipan! A period of relative peace has resulted in surplus arms being made available on the local market!",
   "A rival hong has dumped surplus silk on the market here, Taipan! Prices have crashed!",
   "Taipan, a Yankee captain is selling Turkish opium at below-market prices here!",
-  "Taipan! Burmese jade from a newly-discovered mine has been flooding the market here!",
 ] as const;
 
 /**
@@ -47,7 +44,7 @@ export function conditionReport(h: Hong, message: string): string {
 
 /**
  * Set prices on arrival, with a 1-in-10 chance of a shock after the first month to
- * a good on the market, then any cheap jade for the jade expedition's backers.
+ * a good on the market.
  */
 export function* establishPrices(h: Hong, rng: Rng): Flow {
   h.prices = setPrices(rng, h.location);
@@ -66,8 +63,6 @@ export function* establishPrices(h: Hong, rng: Rng): Flow {
     const m = mult(g);
     h.prices[g] = Math.max(m, Math.trunc(h.prices[g]! / m) * m);
   }
-
-  applyJadeDeal(h);
 }
 
 /** How much of a good you can afford; the bank can pay too, wherever it's open. */

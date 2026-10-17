@@ -28,9 +28,9 @@ export function statusRows(h: Hong | null): Row[] {
   ];
 }
 
-/** Before a game, show the goods a new game starts with: no jade. */
+/** Before a game, show the goods a new game starts with. */
 function goodsRows(h: Hong | null, goods: readonly number[] | undefined, capacity: number | undefined): Row[] {
-  const names = h ? knownGoods(h) : GOODS.slice(0, -1);
+  const names = h ? knownGoods(h) : GOODS;
   const rows: Row[] = names.map((g, i) => [g, goods ? money(goods[i]!) : "-"]);
   const cap = capacity === undefined ? "-" : capacity < 0 ? "Overloaded" : money(capacity);
   rows.push(["Capacity", cap]);

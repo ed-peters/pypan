@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  AT_SEA, BASE_PRICES, BATAVIA, CITIES, GOODS, HONG_KONG, JADE, NUM_GOODS,
+  AT_SEA, BASE_PRICES, BATAVIA, CITIES, GOODS, HONG_KONG, NUM_GOODS, OPIUM,
   city, good, mult, randomOtherCity,
 } from "../../src/engine/constants";
 import { ScriptedRng, SeededRng } from "../../src/engine/rng";
@@ -29,11 +29,11 @@ describe("cities", () => {
 });
 
 describe("goods", () => {
-  it("has five goods with increasing magnitudes", () => {
+  it("has four goods with increasing magnitudes, and no jade", () => {
     expect(GOODS).toHaveLength(NUM_GOODS);
-    expect(good(JADE)).toBe("Jade");
-    expect([0, 1, 2, 3, 4].map(mult)).toEqual([1, 10, 100, 1000, 10000]);
-    expect(() => good(5)).toThrow(RangeError);
+    expect(good(OPIUM)).toBe("Opium");
+    expect([0, 1, 2, 3].map(mult)).toEqual([1, 10, 100, 1000]);
+    expect(() => good(4)).toThrow(RangeError);
   });
 
   it("has a base price row per good, with a column per city", () => {

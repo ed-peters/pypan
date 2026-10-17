@@ -59,22 +59,12 @@ const dearShocks = {
   to: "const g = knownGoods(h).length - 1 - rng.randrange(2);",
 };
 
-const backersOnly = {
-  file: "src/engine/jade.ts",
-  // if we didn't back it, the jade goes to his backers in London
-  from: "It appears our friend Sir Beaumont-Finch was met with success.\");\n      h.jade = true;",
-  to: "It appears our friend Sir Beaumont-Finch was met with success.\");",
+const smallStakes = {
+  file: "src/engine/constants.ts",
+  // the stake is about 1,000,000 whatever the bank, as before pypan-86
+  from: "export const JADE_STAKE_SHARE = 0.25;",
+  to: "export const JADE_STAKE_SHARE = 0;",
 };
-
-const betTheHouse = [
-  {
-    file: "src/engine/jade.ts",
-    // a quarter to half of the bank, and at least the old stake
-    from: "const amount = Math.round(JADE_INVESTMENT * (0.9 + 0.2 * rng.float()) / 1000) * 1000;",
-    to: "const amount = Math.round(Math.max(JADE_INVESTMENT, h.bank * (0.25 + 0.25 * rng.float())) / 1000) * 1000;",
-  },
-  { file: "src/engine/constants.ts", from: "export const JADE_DISCOUNT_MONTHS = 3;", to: "export const JADE_DISCOUNT_MONTHS = 12;" },
-];
 
 export const SCENARIOS = [
   { name: "baseline", title: "Baseline", aim: "-", patches: [] },
@@ -86,14 +76,13 @@ export const SCENARIOS = [
   { name: "frequent-shocks", title: "Frequent shocks", aim: "windfall", patches: [frequentShocks] },
   { name: "dear-shocks", title: "Shocks on dear goods", aim: "windfall", patches: [dearShocks] },
   { name: "boom", title: "Boom markets", aim: "windfall", patches: [frequentShocks, dearShocks] },
-  { name: "backers-only", title: "Backers only", aim: "moonshot", patches: [backersOnly] },
-  { name: "bet-the-house", title: "Bet the house", aim: "moonshot", patches: [backersOnly, ...betTheHouse] },
+  { name: "small-stakes", title: "Small jade stakes", aim: "moonshot", patches: [smallStakes] },
   {
     name: "balanced", title: "Balanced", aim: "all",
-    patches: [...tougherPirates, dearShocks, backersOnly, ...betTheHouse],
+    patches: [...tougherPirates, dearShocks],
   },
   {
     name: "combined", title: "Combined", aim: "all",
-    patches: [...fiercerPirates, frequentShocks, dearShocks, backersOnly, ...betTheHouse],
+    patches: [...fiercerPirates, frequentShocks, dearShocks],
   },
 ];

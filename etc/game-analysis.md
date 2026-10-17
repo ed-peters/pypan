@@ -5,7 +5,8 @@ wealth simulation, and ten tuning scenarios for (a) making risks feel riskier,
 (b) making windfalls feel more powerful and (c) making moonshots make or break a
 fortune.
 
-**Calculated on commit 81f21de.** The figures go out of date when the game engine
+**Calculated on commit 81f21de,** except for "Li Yuen reworked" below, which was
+calculated after pypan-88 changed him. The figures go out of date when the game engine
 changes (`git log --oneline 81f21de.. -- src/engine`). Rerun with:
 
     npm run sim -- --compare --runs 1000 --start guns    # and --start debt
@@ -100,7 +101,7 @@ position. Wealth counts ships afloat only.
 
 | # | Scenario | Aim | What changes |
 |---|---|---|---|
-| 1 | Li Yuen's tithe | Risk | Li Yuen demands 2–6% of cash + bank (at least today's amount), and his patience runs out about every 2 years instead of every 5 |
+| 1 | Li Yuen's tithe | Risk | Li Yuen demands 2–6% of cash + bank (at least today's amount), and his patience runs out about every 2 years instead of every 5. Superseded by pypan-88 (see "Li Yuen reworked"); scenarios 9 and 10 now get his worth-based demand from the game itself, without the shorter patience |
 | 2 | Fiercer pirates | Risk | Pirates gain health twice as fast each year (`ENEMY_HEALTH_BUMP` 10 → 20) and damage twice as fast (`ENEMY_DAMAGE_BUMP` 0.5 → 1) |
 | 3 | Heavy storms | Risk | 1-in-3 storms damage the ship (not 1-in-10), by 10–30% of its size (not 5–20 points) |
 | 4 | Frequent shocks | Windfall | A price shock on 1-in-4 arrivals instead of 1-in-10 |
@@ -191,10 +192,57 @@ position. Wealth counts ships afloat only.
    Mention them in the help or SPEC, so that losing a fortune to them feels like a
    known gamble rather than bad luck.
 5. **Rework Li Yuen before scaling his demand.** A tithe by itself is only a tax.
-   Pair it with a consequence for refusing that players can see coming.
+   Pair it with a consequence for refusing that players can see coming. Done in
+   pypan-88: see "Li Yuen reworked" below.
 6. **Rerun the wealth curve** after any of these. Scenarios 4–6 inflate wealth, and
    scenario 8 spreads it, which moves every threshold in `etc/wealth-curve.md` and
    the score ranks (pypan-85).
+
+## Li Yuen reworked (pypan-88)
+
+After month 12, Li Yuen now asks 3–6% of the cash position (cash + bank − debt), or
+`time × 1000` plus up to as much again if that's more (SPEC.md §8). Refusing, or
+turning down Wu's help to pay, earns a grudge, up to 3. While he holds it his fleet
+attacks on sight, turns up more often (1-in-20 voyages without pirates, then 1-in-10,
+1-in-6 and 1-in-5) with 3 more ships per refusal, and each new demand is 50% larger.
+His warnings grow sterner, and his lieutenant comes on every arrival until you pay.
+His patience is unchanged: a demand about every five years.
+
+Three scenarios compare it with the old rules:
+
+- **Li Yuen before pypan-88:** the old time-based demand (`LI_YUEN_SHARE` 0), with the
+  new grudge.
+- **Impatient Li Yuen:** the new demand about every two and a half years
+  (`LI_YUEN_PATIENCE` 10).
+- **Refusing Li Yuen:** the bot never pays.
+
+1,000 games per start, guns start first and the debt start in parentheses; ships
+afloat at 10 years.
+
+| Scenario | P50 at 10 years | Sunk | Losses (share of income) | Bank's share of income | Worst drawdown after year 5 (median) |
+|---|---|---|---|---|---|
+| Li Yuen before pypan-88 | 530M (384M) | 6.9% (7.4%) | 11.0% (12.0%) | 8.4% (7.8%) | 19.1% (20.6%) |
+| **pypan-88 (the game now)** | 510M (369M) | 7.6% (7.6%) | 13.2% (13.3%) | 8.4% (7.6%) | 19.5% (22.7%) |
+| Impatient Li Yuen | 536M (382M) | 7.5% (12.4%) | 15.1% (14.8%) | 8.4% (7.7%) | 20.5% (23.2%) |
+| Refusing Li Yuen | 604M (725M) | 83% (96%) | 14.7% (16.5%) | 8.4% (8.3%) | 27.8% (19.2%) |
+
+- **Paying him is still a tax, but a bigger one.** Losses rise by about 2 points of
+  income, and the median fortune at 10 years is about 4% lower. Late drawdowns barely
+  move, as a demand of 3–6% every five years is too small to register as a fall. The
+  bank's share of income doesn't change: the bank is still safe.
+- **The risk is in refusing, and it's lethal.** A player who never pays sinks in 83%
+  of games (96% from the debt start). The few survivors are richer, since they kept
+  every donation. A real player will pay up long before then. Each warning, the
+  summons on every arrival and the growing fleet make the danger plain.
+- **More frequent demands hurt poor players, not rich ones.** With a demand every
+  two and a half years, the debt start sinks 12% of ships (up from 7%), while the
+  guns start is unchanged. In year 2 or 3 a debt-start player often can't afford
+  `time × 1000`, refuses, and meets a hostile fleet with a small ship. For that
+  reason the game keeps the five-year patience.
+- **Not done:** the bot pays whenever it can, so it never weighs the grudge against
+  the demand. Making Li Yuen feel like a risk to a player who pays would need a
+  demand that comes when cash is short (at sea, say), or a separate threat to the
+  bank (the "predatory bankers" option in pypan-88).
 
 ## Caveats
 
@@ -208,5 +256,5 @@ position. Wealth counts ships afloat only.
 - **Shock gains are measured against usual prices** at the shocked port, so a bot
   that carried crashed goods to their dearest port would count somewhat more.
 - **Levels only.** Every scenario changes numbers in existing rules. Ideas that need
-  new rules (shocks announced in advance, storms that wash cargo overboard, Li Yuen
-  hunting non-payers) aren't simulated.
+  new rules (shocks announced in advance, storms that wash cargo overboard) aren't
+  simulated. Li Yuen hunting non-payers is now in the game (pypan-88).

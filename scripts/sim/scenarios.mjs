@@ -6,18 +6,25 @@
 // The aims (etc/game-analysis.md): risks that feel riskier, windfalls that feel
 // more powerful, and moonshots that make or break a fortune.
 
-const liYuenTithe = {
-  file: "src/engine/extortion.ts",
-  from: "cost = rng.inRange(0, time * 1000) + time * 1000;",
-  // a share of your money, but never less than today's demand
-  to: "cost = Math.max(rng.inRange(0, time * 1000) + time * 1000, Math.trunc((h.cash + h.bank) * (0.02 + 0.04 * rng.float())));",
+const oldLiYuen = {
+  file: "src/engine/constants.ts",
+  // Li Yuen's demand before pypan-88: time x 1000 plus up to as much again
+  from: "export const LI_YUEN_SHARE = 0.03;",
+  to: "export const LI_YUEN_SHARE = 0;",
 };
 
-const frequentTithes = {
-  file: "src/engine/extortion.ts",
-  // Li Yuen's patience runs out about every two years, not every five
-  from: "if (time > 1 && rng.chanceOf(20)) {",
-  to: "if (time > 1 && rng.chanceOf(8)) {",
+const impatientLiYuen = {
+  file: "src/engine/constants.ts",
+  // Li Yuen's patience runs out about every two and a half years, not every five
+  from: "export const LI_YUEN_PATIENCE = 20;",
+  to: "export const LI_YUEN_PATIENCE = 10;",
+};
+
+const refuseLiYuen = {
+  file: "scripts/sim/bot.ts",
+  // the bot never pays, so his grudge grows to its limit and stays there
+  from: "const pay = cost <= h.cash + h.bank;",
+  to: "const pay = false;",
 };
 
 const tougherPirates = [
@@ -71,7 +78,9 @@ const betTheHouse = [
 
 export const SCENARIOS = [
   { name: "baseline", title: "Baseline", aim: "-", patches: [] },
-  { name: "tithe", title: "Li Yuen's tithe", aim: "risk", patches: [liYuenTithe, frequentTithes] },
+  { name: "old-li-yuen", title: "Li Yuen before pypan-88", aim: "-", patches: [oldLiYuen] },
+  { name: "impatient-li-yuen", title: "Impatient Li Yuen", aim: "risk", patches: [impatientLiYuen] },
+  { name: "refuse-li-yuen", title: "Refusing Li Yuen", aim: "risk", patches: [refuseLiYuen] },
   { name: "pirates", title: "Fiercer pirates", aim: "risk", patches: fiercerPirates },
   { name: "storms", title: "Heavy storms", aim: "risk", patches: heavyStorms },
   { name: "frequent-shocks", title: "Frequent shocks", aim: "windfall", patches: [frequentShocks] },
@@ -81,10 +90,10 @@ export const SCENARIOS = [
   { name: "bet-the-house", title: "Bet the house", aim: "moonshot", patches: [backersOnly, ...betTheHouse] },
   {
     name: "balanced", title: "Balanced", aim: "all",
-    patches: [liYuenTithe, frequentTithes, ...tougherPirates, dearShocks, backersOnly, ...betTheHouse],
+    patches: [...tougherPirates, dearShocks, backersOnly, ...betTheHouse],
   },
   {
     name: "combined", title: "Combined", aim: "all",
-    patches: [liYuenTithe, ...fiercerPirates, frequentShocks, dearShocks, backersOnly, ...betTheHouse],
+    patches: [...fiercerPirates, frequentShocks, dearShocks, backersOnly, ...betTheHouse],
   },
 ];

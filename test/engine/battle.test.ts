@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { GENERAL, SILK } from "../../src/engine/constants";
-import { PIRATE_KING, PirateBattle, checkPirates } from "../../src/engine/battle";
+import { PIRATE_KING, PirateBattle, checkPirates, liYuenSighting } from "../../src/engine/battle";
 import { newHong, type Hong } from "../../src/engine/hong";
 import { ScriptedRng, SeededRng } from "../../src/engine/rng";
 import { makeHong } from "../helpers/hong";
@@ -239,6 +239,13 @@ describe("Li Yuen's fleet", () => {
     expect(count(gunHong(), 12)).toBe(17);
   });
 
+  it("brings 3 more ships for each refusal", () => {
+    const count = (roll: number) => new PirateBattle(makeHong({ grudge: 2 }), new ScriptedRng([roll, 0.5, 100]), PIRATE_KING).pirates;
+    // 11 + randrange(8)
+    expect(count(0)).toBe(11);
+    expect(count(7)).toBe(18);
+  });
+
   it("always has at least 5 ships, even against a tiny ship", () => {
     const b = new PirateBattle(makeHong({ shipSize: 10 }), new ScriptedRng([0, 0.5, 100]), PIRATE_KING);
     expect(b.pirates).toBe(5);
@@ -296,6 +303,14 @@ describe("checkPirates", () => {
       "5 ships of Li Yuen's pirate fleet, Taipan!!!",
       "5 enemies remaining ... What shall we do, Taipan?",
     ]);
+  });
+
+  it("sends Li Yuen more often the more you've refused him", () => {
+    expect([0, 1, 2, 3].map((grudge) => liYuenSighting(makeHong({ grudge })))).toEqual([20, 10, 6, 5]);
+    // a roll of 10 brings him 1-in-10 but not 1-in-20
+    expect(play(checkPirates(makeHong(), new ScriptedRng([1, 10]))).transcript).toEqual([]);
+    const p = play(checkPirates(makeHong({ grudge: 1 }), new ScriptedRng([1, 10, 0, 0.5, 100])));
+    expect(texts(p).slice(0, 2)).toEqual(["Li Yuen's pirates, Taipan!!!", "8 ships of Li Yuen's pirate fleet, Taipan!!!"]);
   });
 
   it("brings Li Yuen's fleet on after it drives off the pirates", () => {

@@ -168,15 +168,15 @@ describe("game endings", () => {
 });
 
 describe("a whole game", () => {
-  it("starts, buys, sails, sells, sails home and pays Li Yuen", () => {
+  it("starts, buys, sails, sells, sails home and pays Li Yuen after refusing him", () => {
     const rng = new ScriptedRng([
       ...MIN_PRICES, //            starting prices: general at 5
       0.5, //                      Li Yuen asks 81
-      1, 1, 1, //                  to Shanghai: no pirates, no Li Yuen, no storm
-      1, //                        extortion counter unchanged -> lieutenant
+      1, 1, 1, //                  to Shanghai: no pirates, no Li Yuen (1-in-10), no storm
+      //                           (he holds a grudge, so no counter roll) -> lieutenant
       2, 0, 0, 0, 0, 1, //         Shanghai prices: general at 5 x 3 = 15; no shock
       1, 1, 1, //                  back home: no pirates, no Li Yuen, no storm
-      1, 0.5, //                   extortion counter unchanged; Li Yuen asks 201
+      0.5, //                      Li Yuen asks 201 x 1.5 = 301
       ...MIN_PRICES, 1, //         Hong Kong prices; no shock
     ]);
     const saves: number[] = [];
@@ -191,17 +191,18 @@ describe("a whole game", () => {
       false, true, //              no business with Wu; pay Li Yuen
     ]);
 
-    expect(seen).toContain("Li Yuen has sent a Lieutenant, Taipan.  He says his admiral wishes to see you in Hong Kong, posthaste!");
-    expect(seen).toContain("Li Yuen asks 201 in donation to the temple of Tin Hau, the Sea Goddess. Will you pay?");
+    expect(seen).toContain("Li Yuen has sent a Lieutenant, Taipan.  He says his admiral is still waiting for you in Hong Kong!");
+    expect(seen).toContain("Li Yuen has not forgotten your refusal, Taipan.");
+    expect(seen).toContain("Li Yuen asks 301 in donation to the temple of Tin Hau, the Sea Goddess. Will you pay?");
     // back at the menu, still in debt, so no retiring yet
     expect(game.prompt).toMatchObject({ kind: "choose" });
     expect(game.prompt?.kind === "choose" && game.prompt.options).not.toContain("Retire");
     expect(rng.remaining).toBe(0);
     expect(session.hong).toMatchObject({
-      location: HONG_KONG, month: 3, cash: 799, debt: 6050, extorted: 1,
+      location: HONG_KONG, month: 3, cash: 699, debt: 6050, extorted: 1, grudge: 0,
       shipGoods: [0, 0, 0, 0, 0],
     });
     // saved at each menu: HK, HK, Shanghai, Shanghai, HK
-    expect(saves).toEqual([400, 100, 100, 1000, 799]);
+    expect(saves).toEqual([400, 100, 100, 1000, 699]);
   });
 });

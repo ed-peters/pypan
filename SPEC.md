@@ -71,6 +71,7 @@ house). It is fully serializable to JSON for save/load. Key fields:
 | `warehouse_goods[5]` | Goods stored in warehouse | all 0 |
 | `threatened` | Whether Wu has issued his debt threat | false |
 | `extorted` | Li Yuen extortion counter (0–3) | 0 |
+| `grudge` | Times you've refused Li Yuen since you last paid him (0–3, §8); saved only when not 0 | 0 |
 | `bailout` | Multiplier for emergency loan cost (see §4.5) | 1 |
 | `location` | Current city index (or AT_SEA) | Hong Kong |
 | `transfer` | Warehouse transfer fee %; `-1` means unavailable | 0 |
@@ -380,33 +381,50 @@ hull. Gun-hit probability rises with existing damage (certain above 80%).
 Li Yuen's fleet shows up in one of two ways:
 
 - It interrupts a regular battle (§7.2), or
-- No regular pirates attacked this voyage, and a further 1-in-20 chance comes up.
+- No regular pirates attacked this voyage, and a further chance comes up: 1-in-20,
+  or 1-in-10, 1-in-6 and 1-in-5 as Li Yuen's grudge grows (§8): `trunc(20 / (1 + grudge))`.
 
 (After a regular battle that ends normally — won or fled — Li Yuen doesn't appear.)
 
 The captain says "Li Yuen's pirates, Taipan!!!". If `extorted` is not 0 (you've paid
 Li Yuen's "donation" recently, §8), the captain says "Good joss!! They let us be!!"
 and the voyage continues. Otherwise Li Yuen attacks with a fleet of 5 to
-`(ship_size / 5) + ship_guns` ships (random, at least 5), which do double damage. The
-player either flees, wins (taking the booty), or sinks.
+`(ship_size / 5) + ship_guns` ships (random, at least 5), plus 3 more for each level of
+his grudge (`LI_YUEN_GRUDGE_SHIPS`), which do double damage. The player either flees,
+wins (taking the booty), or sinks.
 
 ---
 
 ## 8. Li Yuen Extortion (`check_extortion`)
 
 Li Yuen is the pirate admiral who demands "donations." A counter (`extorted`, 0–3)
-randomly increments over time (1-in-20 per arrival after month 1); extortion only
-triggers when the counter wraps back to 0. Since it starts at 0, Li Yuen asks at the
-very start of a game that begins with cash (the debt start).
+randomly increments over time (1-in-20 per arrival after month 1, `LI_YUEN_PATIENCE`);
+extortion only triggers when the counter wraps back to 0, about every five years.
+Since it starts at 0, Li Yuen asks at the very start of a game that begins with cash
+(the debt start).
 
-- **Away from Hong Kong**: a lieutenant summons you to Hong Kong.
+- **Away from Hong Kong**: a lieutenant summons you to Hong Kong ("... his admiral is
+  still waiting for you in Hong Kong!" once you've refused him).
 - **In Hong Kong**: you are asked for a donation. Early game the demand is
-  `cash/2.5 * rand + 1`; after month 12 it is `in_range(0, time*1000) + time*1000`
-  (much larger).
-- **Refusing**: you get a pirate warning, and his fleet will attack if you meet it
-  (§7.4).
-- **Can't afford it**: Elder Brother Wu can cover the shortfall, adding it to your debt.
-- Paying sets `extorted = 1`, resetting the cycle.
+  `cash/2.5 * rand + 1`. After month 12 it tracks what you're worth (pypan-88):
+  `base + randrange(base)`, where `base` is the larger of `time * 1000` and 3% of your
+  cash position, cash + bank − debt (`LI_YUEN_SHARE`). That's 3–6% of your fortune
+  once it's past about 33,000 per month played.
+- **Refusing** gives him a **grudge** (`grudge`, up to 3, `LI_YUEN_MAX_GRUDGE`), and
+  he warns you, more sternly each time:
+  1. "Very well. I would be wary of pirates if I were you, Taipan."
+  2. "Li Yuen will remember this, Taipan. His fleet is looking for you."
+  3. "Li Yuen has put a price on your head, Taipan! His whole fleet is hunting you."
+
+  While he holds a grudge, his fleet attacks if you meet it, and you meet it more
+  often and it brings more ships for each refusal (§7.4). The counter doesn't move,
+  so he asks again on every arrival in Hong Kong, and his lieutenant comes on every
+  arrival elsewhere. Each demand is 50% larger for each refusal
+  (`LI_YUEN_GRUDGE_MARKUP`), after "Li Yuen has not forgotten your refusal, Taipan."
+- **Can't afford it**: Elder Brother Wu can cover the shortfall, adding it to your
+  debt. Turning Wu down counts as a refusal; Wu's own pirate warning stands in for the
+  first one.
+- Paying sets `extorted = 1`, resetting the cycle, and clears the grudge.
 
 ---
 
@@ -532,6 +550,12 @@ after the save's date.
 | `ENEMY_HEALTH_START` / `_BUMP` | 20 / 10 | Pirate health base + per-year growth |
 | `ENEMY_DAMAGE_START` / `_BUMP` | 0.5 / 0.5 | Pirate damage base + per-year growth |
 | `LI_YUEN_MIN_SHIPS` | 5 | Smallest fleet Li Yuen sends |
+| `LI_YUEN_PATIENCE` | 20 | 1-in-N arrivals that advance Li Yuen's counter (§8) |
+| `LI_YUEN_SHARE` | 0.03 | Share of your cash position his demand starts from, after month 12 |
+| `LI_YUEN_SIGHTING` | 20 | 1-in-N voyages without pirates that bring his fleet, divided by `1 + grudge` |
+| `LI_YUEN_MAX_GRUDGE` | 3 | Refusals he remembers until you pay |
+| `LI_YUEN_GRUDGE_MARKUP` | 0.5 | Share added to his demand per refusal |
+| `LI_YUEN_GRUDGE_SHIPS` | 3 | Ships added to his fleet per refusal |
 
 ---
 
@@ -613,6 +637,9 @@ Additions:
   good (the magnitudes were reversed but the rows weren't). The table is now
   correctly mapped, with a new row for Jade, and port-based prices are on by default.
 - **Li Yuen's pirate fleet** (§7.4), which was defined but never used.
+- **Li Yuen's demand tracks your fortune** (§8, pypan-88) rather than only the
+  calendar, and refusing him earns a grudge: his fleet hunts you more often and in
+  greater numbers, and his next demand is larger, until you pay.
 - **Sinking** (§7.3): the ship can now be lost in battle, ending the game.
 - **Retiring and scoring** (§1.1): Retire replaces Exit; the game ends with a score
   and rank.

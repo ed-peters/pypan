@@ -42,6 +42,18 @@ export const JADE_EXPEDITION_MONTHS = 3;
 export const JADE_DISCOUNT_MONTHS = 3;
 /** Backers' jade costs this fraction of the market price. */
 export const JADE_DISCOUNT = 0.2;
+/** Li Yuen's patience runs out 1-in-N arrivals, three times between demands (pypan-88). */
+export const LI_YUEN_PATIENCE = 20;
+/** After month 12 he asks this share of your cash position, plus up to as much again. */
+export const LI_YUEN_SHARE = 0.03;
+/** His fleet turns up 1-in-N voyages without regular pirates, more often with a grudge. */
+export const LI_YUEN_SIGHTING = 20;
+/** Refusals he remembers until you pay. */
+export const LI_YUEN_MAX_GRUDGE = 3;
+/** Each refusal adds this share to his next demand ... */
+export const LI_YUEN_GRUDGE_MARKUP = 0.5;
+/** ... and this many ships to his fleet. */
+export const LI_YUEN_GRUDGE_SHIPS = 3;
 export const ENEMY_HEALTH_START = 20;
 export const ENEMY_HEALTH_BUMP = 10;
 export const ENEMY_DAMAGE_START = 0.5;

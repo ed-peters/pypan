@@ -60,6 +60,14 @@ describe("save format", () => {
     expect(fromSaveString(toSaveString(h)).banker).toBe(true);
   });
 
+  it("round-trips Li Yuen's grudge, written only when he holds one", () => {
+    const h = newHong(new SeededRng(4), false);
+    expect(toSave(h)).not.toHaveProperty("grudge");
+    h.grudge = 2;
+    expect(fromSaveString(toSaveString(h)).grudge).toBe(2);
+    expect(() => fromSave({ ...toSave(h), grudge: 4 })).toThrow(SaveFormatError);
+  });
+
   it("copies arrays rather than sharing them", () => {
     const h = newHong(new SeededRng(4), false);
     const back = fromSave(toSave(h));

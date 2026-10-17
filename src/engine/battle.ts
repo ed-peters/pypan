@@ -4,7 +4,7 @@
 
 import {
   ENEMY_DAMAGE_BUMP, ENEMY_DAMAGE_START, ENEMY_HEALTH_BUMP, ENEMY_HEALTH_START,
-  GUN_SIZE, START_YEAR, good,
+  GUN_SIZE, LI_YUEN_GRUDGE_SHIPS, LI_YUEN_SIGHTING, START_YEAR, good,
 } from "./constants";
 import { money } from "./format";
 import { currentTime, knownGoods, totalGoods, type Hong } from "./hong";
@@ -43,9 +43,12 @@ export class PirateBattle {
     if (this.id === PIRATE_FLEET) {
       this.pirates = rng.randrange(h.shipSize / 10 + h.shipGuns) + 1;
     } else {
-      // Li Yuen brings at least LI_YUEN_MIN_SHIPS, up to capacity / 5 + guns
-      const max = Math.max(LI_YUEN_MIN_SHIPS, Math.trunc(h.shipSize / 5) + h.shipGuns);
-      this.pirates = rng.inRange(LI_YUEN_MIN_SHIPS, max + 1);
+      // Li Yuen brings at least LI_YUEN_MIN_SHIPS, up to capacity / 5 + guns, and
+      // more for each time you've refused him
+      const extra = h.grudge * LI_YUEN_GRUDGE_SHIPS;
+      const min = LI_YUEN_MIN_SHIPS + extra;
+      const max = Math.max(min, Math.trunc(h.shipSize / 5) + h.shipGuns + extra);
+      this.pirates = rng.inRange(min, max + 1);
     }
     this.baseHealth = ENEMY_HEALTH_START + years * ENEMY_HEALTH_BUMP;
     this.currHealth = Math.trunc(this.baseHealth * rng.float()) + 20;
@@ -194,7 +197,8 @@ export class PirateBattle {
 
 /**
  * Pirates at sea: a 1-in-pirateChance chance of a regular pirate fleet. If they
- * don't come (1-in-20), or Li Yuen drives them off, Li Yuen's fleet shows up.
+ * don't come (1-in-20, more often if you've refused Li Yuen: see liYuenSighting),
+ * or Li Yuen drives them off, Li Yuen's fleet shows up.
  * Returns how the last battle ended, or null if there was none.
  */
 export function* checkPirates(h: Hong, rng: Rng): Flow<BattleOutcome | null> {
@@ -204,10 +208,15 @@ export function* checkPirates(h: Hong, rng: Rng): Flow<BattleOutcome | null> {
     if (outcome !== "interrupted") {
       return outcome;
     }
-  } else if (!rng.chanceOf(20)) {
+  } else if (!rng.chanceOf(liYuenSighting(h))) {
     return null;
   }
   return (yield* liYuen(h, rng)) ?? outcome;
+}
+
+/** 1-in-N voyages without regular pirates bring Li Yuen: 20, 10, 6, 5 by his grudge. */
+export function liYuenSighting(h: Hong): number {
+  return Math.trunc(LI_YUEN_SIGHTING / (1 + h.grudge));
 }
 
 /** Li Yuen's fleet arrives: it leaves you be if you've paid him, or attacks. */

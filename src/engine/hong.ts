@@ -55,6 +55,8 @@ export interface Hong {
   threatened: boolean;
   /** Li Yuen extortion counter, 0..3. */
   extorted: number;
+  /** Times you've refused Li Yuen since you last paid him, 0..LI_YUEN_MAX_GRUDGE. */
+  grudge: number;
   /** Multiplier that inflates each successive emergency loan. */
   bailout: number;
   /** City index, or AT_SEA. */
@@ -91,6 +93,7 @@ export function newHong(rng: Rng, guns: boolean, name: string = "Rising Sun"): H
     warehouseGoods: new Array<number>(NUM_GOODS).fill(0),
     threatened: false,
     extorted: 0,
+    grudge: 0,
     bailout: 1,
     location: HONG_KONG,
     transfer: 0,

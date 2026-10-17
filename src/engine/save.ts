@@ -1,7 +1,7 @@
 // Save format: the same JSON shape that etc/pypan.py writes to pypan.json, so saves
 // from the Python version can be imported. Keys are snake_case on disk.
 
-import { CITIES, NUM_GOODS, START_YEAR } from "./constants";
+import { CITIES, LI_YUEN_MAX_GRUDGE, NUM_GOODS, START_YEAR } from "./constants";
 import type { Cargo, Expedition, Hong, JadeDeal } from "./hong";
 
 export class SaveFormatError extends Error {
@@ -33,6 +33,7 @@ export function toSave(h: Hong): Record<string, unknown> {
     // our own additions, written only when they differ from pypan.py's game (where
     // jade was always on the market), so saves otherwise match pypan.py's
     ...(h.banker ? { banker: true } : {}),
+    ...(h.grudge ? { grudge: h.grudge } : {}),
     prices: [...h.prices],
     ...(h.jade ? {} : { jade: false }),
     ...(h.expedition ? { expedition: { ...h.expedition } } : {}),
@@ -70,6 +71,7 @@ export function fromSave(data: unknown): Hong {
     transfer: int(d, "transfer", -1),
     // not in pypan.py saves
     banker: d.banker === undefined ? false : bool(d, "banker"),
+    grudge: d.grudge === undefined ? 0 : int(d, "grudge", 0, LI_YUEN_MAX_GRUDGE),
     prices: goods(d, "prices"),
     jade: d.jade === undefined ? true : bool(d, "jade"),
     expedition: d.expedition == null ? null : expedition(d.expedition),

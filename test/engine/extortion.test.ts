@@ -32,7 +32,7 @@ describe("checkExtortion", () => {
 
   it("advances the counter 1-in-20, wrapping back to a demand", () => {
     const h = makeHong({ time: 5, extorted: 2 });
-    play(checkExtortion(h, new ScriptedRng([0])));
+    play(checkExtortion(h, new ScriptedRng([20])));
     expect(h.extorted).toBe(3);
     const p = play(checkExtortion(h, new ScriptedRng([0, 0.5])), [false]);
     expect(h.extorted).toBe(0);
@@ -60,9 +60,63 @@ describe("checkExtortion", () => {
     expect([h.cash, h.debt, h.extorted]).toEqual([0, 18100, 1]);
   });
 
-  it("stays unpaid if you won't take Wu's help", () => {
+  it("asks a share of your cash position once that's more than time x 1000", () => {
+    const h = makeHong({ time: 13, cash: 1000000, bank: 1500000, debt: 500000 });
+    // 3% of 2,000,000 = 60000, plus randrange(60000)
+    const p = play(checkExtortion(h, new ScriptedRng([1, 0.5, 500])), [true]);
+    expect(texts(p)[0]).toBe(
+      "Li Yuen asks 60,500 in donation to the temple of Tin Hau, the Sea Goddess. Will you pay?",
+    );
+    expect([h.cash, h.bank, h.extorted]).toEqual([939500, 1500000, 1]);
+  });
+
+  it("stays unpaid if you won't take Wu's help, and holds it against you", () => {
     const h = makeHong({ time: 13 });
-    play(checkExtortion(h, new ScriptedRng([1, 0.5, 500])), [true, false]);
-    expect([h.cash, h.debt, h.extorted]).toEqual([400, 5000, 0]);
+    const p = play(checkExtortion(h, new ScriptedRng([1, 0.5, 500])), [true, false]);
+    expect([h.cash, h.debt, h.extorted, h.grudge]).toEqual([400, 5000, 0, 1]);
+    // Wu's refusal carries the first warning
+    expect(texts(p).at(-1)).toBe(
+      "Very well. Elder Brother Wu will not assist you. I would be wary of pirates if I were you, Taipan.",
+    );
+    const again = play(checkExtortion(h, new ScriptedRng([0.5, 500])), [true, false]);
+    expect(texts(again).at(-1)).toBe("Li Yuen will remember this, Taipan. His fleet is looking for you.");
+    expect(h.grudge).toBe(2);
+  });
+});
+
+describe("Li Yuen's grudge", () => {
+  it("grows with each refusal: a bigger demand and a sterner warning, up to a limit", () => {
+    const h = makeHong({ time: 13 });
+    const seen = [];
+    for (let i = 0; i < 4; i++) {
+      // the counter only rolls before the first refusal; then 13000 + randrange(13000)
+      const rolls = i === 0 ? [1, 0.5, 0] : [0.5, 0];
+      seen.push([...texts(play(checkExtortion(h, new ScriptedRng(rolls)), [false])), h.grudge]);
+    }
+    const ask = (n: string) => `Li Yuen asks ${n} in donation to the temple of Tin Hau, the Sea Goddess. Will you pay?`;
+    const reminder = "Li Yuen has not forgotten your refusal, Taipan.";
+    const hunted = "Li Yuen has put a price on your head, Taipan! His whole fleet is hunting you.";
+    expect(seen).toEqual([
+      [ask("13,000"), "Very well. I would be wary of pirates if I were you, Taipan.", 1],
+      [reminder, ask("19,500"), "Li Yuen will remember this, Taipan. His fleet is looking for you.", 2],
+      [reminder, ask("26,000"), hunted, 3],
+      [reminder, ask("32,500"), hunted, 3],
+    ]);
+    expect(h.extorted).toBe(0);
+  });
+
+  it("is forgotten once you pay", () => {
+    const h = makeHong({ time: 13, cash: 100000, grudge: 2 });
+    play(checkExtortion(h, new ScriptedRng([0.5, 0])), [true]);
+    expect([h.cash, h.extorted, h.grudge]).toEqual([74000, 1, 0]);
+  });
+
+  it("keeps him from cooling off, and his lieutenant comes every time", () => {
+    const h = makeHong({ time: 5, location: SHANGHAI, grudge: 1 });
+    const p = play(checkExtortion(h, new ScriptedRng([])));
+    expect(texts(p)).toEqual([
+      "Li Yuen has sent a Lieutenant, Taipan.  He says his admiral is still waiting for you in Hong Kong!",
+    ]);
+    expect(h.extorted).toBe(0);
   });
 });

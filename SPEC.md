@@ -675,7 +675,8 @@ etc.). It is built for touch on iPhone and iPad, and also works with a keyboard.
 - **Report** (the message area): the comprador's report in port, the captain's at
   sea, with the date, the current message, and any ASCII art backdrop (`STORM`,
   `PIRATES`, `BOAT`). Messages type out and can be skipped with a tap.
-- **Current Status**: location, cash, debt, bank, guns, repair %.
+- **Current Status**: location, cash, debt, bank, any jade mine share (§4.6), guns,
+  repair %.
 - **Canton Warehouse**: stored goods and remaining capacity.
 - **Ship's Hold**: carried goods, remaining capacity, and any special cargo.
 
@@ -689,6 +690,10 @@ warehouse open as a drawer, with the hold on the left.
 Each prompt shows touch controls in a dock below the report:
 
 - **Message** (`say`): a Continue button, or tap the report; any key continues.
+  Some messages are **beats** in a sequence (`pause`): they move on by themselves
+  0.9 seconds after they're fully shown, and a tap moves on at once. At sea, every
+  message in a battle round is a beat except the last before your next choice, and a
+  storm's announcement is a beat, so a round or a storm takes one tap.
 - **Yes/No** (`ask_yn`): Yes and No buttons; Y/N keys.
 - **Menu** (`ask_opt`): numbered buttons; select by number or by the option's first
   letter. Some menus can be cancelled (button or `Esc`). Options that can't be chosen

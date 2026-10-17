@@ -12,11 +12,12 @@ describe("checkStorm", () => {
     expect(p.game.result).toBe(SHANGHAI);
   });
 
-  it("can damage the ship, with storm art on the outcome", () => {
+  it("can damage the ship, with storm art on the outcome, and one tap", () => {
     const h = makeHong();
     const p = play(checkStorm(h, new ScriptedRng([0, 0, 3]), SHANGHAI));
+    // the announcement is a beat; only the outcome waits for the player
     expect(p.transcript.map((e) => e.prompt)).toEqual([
-      { kind: "say", text: "Storm, Taipan!" },
+      { kind: "say", text: "Storm, Taipan!", pause: true },
       { kind: "say", text: "We made it, but we took some damage!", art: "storm" },
     ]);
     expect(h.shipDamage).toBe(8);
@@ -57,8 +58,8 @@ describe("checkStorm", () => {
     // storm; no damage; not blown off course; inRange(20, 51) = 20 + 0
     const p = play(checkStorm(h, new ScriptedRng([0, 1, 1, 0]), SHANGHAI));
     expect(p.transcript.map((e) => e.prompt)).toEqual([
-      { kind: "say", text: "Storm, Taipan!" },
-      { kind: "say", text: "We made it!", art: "storm" },
+      { kind: "say", text: "Storm, Taipan!", pause: true },
+      { kind: "say", text: "We made it!", art: "storm", pause: true },
       { kind: "say", text: "The storm broke 20 of our porcelain, Taipan!", art: "storm" },
     ]);
     expect(h.shipGoods[4]).toBe(80);

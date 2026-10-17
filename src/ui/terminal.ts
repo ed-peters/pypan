@@ -13,6 +13,8 @@ import {
 /** Typewriter speed; the whole message is capped so long reports don't drag. */
 const MS_PER_CHAR = 6;
 const MAX_TYPE_MS = 700;
+/** How long a beat (a `pause` message) stays up once it's shown, before moving on. */
+export const BEAT_MS = 900;
 
 export interface TerminalCallbacks {
   /** Called when the player asks for a new game after this one ends. */
@@ -26,6 +28,8 @@ export class Terminal {
   private session: Session | null = null;
   private entry = "";
   private typing: { timer: number; finish: () => void } | null = null;
+  /** The pending move past a beat, if one is showing. */
+  private beatTimer: number | null = null;
 
   private readonly title: HTMLElement;
   private readonly art: HTMLElement;
@@ -148,6 +152,7 @@ export class Terminal {
   }
 
   private submit(value: unknown): void {
+    this.clearBeat();
     if (!this.game?.prompt) {
       return;
     }
@@ -168,6 +173,7 @@ export class Terminal {
   // Rendering
 
   private render(): void {
+    this.clearBeat();
     const h = this.session?.hong ?? null;
     const prompt = this.game?.prompt ?? null;
 
@@ -182,8 +188,26 @@ export class Terminal {
     }
 
     this.art.textContent = prompt.art ? ART[prompt.art] : h ? "" : TITLE;
-    this.typeMessage(prompt.text);
+    // a beat moves on by itself, a moment after it's fully shown
+    const beat = prompt.kind === "say" && prompt.pause
+      ? () => {
+        this.beatTimer = window.setTimeout(() => {
+          this.beatTimer = null;
+          if (this.game?.prompt === prompt) {
+            this.submit(undefined);
+          }
+        }, BEAT_MS);
+      }
+      : undefined;
+    this.typeMessage(prompt.text, beat);
     this.renderControls(prompt);
+  }
+
+  private clearBeat(): void {
+    if (this.beatTimer !== null) {
+      window.clearTimeout(this.beatTimer);
+      this.beatTimer = null;
+    }
   }
 
   private renderPanes(): void {
@@ -194,15 +218,16 @@ export class Terminal {
     this.cargo.replaceChildren(...cargoLines(h).map((l) => el("div", l)));
     this.cargoToggle.textContent = cargoSummary(h);
 
-    // compact one-line status for narrow screens
-    const [loc, cash, debt, bank, guns, repair] = statusRows(h).map(([, v]) => v);
+    // compact one-line status for narrow screens (by label: the rows vary)
+    const v = Object.fromEntries(statusRows(h));
     this.strip.replaceChildren(
-      el("span", `${loc}`),
-      el("span", `Cash ${cash}`),
-      el("span", `Debt ${debt}`),
-      el("span", `Bank ${bank}`),
-      el("span", `Guns ${guns}`),
-      el("span", `Hull ${repair}`),
+      el("span", `${v.Location}`),
+      el("span", `Cash ${v.Cash}`),
+      el("span", `Debt ${v.Debt}`),
+      el("span", `Bank ${v.Bank}`),
+      ...(v["Jade mine"] ? [el("span", `Mine ${v["Jade mine"]}`)] : []),
+      el("span", `Guns ${v.Guns}`),
+      el("span", `Hull ${v.Repair}`),
     );
   }
 
@@ -265,11 +290,13 @@ export class Terminal {
     this.dock.replaceChildren(...children);
   }
 
-  private typeMessage(text: string): void {
+  /** Type out a message; `done` runs once it's all shown (at once, if typing is skipped). */
+  private typeMessage(text: string, done?: () => void): void {
     this.typing?.finish();
     const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     if (reduce || text.length === 0) {
       this.message.textContent = text;
+      done?.();
       return;
     }
     const step = Math.max(1, Math.ceil(text.length / (MAX_TYPE_MS / MS_PER_CHAR)));
@@ -279,6 +306,7 @@ export class Terminal {
       window.clearInterval(timer);
       this.message.textContent = text;
       this.typing = null;
+      done?.();
     };
     const timer = window.setInterval(() => {
       shown = Math.min(text.length, shown + step);

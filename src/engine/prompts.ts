@@ -20,9 +20,14 @@ interface PromptBase {
   art?: Art;
 }
 
-/** Show a message; the player taps/presses a key to continue. Answer: undefined. */
+/**
+ * Show a message; the player taps/presses a key to continue. Answer: undefined. A
+ * `pause` message is a beat in a sequence (a battle round, a storm): the UI moves on
+ * by itself after a brief pause, so the player taps only once the sequence is done.
+ */
 export interface SayPrompt extends PromptBase {
   kind: "say";
+  pause?: boolean;
 }
 
 /** A yes/no question. Answer: boolean. */
@@ -77,6 +82,11 @@ export type Flow<T = void> = Generator<Step, T, unknown>;
 
 export function* say(text: string): Flow {
   yield { kind: "say", text };
+}
+
+/** A message that moves on by itself after a brief pause (see SayPrompt). */
+export function* beat(text: string): Flow {
+  yield { kind: "say", text, pause: true };
 }
 
 export function* askYn(text: string): Flow<boolean> {

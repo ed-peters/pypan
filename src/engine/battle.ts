@@ -1,6 +1,9 @@
 // Pirate battles (SPEC.md section 7; section 7.4 for Li Yuen's fleet).
 // PIRATE_FLEET is the regular pirates; PIRATE_KING is Li Yuen's fleet, which is
 // bigger and does double damage. In any battle the ship sinks at 100% damage.
+//
+// A round's messages are beats that move on by themselves, except the last before
+// the player's next choice (or the battle's end), so each round takes one tap.
 
 import {
   ENEMY_DAMAGE_BUMP, ENEMY_DAMAGE_START, ENEMY_HEALTH_BUMP, ENEMY_HEALTH_START,
@@ -9,7 +12,7 @@ import {
 import { money } from "./format";
 import { currentTime, knownGoods, totalGoods, type Hong } from "./hong";
 import { breakPorcelain } from "./porcelain";
-import { askNum, askOpt, pick, say, withArt, type Flow } from "./prompts";
+import { askNum, askOpt, beat, pick, say, withArt, type Flow } from "./prompts";
 import type { Rng } from "./rng";
 
 export const PIRATE_FLEET = 1;
@@ -83,14 +86,14 @@ export class PirateBattle {
     while (this.pirates > 0) {
       // Li Yuen may interrupt a regular battle (but never his own)
       if (this.id === PIRATE_FLEET && this.rng.chanceOf(20)) {
-        yield* say("Li Yuen's fleet drove them off, Taipan!!");
+        yield* beat("Li Yuen's fleet drove them off, Taipan!!");
         return "interrupted";
       }
       yield* this.myTurn();
       if (this.pirates > 0) {
         yield* this.theirTurn();
         if (this.h.shipDamage >= this.h.shipSize) {
-          yield* say("The buggers got us, Taipan!!");
+          yield* beat("The buggers got us, Taipan!!");
           yield* say("It's all over now!!");
           return "sunk";
         }
@@ -111,7 +114,7 @@ export class PirateBattle {
 
   private *theirTurn(): Flow {
     let text = "They're firing on us, Taipan!";
-    yield* say(text);
+    yield* beat(text);
     if (this.isGunHit()) {
       this.h.shipGuns -= 1;
       this.h.shipSize += GUN_SIZE;
@@ -125,7 +128,8 @@ export class PirateBattle {
     if (broken > 0) {
       text = `${text}\n\nThey smashed ${money(broken)} of our porcelain!`;
     }
-    yield* say(text);
+    // the round's last message, unless we're going down
+    yield* (this.h.shipDamage >= this.h.shipSize ? beat(text) : say(text));
   }
 
   isGunHit(): boolean {
@@ -162,7 +166,7 @@ export class PirateBattle {
 
   private *fireCannons(): Flow {
     let text = "Aye, we'll fire our cannons at 'em, Taipan!";
-    yield* say(text);
+    yield* beat(text);
     let k = 0;
     // once the last ship sinks, the remaining guns hold their fire
     for (let i = 0; i < this.h.shipGuns && this.pirates > 0; i++) {
@@ -177,11 +181,11 @@ export class PirateBattle {
     } else {
       text = `${text}\n\nThey're still after us!`;
     }
-    yield* say(text);
+    yield* beat(text);
   }
 
   private *runAway(): Flow {
-    yield* say("Aye, we'll set sails and run, Taipan!");
+    yield* beat("Aye, we'll set sails and run, Taipan!");
     this.runIk += 1;
     this.runOk += this.runIk;
     if (this.rng.randrange(this.runOk) > this.rng.randrange(this.pirates)) {
@@ -190,22 +194,22 @@ export class PirateBattle {
       this.fled = true;
     } else if (this.pirates > 2 && this.rng.chanceOf(5)) {
       const lost = Math.min(this.rng.randrange(this.pirates / 2) + 1, this.pirates - 1);
-      yield* say(`Couldn't lose 'em, Taipan, but we escaped from ${lost} of 'em!`);
+      yield* beat(`Couldn't lose 'em, Taipan, but we escaped from ${lost} of 'em!`);
       this.pirates -= lost;
     } else {
-      yield* say("Couldn't lose 'em, Taipan!");
+      yield* beat("Couldn't lose 'em, Taipan!");
     }
   }
 
   private *dumpCargo(): Flow {
     const g = yield* askOpt("What shall I toss overboard, Taipan?", knownGoods(this.h));
     if (this.h.shipGoods[g] === 0) {
-      yield* say("We don't have any, Taipan!");
+      yield* beat("We don't have any, Taipan!");
       return;
     }
     const n = yield* askNum(`How much ${good(g)} shall I toss overboard, Taipan?`, this.h.shipGoods[g]!);
     if (n > this.h.shipGoods[g]!) {
-      yield* say("We don't have enough on board, Taipan!");
+      yield* beat("We don't have enough on board, Taipan!");
     } else if (n > 0) {
       this.h.shipGoods[g]! -= n;
       // any cargo dumped helps a little; more helps more
@@ -240,7 +244,7 @@ export function liYuenSighting(h: Hong): number {
 
 /** Li Yuen's fleet arrives: it leaves you be if you've paid him, or attacks. */
 function* liYuen(h: Hong, rng: Rng): Flow<BattleOutcome | null> {
-  yield* say("Li Yuen's pirates, Taipan!!!");
+  yield* beat("Li Yuen's pirates, Taipan!!!");
   if (h.extorted !== 0) {
     yield* say("Good joss!! They let us be!!");
     return null;

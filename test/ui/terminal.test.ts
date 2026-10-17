@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GENERAL } from "../../src/engine/constants";
 import { newGame } from "../../src/engine/pypan";
 import { ScriptedRng } from "../../src/engine/rng";
-import { Terminal } from "../../src/ui/terminal";
+import { BEAT_MS, Terminal } from "../../src/ui/terminal";
 
 // Guns start at the minimum prices: no extortion (no cash), then Wu offers business.
 const rolls = () => new ScriptedRng([0, 0, 0, 0, 0]);
@@ -174,6 +174,54 @@ describe("Terminal", () => {
     tap("Continue");
     expect(onEnd).toHaveBeenCalledOnce();
     expect(onEnd).toHaveBeenCalledWith(expect.objectContaining({ ending: "retired", score: 0 }));
+  });
+
+  it("moves past a beat by itself after a brief pause, or at once on a tap", () => {
+    vi.useFakeTimers();
+    try {
+      // guns start at the minimum prices; at sea: no pirates, no Li Yuen, a storm with
+      // no damage and no change of course
+      const { game } = setup(new ScriptedRng([0, 0, 0, 0, 0, 1, 1, 0, 1, 1]));
+      tap("Guns");
+      tap("[N] No"); //               no business with Wu
+      tap("Leave port");
+      tap("Shanghai");
+      expect($(".message").textContent).toBe("Storm, Taipan!");
+      vi.advanceTimersByTime(BEAT_MS - 1);
+      expect($(".message").textContent).toBe("Storm, Taipan!");
+      vi.advanceTimersByTime(1);
+      expect($(".message").textContent).toBe("We made it!");
+      // the storm's outcome waits for the player
+      vi.advanceTimersByTime(10 * BEAT_MS);
+      expect(game.prompt?.text).toBe("We made it!");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("can skip a beat with a tap, and the pause doesn't then move on twice", () => {
+    vi.useFakeTimers();
+    try {
+      setup(new ScriptedRng([0, 0, 0, 0, 0, 1, 1, 0, 1, 1]));
+      tap("Guns");
+      tap("[N] No");
+      tap("Leave port");
+      tap("Shanghai");
+      tap("Continue"); //               Storm, Taipan!
+      expect($(".message").textContent).toBe("We made it!");
+      vi.advanceTimersByTime(BEAT_MS);
+      expect($(".message").textContent).toBe("We made it!");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("shows a jade mine share in the status strip without shifting the rest", () => {
+    const { session } = setup();
+    tap("Guns");
+    session.hong!.mine = { value: 1500000, due: 4 };
+    tap("[N] No"); //               no business with Wu
+    expect($(".strip").textContent).toBe("Hong KongCash 0Debt 0Bank 0Mine 1,500,000Guns 5Hull 100%");
   });
 
   it("shows GAME OVER when the ship sinks", () => {

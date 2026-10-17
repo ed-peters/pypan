@@ -6,7 +6,7 @@ import {
 import { money } from "./format";
 import type { Hong } from "./hong";
 import { breakPorcelain } from "./porcelain";
-import { say, withArt, type Flow } from "./prompts";
+import { beat, say, withArt, type Flow } from "./prompts";
 import type { Rng } from "./rng";
 
 /**
@@ -22,7 +22,7 @@ export function* checkStorm(h: Hong, rng: Rng, destination: number): Flow<number
     return destination;
   }
 
-  yield* say("Storm, Taipan!");
+  yield* beat("Storm, Taipan!");
 
   let msg = "We made it";
   // storms don't add damage to a ship that is already 80% damaged
@@ -35,8 +35,10 @@ export function* checkStorm(h: Hong, rng: Rng, destination: number): Flow<number
   } else {
     msg = `${msg}!`;
   }
-  yield* withArt("storm", say(msg));
-  if (h.shipGoods[PORCELAIN]! > 0) {
+  // one tap for the storm: its outcome waits, unless porcelain news follows
+  const aboard = h.shipGoods[PORCELAIN]! > 0;
+  yield* withArt("storm", aboard ? beat(msg) : say(msg));
+  if (aboard) {
     const n = breakPorcelain(h, rng, STORM_BREAKAGE);
     yield* withArt("storm", say(`The storm broke ${money(n)} of our porcelain, Taipan!`));
   }

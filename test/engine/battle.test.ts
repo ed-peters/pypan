@@ -94,6 +94,24 @@ describe("fighting", () => {
     expect(named(1, 5)).toBe("1 snake boat of the Widow Ching's fleet approaching, Taipan!");
   });
 
+  it("takes one tap a round: every message is a beat but the last before our next choice", () => {
+    const h = gunHong({ shipGuns: 1 });
+    // as below: we fire and miss, they hit us
+    const rng = new ScriptedRng([2, 0.5, 100, 0, NO_LI_YUEN, 0, 50, 0.5, NO_LI_YUEN]);
+    const p = play(new PirateBattle(h, rng).execute(), [0]);
+    // we fire; we missed; they fire; they hit us
+    const round = p.transcript.slice(2).filter((e) => e.prompt.kind === "say");
+    expect(round.map((e) => e.prompt.kind === "say" && e.prompt.pause === true)).toEqual([true, true, true, false]);
+  });
+
+  it("goes down in beats, ending on one tap", () => {
+    const h = makeHong({ shipDamage: 59 });
+    const { b } = battle(h, [NO_LI_YUEN, 0, 2, 1, 0.5]);
+    const p = play(b.execute(), [0]);
+    const pauses = p.transcript.slice(-3).map((e) => e.prompt.kind === "say" && e.prompt.pause === true);
+    expect(pauses).toEqual([true, true, false]);
+  });
+
   it("takes return fire after a miss", () => {
     const h = gunHong({ shipGuns: 1 });
     // one 10-point hit; gun-hit roll 50 (no); damage = trunc(0.5 * 3 * 1 * 0.5 + 1.5)

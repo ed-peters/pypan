@@ -88,6 +88,14 @@ describe("establishPrices", () => {
     expect(p.transcript).toEqual([]);
   });
 
+  it("shocks goods a venture has replaced, but quietly", () => {
+    const h = makeHong({ time: 2, godownsBought: true });
+    // shock; general; factor 5; up; message roll
+    const p = play(establishPrices(h, new ScriptedRng([...MIN_PRICES, 0, GENERAL, 0, 0, 0])));
+    expect(p.transcript).toEqual([]);
+    expect(h.prices[GENERAL]).toBe(25);
+  });
+
   it("picks one of the good's three messages at random", () => {
     const say = (roll: number, dir: number) =>
       texts(play(establishPrices(makeHong({ time: 2 }), new ScriptedRng([...MIN_PRICES, 0, OPIUM, 0, dir, roll]))));

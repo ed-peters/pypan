@@ -8,9 +8,10 @@ import { play, texts } from "../helpers/play";
 const OFFER = "Taipan, the East India Company man Sir Beaumont-Finch is gathering backers for an expedition to establish a jade mine. Would you like to invest 1,500,000?";
 const FAILED = "Taipan, regrettably our friend Sir Beaumont-Finch has been captured by rebels. It appears there will be no jade forthcoming.";
 
-// month 25, in Singapore with 4,000,000 in the bank
+// month 25, in Singapore with 4,000,000 in the bank, having bought into the godowns
+// and the arms smuggling (pypan-91)
 const rich = (overrides = {}) =>
-  makeHong({ time: 25, location: SINGAPORE, bank: 4000000, ...overrides });
+  makeHong({ time: 25, location: SINGAPORE, bank: 4000000, godownsBought: true, armsBought: true, ...overrides });
 
 // offered (1-in-3), then a stake of 25% x 1.5 = 37.5% of the bank: 1,500,000
 const OFFER_ROLLS = [0, 0.5];
@@ -60,6 +61,8 @@ describe("checkJade", () => {
     ["outside Singapore and Batavia", { location: HONG_KONG }],
     ["while an expedition is out", { expedition: { port: SINGAPORE, resolves: 27, stake: 0 } }],
     ["more than three times", { jadeOffers: 3 }],
+    ["before we've had godowns", { godownsBought: false }],
+    ["before we've had a share in the arms smuggling", { armsBought: false }],
   ])("isn't offered %s", (_, overrides) => {
     // an empty script: any roll would throw
     const p = play(checkJade(rich(overrides), new ScriptedRng()));
@@ -121,83 +124,5 @@ describe("checkJade", () => {
     const h = backed({ time: 27 });
     const p = play(checkJade(h, new ScriptedRng()));
     expect(p.transcript).toEqual([]);
-  });
-});
-
-describe("the jade mine", () => {
-  // a 1,000,000 share, due this month; rolls: no seizure, no rich vein, then the return
-  const owner = (overrides = {}) =>
-    makeHong({ time: 30, location: SHANGHAI, bank: 500000, debt: 0, mine: { value: 1000000, due: 30 }, ...overrides });
-  const QUARTER = [1, 1];
-  // a return of -10% + 30% x f
-  const settle = (h: ReturnType<typeof owner>, f: number, answers: unknown[] = []) =>
-    play(checkJade(h, new ScriptedRng([...QUARTER, f])), answers);
-
-  it("waits for its quarter", () => {
-    const h = owner({ time: 29 });
-    expect(play(checkJade(h, new ScriptedRng())).transcript).toEqual([]);
-  });
-
-  it("pays a good quarter into the bank, and settles again in three months", () => {
-    const h = owner();
-    // 2 + 3 x 0.5: +5%
-    const p = settle(h, 0.5);
-    expect(texts(p)).toEqual(["The jade mine has paid us 50,000 this quarter, Taipan. It has been deposited in the bank."]);
-    expect([h.bank, h.mine]).toEqual([550000, { value: 1000000, due: 33 }]);
-  });
-
-  it("returns at most +20%", () => {
-    const h = owner();
-    settle(h, 0.9999);
-    expect(h.bank).toBe(700000);
-  });
-
-  it("can break even", () => {
-    const h = owner();
-    expect(texts(settle(h, 1 / 3))).toEqual(["The jade mine has broken even this quarter, Taipan."]);
-    expect(h.bank).toBe(500000);
-  });
-
-  it("calls for funds after a bad quarter, paid from the bank, then cash", () => {
-    const h = owner({ bank: 60000, cash: 50000 });
-    // -10%: 100,000
-    const p = settle(h, 0, [true]);
-    expect(texts(p)).toEqual([
-      "Taipan, the jade mine has had a bad quarter, and needs 100,000 more from its backers. Shall we pay our part?",
-    ]);
-    expect([h.bank, h.cash, h.mine?.value]).toEqual([0, 10000, 1000000]);
-  });
-
-  it("takes half our share if we won't pay", () => {
-    const h = owner();
-    const p = settle(h, 0, [false]);
-    expect(texts(p).at(-1)).toBe("The other backers have taken half of our share in the jade mine, Taipan. It is now worth 500,000.");
-    expect([h.bank, h.mine]).toEqual([500000, { value: 500000, due: 33 }]);
-  });
-
-  it("lets Wu make up a call we can't cover", () => {
-    const h = owner({ bank: 30000, cash: 20000 });
-    settle(h, 0, [true, true]);
-    expect([h.bank, h.cash, h.debt, h.mine?.value]).toEqual([0, 0, 50000, 1000000]);
-  });
-
-  it("takes half our share if Wu won't help either, leaving our money alone", () => {
-    const h = owner({ bank: 30000, cash: 20000 });
-    settle(h, 0, [true, false]);
-    expect([h.bank, h.cash, h.debt, h.mine?.value]).toEqual([30000, 20000, 0, 500000]);
-  });
-
-  it("can be seized by rebels, 1-in-80 quarters", () => {
-    const h = owner();
-    const p = play(checkJade(h, new ScriptedRng([0])));
-    expect(texts(p)).toEqual(["Bad joss, Taipan! Rebels have seized the jade mine, and our share in it is lost."]);
-    expect([h.mine, h.bank]).toEqual([null, 500000]);
-  });
-
-  it("can strike a rich vein, 1-in-40 quarters, paying twice the share", () => {
-    const h = owner();
-    const p = play(checkJade(h, new ScriptedRng([1, 0])));
-    expect(texts(p)).toEqual(["Taipan!! The jade mine has struck a rich vein! Our share of 2,000,000 has been deposited in the bank."]);
-    expect([h.bank, h.mine]).toEqual([2500000, { value: 1000000, due: 33 }]);
   });
 });

@@ -1,6 +1,6 @@
 // Local market prices (SPEC.md section 4.1). Price shocks live with trading.
 
-import { BASE_PRICES, BASED_PRICES, NUM_GOODS, mult } from "./constants";
+import { BASE_PRICES, BASED_PRICES, HONG_KONG, NUM_CITIES, NUM_GOODS, mult } from "./constants";
 import type { Rng } from "./rng";
 
 /** Fresh prices for the given city. */
@@ -18,4 +18,11 @@ export function setPrices(rng: Rng, city: number, based: boolean = BASED_PRICES)
     }
   }
   return p;
+}
+
+/** A good's usual price at a port (Hong Kong's at sea): its port level times the mean multiplier, 2. */
+export function usualPrice(g: number, port: number): number {
+  const row = BASE_PRICES[g]!;
+  const p = port < NUM_CITIES ? port : HONG_KONG;
+  return Math.trunc(row[p + 1]! / 2) * 2 * row[0]!;
 }

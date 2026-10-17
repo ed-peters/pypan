@@ -55,8 +55,8 @@ const frequentShocks = {
 const dearShocks = {
   file: "src/engine/trade.ts",
   // shocks hit one of the two dearest goods on the market
-  from: "const g = rng.randrange(knownGoods(h).length);",
-  to: "const g = knownGoods(h).length - 1 - rng.randrange(2);",
+  from: "const g = goods[rng.randrange(goods.length)]!;",
+  to: "const g = goods[goods.length - 1 - rng.randrange(2)]!;",
 };
 
 const smallStakes = {

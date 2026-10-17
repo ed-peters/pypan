@@ -1,8 +1,8 @@
 // The Hong Kong warehouse and transfers (SPEC.md section 10).
 
-import { HONG_KONG, WAREHOUSE_SIZE_INCREMENT, good } from "./constants";
+import { GOODS, HONG_KONG, WAREHOUSE_SIZE_INCREMENT, good } from "./constants";
 import { money } from "./format";
-import { currentTime, hasAny, knownGoods, warehouseAvailable, type Hong } from "./hong";
+import { currentTime, hasAny, marketGoods, warehouseAvailable, type Hong } from "./hong";
 import { askNum, askOptOrCancel, askYn, say, type Flow } from "./prompts";
 import type { Rng } from "./rng";
 
@@ -20,21 +20,24 @@ export function* checkWarehouse(h: Hong, rng: Rng): Flow {
 
 /** The goods aboard ship or in the warehouse. */
 export function goodsToTransfer(h: Hong): number[] {
-  return knownGoods(h).flatMap((_, g) => (hasAny(h, g) ? [g] : []));
+  return marketGoods(h).filter((g) => hasAny(h, g));
 }
 
 /** Move one good between ship and warehouse; the fee skims what arrives. */
 export function* transfer(h: Hong): Flow {
   // decide what good we're going to transfer: if there's only one, that's it;
   // otherwise goods we have none of are disabled
-  const goods = goodsToTransfer(h);
-  const g = goods.length === 1
-    ? goods[0]!
-    : yield* askOptOrCancel("What shall I transfer, Taipan?", knownGoods(h), {
-      disabled: knownGoods(h).flatMap((_, g) => (goods.includes(g) ? [] : [g])),
+  const held = goodsToTransfer(h);
+  let g = held[0]!;
+  if (held.length !== 1) {
+    const goods = marketGoods(h);
+    const i = yield* askOptOrCancel("What shall I transfer, Taipan?", goods.map((g) => GOODS[g]!), {
+      disabled: goods.flatMap((g, i) => (held.includes(g) ? [] : [i])),
     });
-  if (g === null) {
-    return;
+    if (i === null) {
+      return;
+    }
+    g = goods[i]!;
   }
 
   // if we have any onboard, and space in the warehouse, we can offload the good

@@ -7,10 +7,10 @@
 
 import {
   ENEMY_DAMAGE_BUMP, ENEMY_DAMAGE_START, ENEMY_HEALTH_BUMP, ENEMY_HEALTH_START,
-  GUN_SIZE, LI_YUEN_GRUDGE_SHIPS, LI_YUEN_SIGHTING, START_YEAR, VOLLEY_BREAKAGE, good,
+  GOODS, GUN_SIZE, LI_YUEN_GRUDGE_SHIPS, LI_YUEN_SIGHTING, START_YEAR, VOLLEY_BREAKAGE, good,
 } from "./constants";
 import { money } from "./format";
-import { currentTime, knownGoods, totalGoods, type Hong } from "./hong";
+import { currentTime, marketGoods, totalGoods, type Hong } from "./hong";
 import { breakPorcelain } from "./porcelain";
 import { askNum, askOpt, beat, pick, say, withArt, type Flow } from "./prompts";
 import type { Rng } from "./rng";
@@ -202,7 +202,8 @@ export class PirateBattle {
   }
 
   private *dumpCargo(): Flow {
-    const g = yield* askOpt("What shall I toss overboard, Taipan?", knownGoods(this.h));
+    const goods = marketGoods(this.h);
+    const g = goods[yield* askOpt("What shall I toss overboard, Taipan?", goods.map((g) => GOODS[g]!))]!;
     if (this.h.shipGoods[g] === 0) {
       yield* beat("We don't have any, Taipan!");
       return;

@@ -97,8 +97,8 @@ function compare(rows) {
   ));
   out.push("\nIncome at 10 years (median share of gross income; losses against it):\n");
   out.push(table(
-    ["Scenario", "Trading", "of which porcelain", "Shocks", "Bank", "Booty", "Jade", "Losses"],
-    rows.map(({ s, sum }) => [s.title, ...["trading", "porcelain", "shocks", "bank", "booty", "jade", "losses"].map((k) => pct(sum.shares[k]))]),
+    ["Scenario", "Trading", "of which porcelain", "Shocks", "Bank", "Booty", "Ventures", "Losses"],
+    rows.map(({ s, sum }) => [s.title, ...["trading", "porcelain", "shocks", "bank", "booty", "ventures", "losses"].map((k) => pct(sum.shares[k]))]),
   ));
   out.push("\nRisk and windfalls (ships afloat; worth at cost):\n");
   out.push(table(
@@ -111,16 +111,16 @@ function compare(rows) {
     ["Scenario", "In the trade", "Bought in (median month)", "Porcelain profit lost to breakage"],
     rows.map(({ s, sum }) => [s.title, pct(sum.porcelain.owned), fmt(sum.porcelain.month), pct(sum.porcelain.broken)]),
   ));
-  out.push("\nThe jade mine (ships afloat at 10 years; income shares among holders):\n");
+  out.push("\nVentures (ships afloat at 10 years; income shares among those holding any):\n");
   out.push(table(
-    ["Scenario", "Holding a share", "Share (of position)", "Mine income P10 / P50 / P90"],
-    rows.map(({ s, sum }) => [s.title, pct(sum.mine.held), pct(sum.mine.ofPosition),
-      `${pct(sum.mine.incomeP10)} / ${pct(sum.mine.incomeP50)} / ${pct(sum.mine.incomeP90)}`]),
+    ["Scenario", "Godowns", "Arms", "Jade mine", "Any", "Shares (of position)", "Venture income P10 / P50 / P90"],
+    rows.map(({ s, sum }) => [s.title, pct(sum.ventures.godowns), pct(sum.ventures.arms), pct(sum.ventures.mine), pct(sum.ventures.held),
+      pct(sum.ventures.ofPosition), `${pct(sum.ventures.incomeP10)} / ${pct(sum.ventures.incomeP50)} / ${pct(sum.ventures.incomeP90)}`]),
   ));
   out.push("\nThe jade moonshot (ships afloat at 10 years):\n");
   out.push(table(
-    ["Scenario", "Backed", "Stake (share of worth)", "Won per expedition", "Jade (share of income)", "Position: won", "backed, never won", "didn't back"],
-    rows.map(({ s, sum }) => [s.title, pct(sum.moonshot.backed), pct(sum.moonshot.stakeShare), pct(sum.moonshot.perExpedition), pct(sum.shares.jade),
+    ["Scenario", "Backed", "Stake (share of worth)", "Won per expedition", "Ventures (share of income)", "Position: won", "backed, never won", "didn't back"],
+    rows.map(({ s, sum }) => [s.title, pct(sum.moonshot.backed), pct(sum.moonshot.stakeShare), pct(sum.moonshot.perExpedition), pct(sum.shares.ventures),
       fmt(sum.moonshot.posSuccess), fmt(sum.moonshot.posFailure), fmt(sum.moonshot.posNotBacked)]),
   ));
   return out.join("\n");

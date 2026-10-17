@@ -3,7 +3,7 @@
 import { AT_SEA, GOODS, city } from "../engine/constants";
 import { gameDate, money } from "../engine/format";
 import {
-  knownGoods, repairPercent, shipAvailable, warehouseAvailable, type Hong,
+  marketGoods, repairPercent, shipAvailable, warehouseAvailable, type Hong,
 } from "../engine/hong";
 
 export type Row = [label: string, value: string];
@@ -23,7 +23,9 @@ export function statusRows(h: Hong | null): Row[] {
     ["Cash", h ? money(h.cash) : "-"],
     ["Debt", h ? money(h.debt) : "-"],
     ["Bank", h ? money(h.bank) : "-"],
-    // a share in the jade mine, only once we hold one
+    // shares in ventures, only while we hold them
+    ...(h?.godowns ? [["Godowns", money(h.godowns.value)] as Row] : []),
+    ...(h?.arms ? [["Smuggling", money(h.arms.value)] as Row] : []),
     ...(h?.mine ? [["Jade mine", money(h.mine.value)] as Row] : []),
     ["Guns", h ? money(h.shipGuns) : "-"],
     ["Repair", h ? `${repairPercent(h)}%` : "-"],
@@ -31,9 +33,9 @@ export function statusRows(h: Hong | null): Row[] {
 }
 
 /** Before a game, show the goods a new game starts with: no porcelain. */
-function goodsRows(h: Hong | null, goods: readonly number[] | undefined, capacity: number | undefined): Row[] {
-  const names = h ? knownGoods(h) : GOODS.slice(0, -1);
-  const rows: Row[] = names.map((g, i) => [g, goods ? money(goods[i]!) : "-"]);
+function goodsRows(h: Hong | null, amounts: readonly number[] | undefined, capacity: number | undefined): Row[] {
+  const goods = h ? marketGoods(h) : GOODS.slice(0, -1).map((_, g) => g);
+  const rows: Row[] = goods.map((g) => [GOODS[g]!, amounts ? money(amounts[g]!) : "-"]);
   const cap = capacity === undefined ? "-" : capacity < 0 ? "Overloaded" : money(capacity);
   rows.push(["Capacity", cap]);
   return rows;

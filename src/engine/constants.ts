@@ -49,19 +49,33 @@ export const JADE_EXPEDITION_MONTHS = 3;
 /** A success makes the stake a share in the mine worth 2-5 times as much (pypan-89) ... */
 export const MINE_SHARE_MIN = 2;
 export const MINE_SHARE_MAX = 5;
-/** ... which settles every few months, ... */
-export const MINE_QUARTER_MONTHS = 3;
+/** ... which settles every VENTURE_QUARTER_MONTHS, ... */
 /** ... returning -10% to +20% of the share's value: a loss is a call for funds. */
-export const MINE_RETURN_MIN = -0.1;
-export const MINE_RETURN_MAX = 0.2;
-/** Refusing a call loses this share of the share. */
-export const MINE_REFUSAL_LOSS = 0.5;
+export const MINE_RETURN = [-0.1, 0.2] as const;
+/** Refusing any venture's call for funds loses this share of the share. */
+export const REFUSAL_LOSS = 0.5;
 /** 1-in-80 quarters, rebels seize the mine; 1-in-40, a rich vein pays this many times the share. */
 export const MINE_SEIZURE_CHANCE = 80;
 export const MINE_VEIN_CHANCE = 40;
 export const MINE_VEIN_PAYOUT = 2;
 /** Sir Beaumont-Finch seeks backers at most this many times a game. */
 export const JADE_MAX_OFFERS = 3;
+/** Ventures (pypan-91): every few months a share settles, and a loss is a call for funds. */
+export const VENTURE_QUARTER_MONTHS = 3;
+/** The godowns and the arms smuggling cost this share of the cash position ... */
+export const VENTURE_FEE_SHARE = 0.1;
+/** ... offered to a player whose cash position is over this. While we hold a share, the offer is to add to it, once the share is worth less than the fee. */
+export const VENTURE_WORTH_LEVEL = 10000;
+/** Cargo godowns in Nanking, offered 1-in-3 arrivals in Shanghai after this many months: steady, but a rival hong may seize them 1-in-N quarters. */
+export const GODOWN_MIN_MONTHS = 12;
+export const GODOWN_OFFER_CHANCE = 3;
+export const GODOWN_RETURN = [-0.05, 0.1] as const;
+export const GODOWN_SEIZURE_CHANCE = 60;
+/** The Red Wind gang's arms smuggling, offered 1-in-6 arrivals in any port but Hong Kong after this many months (once you've had godowns): volatile, and shut down 1-in-N quarters with a fine. */
+export const ARMS_MIN_MONTHS = 24;
+export const ARMS_OFFER_CHANCE = 6;
+export const ARMS_RETURN = [-0.15, 0.3] as const;
+export const ARMS_SHUTDOWN_CHANCE = 30;
 /** A share in the porcelain trade is offered in Hong Kong only after this many months (pypan-87) ... */
 export const PORCELAIN_MIN_MONTHS = 24;
 /** ... to a player whose cash position (cash + bank - debt) is over this ... */

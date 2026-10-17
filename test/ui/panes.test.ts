@@ -23,6 +23,13 @@ describe("panes", () => {
     expect(statusRows(null).every(([, v]) => v === "-")).toBe(true);
     expect(statusRows(makeHong()).map(([k]) => k)).not.toContain("Jade mine");
     expect(statusRows(makeHong({ mine: { value: 1500000, due: 31 } }))).toContainEqual(["Jade mine", "1,500,000"]);
+    const rows = statusRows(makeHong({ godowns: { value: 35000, due: 9 }, arms: { value: 70000, due: 9 } })).map(([k]) => k);
+    expect(rows).toEqual(["Location", "Cash", "Debt", "Bank", "Godowns", "Smuggling", "Guns", "Repair"]);
+  });
+
+  it("leaves out goods a venture has replaced", () => {
+    const h = makeHong({ godownsBought: true, armsBought: true });
+    expect(holdRows(h).map(([g]) => g)).toEqual(["Silk", "Opium", "Capacity"]);
     expect(holdRows(null).every(([, v]) => v === "-")).toBe(true);
     expect(holdRows(null).map(([g]) => g)).toEqual(["General", "Arms", "Silk", "Opium", "Capacity"]);
     expect(cargoLines(null)).toEqual(["(none)"]);

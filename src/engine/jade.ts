@@ -1,22 +1,20 @@
-// The Burmese jade expedition, a moonshot for its backers, and the share in the
-// mine it gives them if it succeeds (SPEC.md section 4.6).
+// The Burmese jade expedition, a moonshot for its backers, which gives them a share
+// in the mine if it succeeds (SPEC.md section 4.6). The mine settles with the other
+// ventures (ventures.ts).
 
 import {
   BATAVIA, JADE_BANK_LEVEL, JADE_EXPEDITION_MONTHS, JADE_INVESTMENT, JADE_MAX_OFFERS,
-  JADE_MIN_MONTHS, JADE_STAKE_SHARE, MINE_QUARTER_MONTHS, MINE_REFUSAL_LOSS, MINE_RETURN_MAX,
-  MINE_RETURN_MIN, MINE_SEIZURE_CHANCE, MINE_SHARE_MAX, MINE_SHARE_MIN, MINE_VEIN_CHANCE,
-  MINE_VEIN_PAYOUT, SINGAPORE, city,
+  JADE_MIN_MONTHS, JADE_STAKE_SHARE, MINE_SHARE_MAX, MINE_SHARE_MIN, SINGAPORE,
+  VENTURE_QUARTER_MONTHS, city,
 } from "./constants";
 import { money } from "./format";
 import { currentTime, type Hong } from "./hong";
-import { wuCoversShortfall } from "./lender";
 import { askYn, say, type Flow } from "./prompts";
 import type { Rng } from "./rng";
 
-/** On arrival: settle the mine's quarter, and an expedition that's due, then maybe offer a new one. */
+/** On arrival: settle an expedition that's due, then maybe offer a new one. */
 export function* checkJade(h: Hong, rng: Rng): Flow {
   const t = currentTime(h);
-  yield* settleMine(h, rng);
 
   const e = h.expedition;
   if (e && t >= e.resolves) {
@@ -33,7 +31,7 @@ export function* checkJade(h: Hong, rng: Rng): Flow {
         h.mine.value += worth;
         yield* say(`${news} Our share in the jade mine has grown to ${money(h.mine.value)}.`);
       } else {
-        h.mine = { value: worth, due: t + MINE_QUARTER_MONTHS };
+        h.mine = { value: worth, due: t + VENTURE_QUARTER_MONTHS };
         yield* say(`${news} Our ${money(e.stake)} has become a share in the jade mine worth ${money(worth)}, which will settle with us every three months.`);
       }
     } else {
@@ -59,73 +57,12 @@ export function* checkJade(h: Hong, rng: Rng): Flow {
   }
 }
 
-/** Whether Sir Beaumont-Finch could come looking for backers here. */
+/** Whether Sir Beaumont-Finch could come looking for backers here: only once we've had godowns and arms (pypan-91). */
 function offersExpedition(h: Hong): boolean {
-  return h.jadeOffers < JADE_MAX_OFFERS
+  return h.godownsBought && h.armsBought
+    && h.jadeOffers < JADE_MAX_OFFERS
     && !h.expedition
     && currentTime(h) > JADE_MIN_MONTHS
     && h.bank > JADE_BANK_LEVEL
     && (h.location === SINGAPORE || h.location === BATAVIA);
-}
-
-/**
- * Every three months the mine settles with its backers: rarely it's seized or
- * strikes a rich vein; otherwise it returns -10% to +20% of the share's value. A
- * gain goes into the bank; a loss is a call for funds, and refusing it costs half
- * the share.
- */
-function* settleMine(h: Hong, rng: Rng): Flow {
-  const m = h.mine;
-  if (!m || currentTime(h) < m.due) {
-    return;
-  }
-  m.due = currentTime(h) + MINE_QUARTER_MONTHS;
-
-  if (rng.chanceOf(MINE_SEIZURE_CHANCE)) {
-    yield* say("Bad joss, Taipan! Rebels have seized the jade mine, and our share in it is lost.");
-    h.mine = null;
-    return;
-  }
-  if (rng.chanceOf(MINE_VEIN_CHANCE)) {
-    const pay = m.value * MINE_VEIN_PAYOUT;
-    yield* say(`Taipan!! The jade mine has struck a rich vein! Our share of ${money(pay)} has been deposited in the bank.`);
-    h.bank += pay;
-    return;
-  }
-
-  const r = MINE_RETURN_MIN + (MINE_RETURN_MAX - MINE_RETURN_MIN) * rng.float();
-  const amount = Math.round(m.value * Math.abs(r) / 1000) * 1000;
-  if (amount === 0) {
-    yield* say("The jade mine has broken even this quarter, Taipan.");
-  } else if (r > 0) {
-    yield* say(`The jade mine has paid us ${money(amount)} this quarter, Taipan. It has been deposited in the bank.`);
-    h.bank += amount;
-  } else if (!(yield* askYn(`Taipan, the jade mine has had a bad quarter, and needs ${money(amount)} more from its backers. Shall we pay our part?`))
-    || !(yield* payCall(h, amount))) {
-    m.value = Math.round(m.value * (1 - MINE_REFUSAL_LOSS) / 1000) * 1000;
-    yield* say(`The other backers have taken half of our share in the jade mine, Taipan. It is now worth ${money(m.value)}.`);
-  }
-}
-
-/**
- * Pay a call for funds from the bank, then cash (arranged from Hong Kong, as the
- * stake was). Wu can make up a shortfall. Returns whether it was paid.
- */
-function* payCall(h: Hong, amount: number): Flow<boolean> {
-  if (h.bank + h.cash >= amount) {
-    const fromBank = Math.min(h.bank, amount);
-    h.bank -= fromBank;
-    h.cash -= amount - fromBank;
-    return true;
-  }
-  // everything we have goes toward it, and Wu may lend the rest
-  const bank = h.bank;
-  h.cash += bank;
-  h.bank = 0;
-  if (yield* wuCoversShortfall(h, amount, "the mine")) {
-    return true;
-  }
-  h.cash -= bank;
-  h.bank = bank;
-  return false;
 }

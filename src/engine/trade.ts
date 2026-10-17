@@ -1,9 +1,9 @@
 // Trading: local prices, price shocks, buying and selling (SPEC.md sections 4.1-4.3).
 
 import { pay, spendable } from "./bank";
-import { good, mult } from "./constants";
+import { GOODS, PORCELAIN, good, mult } from "./constants";
 import { money } from "./format";
-import { currentTime, knownGoods, type Hong } from "./hong";
+import { currentTime, marketGoods, type Hong } from "./hong";
 import { setPrices } from "./prices";
 import { askNum, askOptOrCancel, askYn, say, type Flow } from "./prompts";
 import type { Rng } from "./rng";
@@ -71,7 +71,7 @@ export const MSG_NEG_SHOCK: readonly (readonly string[])[] = [
  * are in two columns to leave room for the menu below on small screens.
  */
 export function conditionReport(h: Hong, message: string): string {
-  const entries = knownGoods(h).map((g, i) => [g, money(h.prices[i]!)] as const);
+  const entries = marketGoods(h).map((g) => [GOODS[g]!, money(h.prices[g]!)] as const);
   const rows = Math.ceil(entries.length / 2);
   const columns = [entries.slice(0, rows), entries.slice(rows)].map((col, c) => {
     const lw = Math.max(...col.map(([g]) => g.length));
@@ -87,18 +87,24 @@ export function conditionReport(h: Hong, message: string): string {
 }
 
 /**
- * Set prices on arrival, with a 1-in-10 chance of a shock after the first month to
- * a good on the market.
+ * Set prices on arrival, with a 1-in-10 chance of a shock after the first month.
+ * Shocks hit any good traded in the port (porcelain once we're in its trade), even
+ * one a venture has taken off our own market: that one changes quietly. Otherwise
+ * losing the cheap goods would put every shock on the dear ones (pypan-91).
  */
 export function* establishPrices(h: Hong, rng: Rng): Flow {
   h.prices = setPrices(rng, h.location);
 
   if (currentTime(h) > 1 && rng.chanceOf(10)) {
-    const g = rng.randrange(knownGoods(h).length);
+    const goods = GOODS.flatMap((_, g) => (g !== PORCELAIN || h.porcelain ? [g] : []));
+    const g = goods[rng.randrange(goods.length)]!;
     const f = rng.inRange(0, 5) + 5;
     // rising or falling, with one of that good's messages at random
     const up = rng.chanceOf(2);
-    yield* say(rng.choice((up ? MSG_POS_SHOCK : MSG_NEG_SHOCK)[g]!));
+    const message = rng.choice((up ? MSG_POS_SHOCK : MSG_NEG_SHOCK)[g]!);
+    if (marketGoods(h).includes(g)) {
+      yield* say(message);
+    }
     if (up) {
       h.prices[g]! *= f;
     } else {
@@ -117,13 +123,14 @@ function affordable(h: Hong, g: number): number {
 
 export function* buyGoods(h: Hong): Flow {
   // goods you can't afford any of are disabled
-  const goods = knownGoods(h);
-  const g = yield* askOptOrCancel(conditionReport(h, "What shall I buy, Taipan?"), goods, {
-    disabled: goods.flatMap((_, g) => (affordable(h, g) === 0 ? [g] : [])),
+  const goods = marketGoods(h);
+  const i = yield* askOptOrCancel(conditionReport(h, "What shall I buy, Taipan?"), goods.map((g) => GOODS[g]!), {
+    disabled: goods.flatMap((g, i) => (affordable(h, g) === 0 ? [i] : [])),
   });
-  if (g === null) {
+  if (i === null) {
     return;
   }
+  const g = goods[i]!;
 
   const x = affordable(h, g);
 
@@ -138,12 +145,12 @@ export function* buyGoods(h: Hong): Flow {
 
 /** The goods aboard ship. */
 export function goodsAboard(h: Hong): number[] {
-  return knownGoods(h).flatMap((_, g) => (h.shipGoods[g]! > 0 ? [g] : []));
+  return marketGoods(h).filter((g) => h.shipGoods[g]! > 0);
 }
 
 export function* sellGoods(h: Hong): Flow {
   const aboard = goodsAboard(h);
-  let g: number | null;
+  let g: number;
   if (aboard.length === 1) {
     // with only one good aboard, offer to sell the lot
     g = aboard[0]!;
@@ -154,12 +161,14 @@ export function* sellGoods(h: Hong): Flow {
     }
   } else {
     // you can't sell something you don't have
-    g = yield* askOptOrCancel(conditionReport(h, "What shall I sell, Taipan?"), knownGoods(h), {
-      disabled: knownGoods(h).flatMap((_, g) => (aboard.includes(g) ? [] : [g])),
+    const goods = marketGoods(h);
+    const i = yield* askOptOrCancel(conditionReport(h, "What shall I sell, Taipan?"), goods.map((g) => GOODS[g]!), {
+      disabled: goods.flatMap((g, i) => (aboard.includes(g) ? [] : [i])),
     });
-    if (g === null) {
+    if (i === null) {
       return;
     }
+    g = goods[i]!;
   }
 
   const x = h.shipGoods[g]!;

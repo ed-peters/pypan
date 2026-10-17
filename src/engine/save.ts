@@ -2,10 +2,11 @@
 // from the Python version can be imported. Keys are snake_case on disk.
 
 import {
-  BASE_PRICES, CITIES, HONG_KONG, JADE_INVESTMENT, LI_YUEN_MAX_GRUDGE, NUM_GOODS, PORCELAIN,
+  CITIES, HONG_KONG, JADE_INVESTMENT, LI_YUEN_MAX_GRUDGE, NUM_GOODS, PORCELAIN,
   START_YEAR,
 } from "./constants";
-import type { Cargo, Expedition, Hong, Mine } from "./hong";
+import type { Cargo, Expedition, Hong, Share } from "./hong";
+import { usualPrice } from "./prices";
 
 /**
  * Saves from before pypan-87 have no porcelain. Those written between pypan-86 and
@@ -51,6 +52,10 @@ export function toSave(h: Hong): Record<string, unknown> {
     ...(h.jadeOffers ? { jade_offers: h.jadeOffers } : {}),
     ...(h.porcelain ? { porcelain: true } : {}),
     ...(h.mine ? { mine: { ...h.mine } } : {}),
+    ...(h.godowns ? { godowns: { ...h.godowns } } : {}),
+    ...(h.godownsBought ? { godowns_bought: true } : {}),
+    ...(h.arms ? { arms: { ...h.arms } } : {}),
+    ...(h.armsBought ? { arms_bought: true } : {}),
   };
 }
 
@@ -68,7 +73,7 @@ export function fromSave(data: unknown): Hong {
   const prices = goods(d, "prices", true, true)[0];
   if (prices.length < NUM_GOODS) {
     // a four-good save: porcelain is hidden, and priced afresh on the next arrival
-    prices.push(usualPorcelainPrice(location));
+    prices.push(usualPrice(PORCELAIN, location));
   }
   return {
     name: str(d, "name"),
@@ -96,7 +101,11 @@ export function fromSave(data: unknown): Hong {
     expeditionFailed: d.expedition_failed === undefined ? false : bool(d, "expedition_failed"),
     jadeOffers: d.jade_offers === undefined ? 0 : int(d, "jade_offers", 0),
     porcelain,
-    mine: d.mine == null ? null : mine(d.mine),
+    mine: d.mine == null ? null : share(d.mine, "mine"),
+    godowns: d.godowns == null ? null : share(d.godowns, "godowns"),
+    godownsBought: d.godowns_bought === undefined ? false : bool(d, "godowns_bought"),
+    arms: d.arms == null ? null : share(d.arms, "arms"),
+    armsBought: d.arms_bought === undefined ? false : bool(d, "arms_bought"),
   };
 }
 
@@ -166,13 +175,6 @@ function goods(d: Rec, key: string, porcelain: boolean, short = false): [number[
   return [all, jade];
 }
 
-/** Porcelain's usual price at a port (Hong Kong's at sea): its level times 2. */
-function usualPorcelainPrice(location: number): number {
-  const row = BASE_PRICES[PORCELAIN]!;
-  const port = location < CITIES.length ? location : HONG_KONG;
-  return Math.trunc(row[port + 1]! / 2) * 2 * row[0]!;
-}
-
 function cargo(v: unknown, d: Rec): Cargo {
   const c = record(v, "ship_cargo");
   // pypan.py consignments have no deadline: make them due on the next arrival
@@ -198,7 +200,7 @@ function expedition(v: unknown): Expedition {
   };
 }
 
-function mine(v: unknown): Mine {
-  const m = record(v, "mine");
+function share(v: unknown, key: string): Share {
+  const m = record(v, key);
   return { value: int(m, "value", 0), due: int(m, "due") };
 }

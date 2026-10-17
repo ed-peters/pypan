@@ -12,9 +12,10 @@
 //   never borrows except for a bailout when broke.
 // - Banks everything above that, and enough cash to afford a new ship.
 // - Pays Li Yuen, repairs fully, buys bigger ships, and guns up to a target.
-// - Backs the jade expedition with twice the stake in the bank, pays every call for
-//   funds from the jade mine, and buys into the porcelain trade whenever it's
-//   offered. It doesn't allow for porcelain breaking.
+// - Buys into the godowns and the arms smuggling whenever they're offered, backs the
+//   jade expedition with twice the stake in the bank, pays every call for funds,
+//   and buys into the porcelain trade whenever it's offered. It doesn't allow for
+//   porcelain breaking.
 // - Fights when it has guns to match the pirates, otherwise runs.
 //
 // Any prompt it doesn't recognize is an error, so new game events can't quietly
@@ -30,10 +31,11 @@ import {
   BANK_RATE, BASE_PRICES, CITIES, GOODS, HONG_KONG, LOAN_RATE, OPIUM, PORCELAIN,
 } from "../../src/engine/constants";
 import {
-  currentTime, isBroke, knownGoods, repairPercent, shipAvailable, type Hong,
+  currentTime, isBroke, marketGoods, repairPercent, shipAvailable, type Hong,
 } from "../../src/engine/hong";
 import type { Prompt } from "../../src/engine/prompts";
 import { MSG_NEG_SHOCK, MSG_POS_SHOCK } from "../../src/engine/trade";
+import { sharesValue } from "../../src/engine/ventures";
 
 /** Running totals of where money came from and went, for one game. */
 export interface Ledger {
@@ -73,9 +75,9 @@ export interface Ledger {
   /** Expeditions backed, and how many succeeded. */
   jadeBacked: number;
   jadeWins: number;
-  /** The jade mine's dividends and rich veins; and what was lost to it: failed stakes, calls for funds, and share value seized or taken for refusing. */
-  jadeGain: number;
-  jadeLost: number;
+  /** Ventures' dividends and rich veins; and what was lost to them: failed jade stakes, calls for funds, and share value seized or taken for refusing. */
+  ventureGain: number;
+  ventureLost: number;
   /** The porcelain share: when it was bought (month), its fee, and what was paid for porcelain broken. */
   porcelainMonth: number | null;
   porcelainFee: number;
@@ -88,7 +90,7 @@ export function newLedger(): Ledger {
     robbery: 0, fines: 0, seized: 0, repairs: 0, ships: 0, guns: 0, bailouts: 0,
     shockGain: 0, shocksUp: 0, shocksUpSold: 0, shocksDown: 0, shocksDownBought: 0,
     biggestWindfall: 0, biggestLateWindfall: 0, jadeOffers: 0, jadeStake: 0, jadeStakeShare: 0, jadeOutcome: null, jadeBacked: 0, jadeWins: 0,
-    jadeGain: 0, jadeLost: 0, porcelainMonth: null, porcelainFee: 0, porcelainBroken: 0,
+    ventureGain: 0, ventureLost: 0, porcelainMonth: null, porcelainFee: 0, porcelainBroken: 0,
   };
 }
 
@@ -141,8 +143,8 @@ export class Bot {
     if (last === "What shall I do, Taipan?") {
       return this.portMenu(p, h);
     }
-    if (last === "What shall I sell, Taipan?") {
-      return (this.step as { good: number }).good;
+    if (last === "What shall I sell, Taipan?" && p.kind === "choose") {
+      return p.options.indexOf(GOODS[(this.step as { good: number }).good]!);
     }
     if (/^Would you like to sell all of your/.test(last)) {
       const g = (this.step as { good: number }).good;
@@ -154,8 +156,8 @@ export class Bot {
       this.recordSale(h, g, h.shipGoods[g]!);
       return h.shipGoods[g];
     }
-    if (last === "What shall I buy, Taipan?") {
-      return (this.step as { good: number }).good;
+    if (last === "What shall I buy, Taipan?" && p.kind === "choose") {
+      return p.options.indexOf(GOODS[(this.step as { good: number }).good]!);
     }
     if (/^How much \w+ shall I buy, Taipan\?$/.test(last)) {
       const s = this.step as { good: number; qty: number };
@@ -257,9 +259,14 @@ export class Bot {
       }
       return this.backing > 0;
     }
-    m = /^Taipan, the jade mine has had a bad quarter, and needs ([\d,]+) more from its backers/.exec(text);
+    m = /^Taipan, it has been a bad quarter for the .*, and the backers must put in ([\d,]+) more/.exec(text);
     if (m) {
-      this.ledger.jadeLost += num(m[1]!);
+      this.ledger.ventureLost += num(m[1]!);
+      return true;
+    }
+    // the godowns and the arms smuggling, first, again or more: always buy in
+    if (/(?:cargo godowns|new godowns|arms smuggling|back in business).* for ([\d,]+)\. (?:We would .* )?Shall we (?:buy|buy back|join)/.test(text)
+      || /(?:building more godowns|gang is expanding), and offers to add [\d,]+ to our share\. Shall we\?$/.test(text)) {
       return true;
     }
     m = /offers us a share in the porcelain trade for ([\d,]+)\./.exec(text);
@@ -311,7 +318,7 @@ export class Bot {
   /** Sell, buy, bank, then sail. */
   private makePlan(h: Hong): Step[] {
     const here = h.location;
-    const goods = knownGoods(h).map((_, g) => g);
+    const goods = marketGoods(h);
     const others = CITIES.map((_, q) => q).filter((q) => q !== here);
     const plan: Step[] = [];
 
@@ -431,9 +438,9 @@ export class Bot {
     }
   }
 
-  /** Cash plus bank, less debt, plus any jade mine share and what we paid for the goods aboard. */
+  /** Cash plus bank, less debt, plus any shares in ventures and what we paid for the goods aboard. */
   worthAtCost(h: Hong): number {
-    return h.cash + h.bank - h.debt + (h.mine?.value ?? 0) + this.cost.reduce((a, b) => a + b, 0);
+    return h.cash + h.bank - h.debt + sharesValue(h) + this.cost.reduce((a, b) => a + b, 0);
   }
 
   /** Track money from messages: booty, consignments, robbery, fines, shocks, jade. */
@@ -459,22 +466,25 @@ export class Bot {
       this.backing = 0;
     } else if (/has been captured by rebels/.test(text) && this.backing) {
       this.ledger.jadeOutcome = "failure";
-      this.ledger.jadeLost += this.backing;
+      this.ledger.ventureLost += this.backing;
       this.backing = 0;
     } else if (/met with success/.test(text)) {
       this.backing = 0;
     }
-    m = /^The jade mine has paid us ([\d,]+) this quarter/.exec(text) ?? /struck a rich vein! Our share of ([\d,]+)/.exec(text);
+    m = /^Our share in the .* has paid us ([\d,]+) this quarter/.exec(text) ?? /struck a rich vein! Our share of ([\d,]+)/.exec(text);
     if (m) {
-      this.ledger.jadeGain += num(m[1]!);
+      this.ledger.ventureGain += num(m[1]!);
       this.windfall(num(m[1]!), this.worthAtCost(h), h);
     }
-    if (/Rebels have seized the jade mine/.test(text)) {
-      this.ledger.jadeLost += h.mine?.value ?? 0;
-    }
-    m = /half of our share in the jade mine, Taipan\. It is now worth ([\d,]+)\./.exec(text);
+    m = /^Bad joss, Taipan! .* worth ([\d,]+), is lost/.exec(text);
     if (m) {
-      this.ledger.jadeLost += num(m[1]!);
+      this.ledger.ventureLost += num(m[1]!);
+    }
+    m = /they have fined us ([\d,]+)!/.exec(text);
+    if (m) this.ledger.fines += num(m[1]!);
+    m = /half of our share in the .*, Taipan\. It is now worth ([\d,]+)\./.exec(text);
+    if (m) {
+      this.ledger.ventureLost += num(m[1]!);
     }
     m = /(?:broke|smashed|Rough seas, Taipan!) ([\d,]+) of our porcelain/.exec(text);
     if (m) {
@@ -500,11 +510,11 @@ export class Bot {
   }
 }
 
-/** Cash plus bank, less debt, plus any jade mine share and goods at local prices. */
+/** Cash plus bank, less debt, plus any shares in ventures and goods at local prices. */
 export function worth(h: Hong): number {
   const goods = h.shipGoods.reduce((s, n, g) => s + n * h.prices[g]!, 0)
     + h.warehouseGoods.reduce((s, n, g) => s + n * h.prices[g]!, 0);
-  return h.cash + h.bank - h.debt + (h.mine?.value ?? 0) + goods;
+  return h.cash + h.bank - h.debt + sharesValue(h) + goods;
 }
 
 /** One gun per 50 of hold, at least two and at most ten. */

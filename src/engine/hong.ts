@@ -2,8 +2,8 @@
 // (SPEC.md section 2.1). It is plain data; behavior lives in functions.
 
 import {
-  GOODS, HONG_KONG, NUM_GOODS, START_CASH, START_DEBT, START_GUNS, START_MONTH,
-  START_SHIP_SIZE, START_WAREHOUSE_SIZE, START_YEAR,
+  ARMS, GENERAL, GOODS, HONG_KONG, NUM_GOODS, PORCELAIN, START_CASH, START_DEBT, START_GUNS,
+  START_MONTH, START_SHIP_SIZE, START_WAREHOUSE_SIZE, START_YEAR,
 } from "./constants";
 import { setPrices } from "./prices";
 import type { Rng } from "./rng";
@@ -30,8 +30,8 @@ export interface Expedition {
   stake: number;
 }
 
-/** A share in the jade mine (pypan-89): what it's worth, and when it next settles. */
-export interface Mine {
+/** A share in a venture (the godowns, the arms smuggling or the jade mine): what it's worth, and when it next settles. */
+export interface Share {
   value: number;
   /** The month (as currentTime) of the next quarter's return. */
   due: number;
@@ -69,7 +69,14 @@ export interface Hong {
   expeditionFailed: boolean;
   /** How many times Sir Beaumont-Finch has sought backers, up to JADE_MAX_OFFERS. */
   jadeOffers: number;
-  mine: Mine | null;
+  /** A share in the jade mine (pypan-89). */
+  mine: Share | null;
+  /** A share in the cargo godowns in Nanking, and whether we've ever bought one (pypan-91). */
+  godowns: Share | null;
+  godownsBought: boolean;
+  /** A share in the Red Wind gang's arms smuggling, and whether we've ever bought one. */
+  arms: Share | null;
+  armsBought: boolean;
   /** Whether we own a share in the porcelain trade; until then porcelain is hidden. */
   porcelain: boolean;
 }
@@ -101,6 +108,10 @@ export function newHong(rng: Rng, guns: boolean, name: string = "Rising Sun"): H
     expeditionFailed: false,
     jadeOffers: 0,
     mine: null,
+    godowns: null,
+    godownsBought: false,
+    arms: null,
+    armsBought: false,
     porcelain: false,
   };
 }
@@ -129,9 +140,15 @@ export function netWorthOnHand(h: Hong): number {
   return h.shipGoods.reduce((sum, n, g) => sum + n * h.prices[g]!, h.cash);
 }
 
-/** The goods on the market: porcelain, the last, only once we've bought into it. */
-export function knownGoods(h: Hong): readonly string[] {
-  return h.porcelain ? GOODS : GOODS.slice(0, -1);
+/**
+ * The goods on our market, by index: porcelain only once we're in its trade, and
+ * not general cargo or arms once a venture has replaced them (pypan-91).
+ */
+export function marketGoods(h: Hong): number[] {
+  return GOODS.flatMap((_, g) => {
+    const on = g === PORCELAIN ? h.porcelain : g === GENERAL ? !h.godownsBought : g === ARMS ? !h.armsBought : true;
+    return on ? [g] : [];
+  });
 }
 
 export function totalGoods(h: Hong): number {

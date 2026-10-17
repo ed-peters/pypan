@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { HONG_KONG, PORCELAIN, SHANGHAI } from "../../src/engine/constants";
-import { knownGoods } from "../../src/engine/hong";
+import { marketGoods } from "../../src/engine/hong";
 import { breakPorcelain, checkPorcelain, porcelainOdds } from "../../src/engine/porcelain";
 import { ScriptedRng } from "../../src/engine/rng";
 import { makeHong } from "../helpers/hong";
@@ -40,7 +40,7 @@ describe("checkPorcelain", () => {
       "Very well, Taipan. We are in the porcelain trade. Mind how it's stowed: it breaks!",
     ]);
     expect([h.cash, h.bank, h.porcelain]).toEqual([0, 2500400, true]);
-    expect(knownGoods(h)).toContain("Porcelain");
+    expect(marketGoods(h)).toContain(PORCELAIN);
   });
 
   it("leaves porcelain hidden if we decline, to be offered again", () => {
@@ -48,7 +48,7 @@ describe("checkPorcelain", () => {
     const p = play(checkPorcelain(h, new ScriptedRng([0])), [false]);
     expect(texts(p)).toEqual([OFFER]);
     expect([h.cash, h.bank, h.porcelain]).toEqual([400, 5000000, false]);
-    expect(knownGoods(h)).not.toContain("Porcelain");
+    expect(marketGoods(h)).not.toContain(PORCELAIN);
     expect(texts(play(checkPorcelain(h, new ScriptedRng([0])), [false]))).toEqual([OFFER]);
   });
 

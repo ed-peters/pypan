@@ -5,7 +5,7 @@ import { accrueInterest } from "./bank";
 import { AT_SEA, CITIES, city } from "./constants";
 import { checkCargo } from "./cargo";
 import { checkExtortion } from "./extortion";
-import { checkJade } from "./jade";
+import { checkVentures } from "./ventures";
 import { advanceTime, isOverloaded, type Hong } from "./hong";
 import { checkLender } from "./lender";
 import { checkPorcelain } from "./porcelain";
@@ -51,7 +51,7 @@ export function* sailAway(h: Hong, rng: Rng): Flow<"sunk" | void> {
   yield* checkExtortion(h, rng);
   yield* checkUpgrades(h, rng);
   yield* checkWarehouse(h, rng);
-  yield* checkJade(h, rng);
+  yield* checkVentures(h, rng);
   yield* checkPorcelain(h, rng);
   yield* checkCargo(h, rng);
   yield* checkSafety(h, rng);

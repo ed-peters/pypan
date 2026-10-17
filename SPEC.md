@@ -23,7 +23,8 @@ in a pirate battle (§7.3). Either way the game is over for good and is scored.
 ### 1.1 Scoring
 
 When the game ends, the **final position** is cash + bank − debt, plus the value of
-any share in the jade mine (§4.6); goods don't count. The captain comments on it, if it deserves a comment (only the first that
+any shares in ventures (the godowns, the arms smuggling and the jade mine, §4.8);
+goods don't count. The captain comments on it, if it deserves a comment (only the first that
 applies):
 
 - Over 1,000,000: "You're a M I L L I O N A I R E !!!"
@@ -88,6 +89,8 @@ house). It is fully serializable to JSON for save/load. Key fields:
 | `expedition_failed` | Whether a jade expedition has failed, so later offers say Sir Beaumont-Finch escaped; saved only when true | false |
 | `jade_offers` | How many times the jade expedition has been offered (§4.6); saved only when not 0 | 0 |
 | `mine` | A share in the jade mine (§4.6): `value`, `due` (month of the next return); saved only when held | none |
+| `godowns`, `arms` | Shares in the Nanking godowns and the Red Wind gang's smuggling (§4.8), as `mine`; saved only when held | none |
+| `godowns_bought`, `arms_bought` | Whether you've ever bought into them, so general cargo or arms are off your market (§4.8); saved only when true | false |
 | `porcelain` | Whether you own a share in the porcelain trade (§4.7); saved only when true | false |
 
 **Older saves.** Saves without `porcelain` come from before porcelain:
@@ -122,8 +125,9 @@ Wu), ship repair (McHenry), warehouse upgrades, and warehouse transfers.
 
 Five tradeable commodities, indexed 0–4, each in a different price tier (the tier
 sets the order of magnitude via `mult(n) = 10^n`). Porcelain, the dearest, is hidden
-until you buy a share in the porcelain trade (§4.7). (Jade held its tier until
-pypan-86 made the jade expedition pay out instead, §4.6.)
+until you buy a share in the porcelain trade (§4.7). General cargo and arms leave
+your market for good once you buy into the godowns and the arms smuggling (§4.8).
+(Jade held its tier until pypan-86 made the jade expedition pay out instead, §4.6.)
 
 | Index | Good | Price magnitude |
 |---|---|---|
@@ -197,7 +201,9 @@ With the `BASED_PRICES` flag turned off, prices are fully random instead:
 ### 4.2 Price Shocks
 
 After month 1, there is a 1-in-10 chance per arrival of a market shock on a random
-good on the market (porcelain only once you're in the trade, §4.7). A coin flip decides
+good (porcelain only once you're in the trade, §4.7). A good that a venture has taken
+off your market (§4.8) is still shocked, but quietly, with no message: otherwise, with
+the cheap goods gone, every shock would land on the dear ones. A coin flip decides
 direction:
 
 - **Positive shock** (e.g. famine, rebellion): price multiplied by a factor of 5–9.
@@ -268,7 +274,8 @@ The game's moonshot: a Burmese jade mining expedition which, if it succeeds, giv
 its backers a share in the mine: a passive asset like the bank, but riskier
 (`check_jade`, on arrival, before consignments). Jade is never a tradeable good.
 
-- **Offer:** after month 24, if no expedition is under way, it has been offered fewer
+- **Offer:** after month 24, once you have bought into both the godowns and the arms
+  smuggling (§4.8, held now or not), if no expedition is under way, it has been offered fewer
   than 3 times this game (`JADE_MAX_OFFERS`, counting declined offers), the bank
   holds over 2,000,000 (`JADE_BANK_LEVEL`; cash on hand doesn't count) and the port
   is Singapore or Batavia, there's a 1-in-3 chance the East India Company man Sir
@@ -287,26 +294,55 @@ its backers a share in the mine: a passive asset like the bank, but riskier
   back it hear the rumor of a new mine and get nothing. He may be back with another
   expedition after a success too, up to the limit of three offers.
 
-**The mine** settles every 3 months (`MINE_QUARTER_MONTHS`), on the first arrival
-(anywhere) once it's due, starting 3 months after the success:
+**The mine** is the riskiest and richest of the ventures, and settles as they do
+(§4.8), starting 3 months after the success:
 
-- **Seized** (1-in-80, `MINE_SEIZURE_CHANCE`): "Rebels have seized the jade mine, and
-  our share in it is lost."
+- **Seized** (1-in-80 quarters, `MINE_SEIZURE_CHANCE`): "Rebels have seized the jade
+  mine, and our share in it, worth ((value)), is lost."
 - **Rich vein** (else 1-in-40, `MINE_VEIN_CHANCE`): pays twice the share's value
   (`MINE_VEIN_PAYOUT`) into the bank.
-- **Otherwise** a return of −10% to +20% of the share's value (`MINE_RETURN_MIN`,
-  `_MAX`, rounded to the thousand). A gain is paid into the bank. Zero is "broken
-  even". A loss is a **call for funds**: "the jade mine has had a bad quarter, and
-  needs ((amount)) more from its backers. Shall we pay our part?" Paying takes it
-  from the bank, then cash (wherever you are, as the stake was). If that's not
-  enough, Elder Brother Wu can make up the difference, adding it to your debt.
-  Refusing, or turning Wu down, costs half the share (`MINE_REFUSAL_LOSS`): "The
-  other backers have taken half of our share in the jade mine."
+- **Otherwise** a return of −10% to +20% of the share's value (`MINE_RETURN`).
 
-The share's value only changes with new successes, refusals and seizure; returns are
-paid out. It can't be sold, but it counts toward the final score (§1.1), and the
-status pane shows it ("Jade mine") while you hold one. On average a quarter returns
-about 5% of the share, plus 5% from rich veins, less about 1% lost to seizure.
+On average a quarter returns about 5% of the share, plus 5% from rich veins, less
+about 1% lost to seizure.
+
+### 4.8 Ventures: the Godowns, the Arms Smuggling and the Jade Mine (pypan-91)
+
+Three ventures, offered in turn, are shares that settle every three months
+(`check_ventures`, on arrival, before the jade expedition). The first two replace
+trading a good: once you buy in, that good leaves your market (menus, the condition
+report, the panes) for the rest of the game, even if you later lose the share.
+
+| Venture | Offered | Replaces | Each quarter | Lost |
+|---|---|---|---|---|
+| Cargo godowns in Nanking | Shanghai, 1-in-3 arrivals, after month 12 | General cargo | −5% to +10% (`GODOWN_RETURN`) | Seized by a rival hong, 1-in-60 quarters |
+| The Red Wind gang's arms smuggling | Any port but Hong Kong, 1-in-6 arrivals, after month 24, once you've had godowns | Arms | −15% to +30% (`ARMS_RETURN`) | Shut down by the authorities, 1-in-30 quarters, with a fine of up to ~`cash/1.8` |
+| The jade mine | A successful jade expedition (§4.6), offered once you've had both | – | −10% to +20%, rich veins | Seized by rebels, 1-in-80 quarters |
+
+- **Buying in** (godowns and arms): the offer is for a tenth of your cash position
+  (`VENTURE_FEE_SHARE`, rounded to the thousand), only when that's over 10,000
+  (`VENTURE_WORTH_LEVEL`). The fee is paid from cash and then the bank. Any of the
+  replaced good aboard or in the warehouse goes into the share at its usual Hong Kong
+  price ("Our 15 general cargo has gone into them too"). Declining costs nothing; the
+  offer comes again. After a loss you can buy back in ("the merchant of Nanking has
+  new godowns", "the Red Wind gang is back in business").
+- **Adding to a share:** while you hold one, the same offer can add a tenth of your
+  cash position to it, but only once the share is worth less than that.
+- **Settling** (`VENTURE_QUARTER_MONTHS`, on the first arrival anywhere once it's
+  due): first the 1-in-N chance the share is lost (its news gives what it was worth),
+  then the mine's rich vein, then the quarter's return, rounded to the thousand. A
+  gain is paid into the bank ("Our share in the Nanking godowns has paid us
+  ((amount)) this quarter"). Zero has "broken even". A loss is a **call for funds**:
+  "it has been a bad quarter for the ((venture)), and the backers must put in
+  ((amount)) more. Shall we pay our part?" Paying takes it from the bank, then cash.
+  If that's not enough, Elder Brother Wu can make up the difference, adding it to
+  your debt. Refusing, or turning Wu down, costs half the share (`REFUSAL_LOSS`).
+- **Shares** can't be sold, but count toward the final position and score (§1.1). The
+  status pane shows each one held ("Godowns", "Smuggling", "Jade mine"). Returns are
+  paid out, so a share's value changes only by buying, adding, refusing and losing it.
+
+On average a quarter of godowns returns about 2.5% (less about 1.7% for seizure),
+the arms smuggling about 7.5% (less about 3.3% for shutdowns, and fines).
 
 ### 4.7 Porcelain (pypan-87)
 
@@ -364,7 +400,8 @@ The game auto-saves at the top of every menu iteration.
 6. Arrives; **debt and bank interest are applied**.
 7. Runs the arrival event sequence:
    `check_lender` → `check_extortion` → `check_upgrades` → `check_warehouse`
-   → `check_jade` → `check_porcelain` → `check_cargo`
+   → `check_ventures` (shares, the godown and arms offers, then `check_jade`)
+   → `check_porcelain` → `check_cargo`
    → `check_safety` → `establish_prices`.
 
 ---
@@ -626,9 +663,15 @@ after the save's date.
 | `JADE_INVESTMENT` | 1000000 | ... but at least this |
 | `JADE_EXPEDITION_MONTHS` | 3 | Months from the offer until the expedition resolves |
 | `MINE_SHARE_MIN` / `_MAX` | 2 / 5 | A success makes the stake a mine share worth this many times as much |
-| `MINE_QUARTER_MONTHS` | 3 | Months between the mine's returns |
-| `MINE_RETURN_MIN` / `_MAX` | −0.1 / 0.2 | Each quarter's return, as a share of the share's value |
-| `MINE_REFUSAL_LOSS` | 0.5 | Share of the share lost for refusing a call for funds |
+| `VENTURE_QUARTER_MONTHS` | 3 | Months between a venture's returns (§4.8) |
+| `VENTURE_FEE_SHARE` | 0.1 | Share of the cash position a godown or arms share (or addition) costs |
+| `VENTURE_WORTH_LEVEL` | 10000 | Cash position above which they're offered |
+| `REFUSAL_LOSS` | 0.5 | Share of a share lost for refusing a call for funds |
+| `MINE_RETURN` | −0.1 / 0.2 | The jade mine's quarterly return, as a share of the share's value |
+| `GODOWN_MIN_MONTHS` / `GODOWN_OFFER_CHANCE` | 12 / 3 | Godowns: offered after this month, 1-in-N Shanghai arrivals |
+| `GODOWN_RETURN` / `GODOWN_SEIZURE_CHANCE` | −0.05 / 0.1, 60 | Godowns' quarterly return, and 1-in-N quarters seized |
+| `ARMS_MIN_MONTHS` / `ARMS_OFFER_CHANCE` | 24 / 6 | Arms smuggling: offered after this month, 1-in-N foreign arrivals |
+| `ARMS_RETURN` / `ARMS_SHUTDOWN_CHANCE` | −0.15 / 0.3, 30 | Arms smuggling's quarterly return, and 1-in-N quarters shut down |
 | `MINE_SEIZURE_CHANCE` | 80 | 1-in-N quarters, rebels seize the mine |
 | `MINE_VEIN_CHANCE` / `MINE_VEIN_PAYOUT` | 40 / 2 | 1-in-N quarters, a rich vein pays this many times the share |
 | `JADE_MAX_OFFERS` | 3 | Times the expedition can be offered in a game |
@@ -663,7 +706,7 @@ etc.). It is built for touch on iPhone and iPad, and also works with a keyboard.
 - **Report** (the message area): the comprador's report in port, the captain's at
   sea, with the date, the current message, and any ASCII art backdrop (`STORM`,
   `PIRATES`, `BOAT`). Messages type out and can be skipped with a tap.
-- **Current Status**: location, cash, debt, bank, any jade mine share (§4.6), guns,
+- **Current Status**: location, cash, debt, bank, any shares in ventures (§4.8), guns,
   repair %.
 - **Canton Warehouse**: stored goods and remaining capacity.
 - **Ship's Hold**: carried goods, remaining capacity, and any special cargo.
@@ -741,6 +784,8 @@ Additions:
 - **Contraband consignments** (§12), which pay five times as much but can be seized
   by the harbor police, with a fine, like opium. pypan.py's `illegal` flag was never
   set.
+- **Ventures** (§4.8): shares in cargo godowns and arms smuggling replace trading
+  general cargo and arms, and lead on to the jade expedition.
 - **Porcelain** (§4.7), a fragile top good unlocked by buying a share in the trade
   for half your fortune. Storms, rough seas and cannon fire break it.
 - **Li Yuen's demand tracks your fortune** (§8, pypan-88) rather than only the

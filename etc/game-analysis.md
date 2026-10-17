@@ -5,12 +5,13 @@ wealth simulation, and ten tuning scenarios for (a) making risks feel riskier,
 (b) making windfalls feel more powerful and (c) making moonshots make or break a
 fortune.
 
-**Calculated on commit 81f21de,** except for the sections "Li Yuen reworked"
-(after pypan-88), "Jade as a payout" (after pypan-86, which took jade off the
-market), "Porcelain" (after pypan-87, which added porcelain as the top good) and
-"The jade mine" (after pypan-89). Each later section changes the game under the
-earlier ones. The figures go out of date when the game engine
-changes (`git log --oneline 81f21de.. -- src/engine`). Rerun with:
+**"The game today" is calculated after 02d48fd, with the improved bot.** The
+sections after it are a history, each calculated with the old bot (which
+understated wealth two- to threefold) on the game as it was then: commit 81f21de,
+then "Li Yuen reworked" (pypan-88), "Jade as a payout" (pypan-86), "Porcelain"
+(pypan-87) and "The jade mine" (pypan-89). Their comparisons still explain the
+design decisions, but not today's numbers. The figures go out of date when the game
+engine changes (`git log --oneline 02d48fd.. -- src/engine`). Rerun with:
 
     npm run sim -- --compare --runs 1000 --start guns    # and --start debt
 
@@ -29,7 +30,62 @@ The player should feel four sources of income:
 | **Windfalls** | Luck caught at the right moment | Price shocks, pirate booty, "good joss" consignments |
 | **Moonshots** | Big risk, big reward | The jade expedition |
 
-## How the game measures up today
+## The game today (after pypan-91, with the improved bot)
+
+Since the history below: Li Yuen's demand tracks your fortune and refusing him earns
+a grudge (pypan-88); jade is no longer a good, and a successful expedition gives a
+share in the mine (pypan-86, pypan-89); porcelain is the fragile top good
+(pypan-87); the lorcha and the bank's representative are gone, so banking and
+transfers are Hong Kong only; and godowns and arms smuggling replace trading general
+cargo and arms, leading on to the jade expedition (pypan-91, SPEC.md §4.8). The bot
+now replans the whole hold at every port and heads home every six voyages
+(`etc/wealth-curve.md`).
+
+Scenarios no longer in the list: Li Yuen's tithe, Backers only and Bet the house are
+now the game's own rules. **Balanced** is now tougher pirates plus shocks on dear
+goods, and **Combined** fiercer pirates plus both shock changes. **No porcelain**,
+**Sturdy porcelain** (pypan-87's first breakage), **Small jade stakes** (about
+1,000,000), **Li Yuen before pypan-88**, **Impatient Li Yuen** and **Refusing Li Yuen**
+are as described in the history.
+
+1,000 games per scenario, guns start first and the debt start in parentheses; ships
+afloat at 10 years. Losses include venture losses, the porcelain fee and breakage.
+
+| Scenario | P50 at 10 years | Sunk | Shocks (share of income) | Ventures | Losses | Worst drawdown after year 5 (median) | Biggest windfall after year 5 (median) |
+|---|---|---|---|---|---|---|---|
+| **Baseline** | 1.46B (1.32B) | 4% (5%) | 3% (3%) | 9% (9%) | 32% (31%) | 42% (42%) | 17% (15%) |
+| Li Yuen before pypan-88 | 1.48B (1.33B) | 4% (5%) | 3% (3%) | 9% (9%) | 31% (30%) | 41% (41%) | 17% (15%) |
+| Impatient Li Yuen | 1.46B (1.29B) | 6% (9%) | 3% (3%) | 10% (9%) | 33% (31%) | 41% (41%) | 14% (16%) |
+| Refusing Li Yuen | 1.29B (1.20B) | 79% (92%) | 4% (5%) | 9% (8%) | 41% (39%) | 47% (46%) | 22% (17%) |
+| Fiercer pirates | 1.53B (1.30B) | 19% (14%) | 3% (3%) | 11% (9%) | 33% (31%) | 41% (41%) | 20% (17%) |
+| Heavy storms | 1.47B (1.26B) | 5% (7%) | 3% (3%) | 10% (9%) | 33% (31%) | 42% (42%) | 18% (18%) |
+| Frequent shocks | 1.74B (1.62B) | 4% (3%) | 12% (12%) | 10% (10%) | 31% (30%) | 40% (41%) | 49% (51%) |
+| Shocks on dear goods | 1.71B (1.55B) | 4% (4%) | 12% (11%) | 10% (10%) | 30% (30%) | 42% (41%) | 51% (54%) |
+| Boom markets | 2.52B (2.34B) | 3% (2%) | 34% (34%) | 11% (10%) | 27% (26%) | 41% (40%) | 105% (111%) |
+| Small jade stakes | 1.41B (1.28B) | 4% (5%) | 3% (3%) | 7% (7%) | 25% (23%) | 35% (36%) | 10% (11%) |
+| No porcelain | 206M (178M) | 4% (5%) | 6% (6%) | 10% (10%) | 27% (24%) | 16% (17%) | 9% (11%) |
+| Sturdy porcelain | 1.89B (1.61B) | 4% (5%) | 3% (3%) | 10% (10%) | 27% (26%) | 38% (39%) | 16% (16%) |
+| Balanced | 1.72B (1.61B) | 8% (8%) | 13% (13%) | 10% (11%) | 31% (28%) | 42% (40%) | 58% (57%) |
+| Combined | 2.62B (2.38B) | 13% (12%) | 34% (35%) | 11% (10%) | 28% (27%) | 39% (40%) | 110% (111%) |
+
+Measured against the goal:
+
+- **Bank: slow and steady, as intended.** About 5% of income, and safe.
+- **Trading: the engine, with risk late.** About 78% of income, three-quarters of it
+  from porcelain by 10 years. Porcelain's fee and breakage keep the late game risky:
+  the median worst fall after year 5 is about 42%, against 16% without porcelain.
+- **Windfalls: still weak.** Shocks are 3% of income and the biggest late windfall
+  is about a sixth of worth. Shocks on dear goods (scenario) remain the strongest
+  lever: windfalls of half of worth, at about 17% more wealth.
+- **Moonshots: present but tamer.** The jade expedition is offered once a player
+  holds godowns and arms (98% of games); a third of expeditions succeed, and winners
+  end up about 1.5× as rich as those who never win. Ventures as a whole are a steady
+  9% of income.
+- **Pirates and storms barely bite** with a bot that buys guns and repairs; even
+  fiercer pirates sink only 14–19% of ships. Refusing Li Yuen is still near-certain
+  ruin.
+
+## How the game measured up at 81f21de (history, old bot)
 
 ### Measures
 

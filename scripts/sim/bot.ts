@@ -4,10 +4,11 @@
 // would. It knows the port price table (BASE_PRICES), so it knows what each good
 // usually costs where, but not today's prices elsewhere. Its play:
 //
-// - Sells a good once the local price is at least what it expects anywhere else.
-// - Buys for the destination with the best expected profit, using the bank where
-//   it can, and sails there (or delivers a consignment, which it always takes
-//   when it fits).
+// - Plans each port as if it had sold everything aboard (goods sell for what they
+//   cost here): fills the hold for the destination with the best expected profit,
+//   using the bank where it can, and sells only what that plan doesn't keep. It
+//   sails there (or delivers a consignment, which it always takes when it fits),
+//   and heads home to Hong Kong after six voyages away.
 // - Repays Wu on each visit and keeps enough cash to repay the rest next time;
 //   never borrows except for a bailout when broke.
 // - Banks everything above that, and enough cash to afford a new ship.
@@ -94,6 +95,9 @@ export function newLedger(): Ledger {
   };
 }
 
+/** Voyages away before the bot heads home to Hong Kong. */
+const HOME_EVERY = 6;
+
 /** What a good usually costs at a port: its level times the mean multiplier (2). */
 export function expectedPrice(port: number, g: number): number {
   const row = BASE_PRICES[g]!;
@@ -124,6 +128,8 @@ export class Bot {
   private shockUsed = false;
   /** Our stake in the expedition under way; 0 if we didn't back it. */
   private backing = 0;
+  /** The last month we were in Hong Kong, where the bank and most offers are. */
+  private lastHome = 1;
 
   constructor(private readonly start: "guns" | "debt") {}
 
@@ -322,47 +328,23 @@ export class Bot {
     const others = CITIES.map((_, q) => q).filter((q) => q !== here);
     const plan: Step[] = [];
 
-    // sell what's dearer here than we'd expect anywhere else, and anything at all
-    // if overloaded
-    const kept = [...h.shipGoods];
-    for (const g of goods) {
-      const best = Math.max(...others.map((q) => expectedPrice(q, g)));
-      if (kept[g]! > 0 && (h.prices[g]! >= best || shipAvailable(h) < 0)) {
-        plan.push({ kind: "sell", good: g });
-        kept[g] = 0;
-      }
-    }
-    const proceeds = goods.reduce((s, g) => s + (h.shipGoods[g]! - kept[g]!) * h.prices[g]!, 0);
+    // Goods sell for what they cost here, so keeping a good is the same as buying
+    // it again now: plan as if we'd sold everything aboard, fill the hold for the
+    // best destination, then sell only what that plan doesn't keep. (Holding out
+    // for a better price elsewhere left cheap goods clogging the hold.)
+    const aboard = goods.reduce((s, g) => s + h.shipGoods[g]! * h.prices[g]!, 0);
+    const cargoSpace = h.shipSize - (h.shipCargo?.size ?? 0);
+    const funds = Math.max(0, spendable(h) + aboard - this.keep(h));
 
-    // what we can spend: cash and (where it's open) the bank, less what we keep
-    const cargoSpace = h.shipSize - (h.shipCargo?.size ?? 0) - kept.reduce((a, b) => a + b, 0);
-    const funds = Math.max(0, spendable(h) + proceeds - this.keep(h));
-
-    // pick the destination with the best expected value for what's kept plus what
-    // we'd buy for it; a consignment decides the destination for us
+    // pick the destination with the best expected value for what we'd carry there;
+    // a consignment decides the destination for us
     const destinations = h.shipCargo ? [h.shipCargo.destination] : others;
     let bestTo = -1;
     let bestValue = -Infinity;
-    let bestBuys: Step[] = [];
+    let bestLoad = new Map<number, number>();
     for (const q of destinations) {
-      let space = cargoSpace;
-      let money = funds;
-      let value = goods.reduce((s, g) => s + kept[g]! * expectedPrice(q, g), 0);
-      const buys: Step[] = [];
-      // greedily fill the hold with the best margin per unit of space
-      const ranked = goods
-        .map((g) => ({ g, margin: expectedPrice(q, g) - h.prices[g]! }))
-        .filter(({ g, margin }) => margin > 0.25 * h.prices[g]!)
-        .sort((a, b) => b.margin - a.margin);
-      for (const { g, margin } of ranked) {
-        const qty = Math.min(space, Math.floor(money / h.prices[g]!));
-        if (qty > 0) {
-          buys.push({ kind: "buy", good: g, qty });
-          space -= qty;
-          money -= qty * h.prices[g]!;
-          value += qty * margin;
-        }
-      }
+      const load = this.fill(h, goods, q, cargoSpace, funds);
+      let value = [...load].reduce((sum, [g, qty]) => sum + qty * (expectedPrice(q, g) - h.prices[g]!), 0);
       // home pulls when the ship needs repairs or there's debt to pay
       if (q === HONG_KONG && (repairPercent(h) < 75 || h.debt > 0)) {
         value = value * 1.25 + 1;
@@ -370,21 +352,55 @@ export class Bot {
       if (value > bestValue) {
         bestValue = value;
         bestTo = q;
-        bestBuys = buys;
+        bestLoad = load;
       }
     }
-    // nothing worth carrying and nothing to spend: go home to the bank (or Wu)
-    if (bestValue <= 0 && !h.shipCargo && here !== HONG_KONG) {
+    // nothing worth carrying and nothing to spend, or six voyages away: go home to
+    // the bank (or Wu), carrying the best we can for Hong Kong
+    if (here === HONG_KONG) {
+      this.lastHome = currentTime(h);
+    } else if (!h.shipCargo && (bestValue <= 0 || currentTime(h) - this.lastHome >= HOME_EVERY)) {
       bestTo = HONG_KONG;
-      bestBuys = [];
+      bestLoad = this.fill(h, goods, HONG_KONG, cargoSpace, funds);
     }
 
-    plan.push(...bestBuys);
+    // sell (all of) any good we'd carry less of, then buy up to the plan
+    const buys: Step[] = [];
+    for (const g of goods) {
+      const want = bestLoad.get(g) ?? 0;
+      let have = h.shipGoods[g]!;
+      if (have > want) {
+        plan.push({ kind: "sell", good: g });
+        have = 0;
+      }
+      if (want > have) {
+        buys.push({ kind: "buy", good: g, qty: want - have });
+      }
+    }
+    plan.push(...buys);
     if (bankAvailable(h)) {
       plan.push({ kind: "bank" });
     }
     plan.push({ kind: "leave", to: bestTo });
     return plan;
+  }
+
+  /** Greedily fill the hold for a destination with the best margin per unit of space. */
+  private fill(h: Hong, goods: number[], q: number, space: number, money: number): Map<number, number> {
+    const load = new Map<number, number>();
+    const ranked = goods
+      .map((g) => ({ g, margin: expectedPrice(q, g) - h.prices[g]! }))
+      .filter(({ g, margin }) => margin > 0.25 * h.prices[g]!)
+      .sort((a, b) => b.margin - a.margin);
+    for (const { g } of ranked) {
+      const qty = Math.min(space, Math.floor(money / h.prices[g]!));
+      if (qty > 0) {
+        load.set(g, qty);
+        space -= qty;
+        money -= qty * h.prices[g]!;
+      }
+    }
+    return load;
   }
 
   /**

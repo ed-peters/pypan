@@ -3,12 +3,12 @@
 Starting estimates for the money thresholds, rates and prices in the late-game
 recommendations (`etc/recommendations/`).
 
-**Calculated with pypan-87 in place** (the commit after 14b3b9b: porcelain as the
+**Calculated after 0c8f21b, with porcelain's breakage raised** (porcelain as the
 top good, bought into for half your fortune; the jade expedition paying out once;
 bank interest at 0.5% a month). The figures go out of date when the game engine
 changes. To list engine changes since then:
 
-    git log --oneline 14b3b9b.. -- src/engine
+    git log --oneline 0c8f21b.. -- src/engine
 
 After any change to prices, ships, pirates, jade or other money rules, rerun the
 simulation, update the tables below, and update this commit.
@@ -51,16 +51,16 @@ count. Amounts are in k (thousands), M (millions) and B (billions).
 | Stage | Afloat | Low (P25) | Middling (P50) | High (P90) |
 |---|---|---|---|---|
 | Early (2 years) | 99.8% | 43k | 536k | 4.1M |
-| Mid (5 years) | 98.3% | 4.2M | 14.3M | 56M |
-| Late (10 years) | 93.2% | 167M | 525M | 1.45B |
+| Mid (5 years) | 98.3% | 4.2M | 14.2M | 54M |
+| Late (10 years) | 92.0% | 134M | 406M | 1.16B |
 
 ### Debt start (no guns)
 
 | Stage | Afloat | Low (P25) | Middling (P50) | High (P90) |
 |---|---|---|---|---|
 | Early (2 years) | 99.9% | 8k | 82k | 1.9M |
-| Mid (5 years) | 97.5% | 2.9M | 9.8M | 44M |
-| Late (10 years) | 92.3% | 119M | 432M | 1.21B |
+| Mid (5 years) | 97.4% | 2.9M | 9.8M | 43M |
+| Late (10 years) | 92.0% | 101M | 351M | 1.11B |
 
 The guns start does better. With no cash, the bot fights the early pirates and wins
 booty, and it never pays Wu's 10% a month.
@@ -71,22 +71,22 @@ booty, and it never pays Wu's 10% a month.
 |---|---|---|---|---|
 | 12 | 100% | 6k | 22k | 286k |
 | 24 | 100% | 43k | 536k | 4.1M |
-| 36 | 100% | 403k | 2.3M | 13M |
-| 48 | 99% | 1.8M | 7.7M | 29M |
-| 60 | 98% | 4.2M | 14.3M | 56M |
-| 72 | 97% | 11M | 27M | 138M |
-| 84 | 97% | 20M | 48M | 327M |
-| 96 | 96% | 38M | 105M | 621M |
-| 108 | 95% | 78M | 281M | 974M |
-| 120 | 93% | 167M | 525M | 1.45B |
+| 36 | 100% | 394k | 2.3M | 13M |
+| 48 | 99% | 1.8M | 7.8M | 28M |
+| 60 | 98% | 4.2M | 14.2M | 54M |
+| 72 | 97% | 11M | 26M | 121M |
+| 84 | 97% | 19M | 47M | 267M |
+| 96 | 95% | 31M | 87M | 524M |
+| 108 | 94% | 65M | 199M | 816M |
+| 120 | 92% | 134M | 406M | 1.16B |
 
 ### The middling player's ship and money (guns start)
 
 | Stage | Hold | Guns | Cash on hand | Bank |
 |---|---|---|---|---|
 | Early (2 years) | 260 | 5 | 30k | 48k |
-| Mid (5 years) | 630 | 7 | 153k | 9.9M |
-| Late (10 years) | 1,310 | 8 | 3.9M | 435M |
+| Mid (5 years) | 630 | 7 | 156k | 9.7M |
+| Late (10 years) | 1,310 | 8 | 1.7M | 313M |
 
 The middling player is out of debt by year 2 in both starts.
 
@@ -95,21 +95,21 @@ The middling player is out of debt by year 2 in both starts.
 | Stage | Trading | Bank interest | Booty | Robbery | Opium seized | Repairs | Ships | Li Yuen |
 |---|---|---|---|---|---|---|---|---|
 | Early (2 years) | 1.0M | 5k | 29k | 0 | 0 | 0 | 21k | 0 |
-| Mid (5 years) | 23M | 933k | 112k | 117k | 1.5M | 155k | 285k | 1k |
-| Late (10 years) | 716M | 37M | 365k | 9.1M | 12M | 5.0M | 2.4M | 379k |
+| Mid (5 years) | 23M | 913k | 113k | 117k | 1.5M | 151k | 282k | 1k |
+| Late (10 years) | 586M | 29M | 353k | 9.3M | 11M | 5.3M | 2.4M | 293k |
 
 | Stage | Share of trading profit: Silk | Opium | Porcelain |
 |---|---|---|---|
 | Early (2 years) | 17% | 81% | 0% |
 | Mid (5 years) | 7% | 61% | 31% |
-| Late (10 years) | 1% | 16% | 82% |
+| Late (10 years) | 1% | 18% | 80% |
 
 ### Porcelain (at 10 years)
 
 | Start | In the trade | Bought in (median month) | Porcelain profit (share of income) | Lost to breakage |
 |---|---|---|---|---|
-| Guns | 85% | 81 | 71% | 5% |
-| Debt | 82% | 83 | 69% | 4% |
+| Guns | 85% | 81 | 68% | 12% |
+| Debt | 82% | 83 | 67% | 10% |
 
 "Lost to breakage" is what the bot paid for porcelain that broke, against its
 porcelain profit plus that.
@@ -118,22 +118,23 @@ porcelain profit plus that.
 
 | Backed | Stake (median share of worth) | Expeditions backed (median) | Won per expedition | Position: won at least once | backed, never won |
 |---|---|---|---|---|---|
-| 98% | 39% | 3 | 33% | 633M | 405M |
+| 98% | 39% | 3 | 33% | 476M | 283M |
 
 ## Findings
 
 1. **Porcelain carries the late game, as jade did.** Once a player is in the trade it
-   is about 70% of income by 10 years, and the late-game curve is back near where it
-   was with jade (the middling player at 10 years: 525M, against 510M with jade and
-   100M with neither). Opium carries the first five years. Bank interest at 0.5% is
+   is about two-thirds of income by 10 years, and the late-game curve is most of the
+   way back to where it was with jade (the middling player at 10 years: 406M,
+   against 510M with jade and 100M with neither). Opium carries the first five years. Bank interest at 0.5% is
    about 6% of income, booty under 1%, and consignments nothing: their money limit
    (100,000) is passed by year 2.
 2. **The share comes late.** The offer needs a Hong Kong arrival, a cash position
    over 2,000,000 and a 1-in-20 roll that only reaches 1-in-3 by month 76, so the
-   median player buys in around month 81 (year 7). Wealth then grows about 2.5× a
-   year in years 8 and 9, against about 1.8× in years 6 and 7.
-3. **Breakage is a mild cost.** The bot loses about 5% of its porcelain profit to
-   breakage: a steady leak, not a disaster.
+   median player buys in around month 81 (year 7). Wealth then grows about 1.9–2.3× a
+   year in years 8 to 10, against about 1.8× in years 6 and 7.
+3. **Breakage is a real cost.** The bot loses about 10–12% of its porcelain profit
+   to breakage, and the middling fortune at 10 years is about a fifth lower than
+   with half the breakage (525M).
 4. **The fee is a big, visible cut.** Half the cash position goes in one payment
    (worth here doesn't count the share as an asset), so it shows up as a 50% fall.
    It pays back fast: the middling player is several times richer two years after
@@ -141,12 +142,13 @@ porcelain profit plus that.
 5. **The spread is wide.** High is about 8× middling at 2 years and about 3× at 10.
    Low is about a third of middling at 10 years.
 6. **The jade expedition matters less again.** Next to porcelain it's 1–2% of
-   income, and players who win it end up about 1.6× as rich as those who never do.
+   income, and players who win it end up about 1.7× as rich as those who never do.
 7. **Players rarely sink.** About 93% are afloat after 10 years, so the survivors-only
    figures are close to the whole population.
-8. **Scores:** at 10 years, middling scores about 36,000–43,000 (Master Taipan) and
-   high about 100,000–120,000 (Ma Tsu), close to the figures with jade, so the
-   ranks and pypan-85's proposals hold roughly as they were.
+8. **Scores:** at 10 years, middling scores about 29,000–34,000 (Master Taipan) and
+   high about 92,000–96,000 (Ma Tsu), a little below the figures with jade, so the
+   ranks and pypan-85's proposals hold roughly, with their top thresholds slightly
+   high.
 
 ## Implications for tuning
 
@@ -161,7 +163,7 @@ porcelain profit plus that.
   would bring the late-game wealth forward; a slower one would leave more games on
   opium alone.
 - **Rates competing with trading:** the middling player's money grows about 13% a
-  month in year 3, 10% in year 4 and 5% in year 5, and 5–8% a month once porcelain
+  month in year 3, 10% in year 4 and 5% in year 5, and 5–7% a month once porcelain
   arrives. A 0.5% bank rate
   is safety, not income. Investments meant to rival trading (pypan-60's holdings,
   pypan-54's traders) need several percent a month.

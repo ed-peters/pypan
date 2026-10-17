@@ -304,10 +304,10 @@ menus, price shocks, and the hold and warehouse panes.
   offer comes again on a later arrival.
 - **Owning it** makes porcelain a regular good at every port for the rest of the
   game. It can be stored in the warehouse, where it's safe.
-- **Breakage:** porcelain aboard ship breaks. A storm breaks 10–30% of it
-  (`STORM_BREAKAGE`, §6); rough seas break 5–15% on 1-in-5 voyages without a storm
+- **Breakage:** porcelain aboard ship breaks. A storm breaks 20–50% of it
+  (`STORM_BREAKAGE`, §6); rough seas break 10–30% on 1-in-3 voyages without a storm
   (`ROUGH_SEAS_BREAKAGE`, `ROUGH_SEAS_CHANCE`); and each enemy volley in a pirate
-  battle breaks 2–10% (`VOLLEY_BREAKAGE`, §7.2). Each break is at least one unit, and
+  battle breaks 5–20% (`VOLLEY_BREAKAGE`, §7.2). Each break is at least one unit, and
   each is reported ("The storm broke 12 of our porcelain, Taipan!"). The rolls are
   made only when there's porcelain aboard.
 
@@ -360,8 +360,8 @@ A 1-in-10 chance per voyage. When a storm hits, one of three outcomes:
   city than intended (any of the other six).
 - **Safe passage**: otherwise, "We made it!"
 
-Storms can't sink the ship. With porcelain aboard, a storm also breaks 10–30% of it.
-A voyage without a storm has rough seas 1-in-5, breaking 5–15% of the porcelain
+Storms can't sink the ship. With porcelain aboard, a storm also breaks 20–50% of it.
+A voyage without a storm has rough seas 1-in-3, breaking 10–30% of the porcelain
 aboard ("Rough seas, Taipan! ((n)) of our porcelain was broken."), with the storm
 art (§4.7). Without porcelain aboard, there are no rough seas.
 
@@ -411,7 +411,7 @@ never interrupts its own battle.
 **Enemy turn** (`their_turn`): pirates fire; a hit may destroy one of your guns
 (raising capacity by the gun's size since a gun occupies 10 units) or damage the
 hull. Gun-hit probability rises with existing damage (certain above 80%). Every
-volley also breaks 2–10% of any porcelain aboard: "They smashed ((n)) of our
+volley also breaks 5–20% of any porcelain aboard: "They smashed ((n)) of our
 porcelain!" (§4.7).
 
 ### 7.3 Resolution
@@ -598,9 +598,9 @@ after the save's date.
 | `PORCELAIN_FEE_SHARE` | 0.5 | Share of the cash position it costs |
 | `PORCELAIN_ODDS_START` / `_MIN` | 20 / 3 | 1-in-N per Hong Kong arrival, from first to best |
 | `PORCELAIN_RAMP_MONTHS` | 3 | Months for each step from 1-in-20 toward 1-in-3 |
-| `STORM_BREAKAGE` | 10–30 | Percent of the porcelain aboard a storm breaks |
-| `ROUGH_SEAS_BREAKAGE` / `ROUGH_SEAS_CHANCE` | 5–15 / 5 | Rough seas: percent broken, and 1-in-N voyages without a storm |
-| `VOLLEY_BREAKAGE` | 2–10 | Percent broken by each enemy volley |
+| `STORM_BREAKAGE` | 20–50 | Percent of the porcelain aboard a storm breaks |
+| `ROUGH_SEAS_BREAKAGE` / `ROUGH_SEAS_CHANCE` | 10–30 / 3 | Rough seas: percent broken, and 1-in-N voyages without a storm |
+| `VOLLEY_BREAKAGE` | 5–20 | Percent broken by each enemy volley |
 | `BASED_PRICES` | true | Port-based prices (§4.1); false for fully random |
 | `ENEMY_HEALTH_START` / `_BUMP` | 20 / 10 | Pirate health base + per-year growth |
 | `ENEMY_DAMAGE_START` / `_BUMP` | 0.5 / 0.5 | Pirate damage base + per-year growth |

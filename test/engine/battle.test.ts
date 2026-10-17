@@ -94,10 +94,10 @@ describe("fighting", () => {
     expect(h.shipDamage).toBe(2);
   });
 
-  it("smashes 2-10% of the porcelain aboard with every volley", () => {
+  it("smashes 5-20% of the porcelain aboard with every volley", () => {
     const h = gunHong({ shipGuns: 1, shipGoods: [0, 0, 0, 0, 50] });
-    // as above, then inRange(2, 11) = 2 + 3: 5% of 50
-    const rng = new ScriptedRng([2, 0.5, 100, NO_LI_YUEN, 0, 50, 0.5, 3, NO_LI_YUEN]);
+    // as above, then inRange(5, 21) = 5 + 0: 5% of 50
+    const rng = new ScriptedRng([2, 0.5, 100, NO_LI_YUEN, 0, 50, 0.5, 0, NO_LI_YUEN]);
     const p = play(new PirateBattle(h, rng).execute(), [0]);
     expect(texts(p)).toContain("They're firing on us, Taipan!\n\nThey hit us!\n\nThey smashed 2 of our porcelain!");
     expect(h.shipGoods[4]).toBe(48);

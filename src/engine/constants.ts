@@ -56,11 +56,11 @@ export const PORCELAIN_ODDS_START = 20;
 export const PORCELAIN_ODDS_MIN = 3;
 export const PORCELAIN_RAMP_MONTHS = 3;
 /** Percent of the porcelain aboard broken by a storm, rough seas and each enemy volley. */
-export const STORM_BREAKAGE = [10, 30] as const;
-export const ROUGH_SEAS_BREAKAGE = [5, 15] as const;
-export const VOLLEY_BREAKAGE = [2, 10] as const;
+export const STORM_BREAKAGE = [20, 50] as const;
+export const ROUGH_SEAS_BREAKAGE = [10, 30] as const;
+export const VOLLEY_BREAKAGE = [5, 20] as const;
 /** 1-in-N voyages without a storm have rough seas (when there's porcelain aboard). */
-export const ROUGH_SEAS_CHANCE = 5;
+export const ROUGH_SEAS_CHANCE = 3;
 /** Li Yuen's patience runs out 1-in-N arrivals, three times between demands (pypan-88). */
 export const LI_YUEN_PATIENCE = 20;
 /** After month 12 he asks this share of your cash position, plus up to as much again. */

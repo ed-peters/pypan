@@ -82,8 +82,7 @@ house). It is fully serializable to JSON for save/load. Key fields:
 | `grudge` | Times you've refused Li Yuen since you last paid him (0–3, §8); saved only when not 0 | 0 |
 | `bailout` | Multiplier for emergency loan cost (see §4.5) | 1 |
 | `location` | Current city index (or AT_SEA) | Hong Kong |
-| `transfer` | Warehouse transfer fee %; `-1` means unavailable | 0 |
-| `banker` | Whether the bank's representative is in this foreign port (§4.4); saved only when true | false |
+| `transfer` | pypan.py's warehouse transfer fee: written as 0 in Hong Kong and −1 elsewhere, and ignored on loading (transfers are Hong Kong only, §10) | 0 |
 | `prices[5]` | Current local price of each good | set for Hong Kong |
 | `expedition` | The jade expedition under way: `port`, `resolves` (month), `stake` (0 if you didn't back it); saved only when set | none |
 | `expedition_failed` | Whether a jade expedition has failed, so later offers say Sir Beaumont-Finch escaped; saved only when true | false |
@@ -116,9 +115,8 @@ Seven tradeable ports, indexed 0–6:
 `Singapore` (5), `Batavia` (6).
 
 An eighth pseudo-location, **At Sea** (7), is used while traveling. **Hong Kong is
-the home port**: it is the only place with a bank (barring a visit from its
-representative, §4.4), the moneylender (Elder Brother Wu),
-ship repair (McHenry), warehouse upgrades, and free warehouse transfers.
+the home port**: it is the only place with a bank, the moneylender (Elder Brother
+Wu), ship repair (McHenry), warehouse upgrades, and warehouse transfers.
 
 ### 2.4 Goods
 
@@ -154,8 +152,7 @@ unlock only after certain thresholds:
 
 - **> 1 month**: price shocks and emergency bailout loans can occur.
 - **> 6 months**: new-ship and new-gun offers appear.
-- **> 12 months**: Wu robbery risk, larger Li Yuen demands, warehouse upgrades,
-  warehouse transfers and the bank's representative (away from home), and
+- **> 12 months**: Wu robbery risk, larger Li Yuen demands, warehouse upgrades, and
   harbor-police / mugging / fire events.
 - **>= 18 months**: special cargo consignments begin to appear.
 - **> 24 months**: the jade expedition (§4.6) and the porcelain share (§4.7) can be
@@ -215,8 +212,8 @@ and direction (see `MSG_POS_SHOCK` / `MSG_NEG_SHOCK`).
 
 ### 4.3 Buying and Selling
 
-- **Buy**: limited by cash (`floor(cash / price)`); wherever the bank can be visited
-  (Hong Kong, or with its representative in port), by cash plus the bank. Goods you
+- **Buy**: limited by cash (`floor(cash / price)`); in Hong Kong, by cash plus the
+  bank (abroad, cash only). Goods you
   can't afford any of are disabled on the menu. Goods go into the ship's hold. No explicit capacity check at purchase time —
   overload is caught when sailing. When cash doesn't cover it, the rest comes from
   the bank: "The necessary funds will be sent from the bank, Taipan."
@@ -228,14 +225,10 @@ and direction (see `MSG_POS_SHOCK` / `MSG_NEG_SHOCK`).
 Both show a condition report listing the current price of each good on the market
 (four goods until you're in the porcelain trade, §4.7), in two columns.
 
-### 4.4 Banking (Hong Kong, or with the bank's representative)
+### 4.4 Banking (Hong Kong only)
 
-Deposit cash into or withdraw from the bank. The bank is in Hong Kong, but on
-arrival at a foreign port after month 12 there is a 1-in-6 chance (the lorcha's
-odds) that a representative from the bank is there for the month: "Good joss!! A
-representative from your bank is in Shanghai for the month. You may transact with
-him as normal." While he's in port, the menu offers **Visit the bank**. The bank balance **earns 0.5% interest
-per voyage** (`BANK_RATE`), applied on arrival at any port.
+Deposit cash into or withdraw from the bank, in Hong Kong. The bank balance **earns
+0.5% interest per voyage** (`BANK_RATE`), applied on arrival at any port.
 
 Leaving the bank carries the same mugging risk as arriving at a foreign harbor
 (§11): after month 12, a 1-in-20 chance if cash on hand exceeds 20000.
@@ -349,15 +342,13 @@ and the lender, then repeatedly presents the port action menu. The menu
 
 - **Buy goods**
 - **Sell goods** (disabled when the hold has no goods)
-- **Transfer goods** (only if `transfer >= 0`; disabled when there are no goods in
-  the hold or the warehouse)
-- In Hong Kong, or abroad when the bank's representative is in port: **Visit the bank**
+- In Hong Kong only: **Transfer goods** (disabled when there are no goods in the hold
+  or the warehouse) and **Visit the bank**
 - **Leave port**
 - In Hong Kong only, and only when out of debt: **Retire**. It asks "Are you sure you
   want to retire, Taipan?" before ending the game (§1.1).
 
-Abroad, **Leave port** comes third, right after Sell, so it's always in the same place
-whether or not transfers and the bank are on offer.
+Abroad, the menu is just Buy, Sell and **Leave port**.
 
 The game auto-saves at the top of every menu iteration.
 
@@ -373,7 +364,7 @@ The game auto-saves at the top of every menu iteration.
 6. Arrives; **debt and bank interest are applied**.
 7. Runs the arrival event sequence:
    `check_lender` → `check_extortion` → `check_upgrades` → `check_warehouse`
-   → `check_banker` → `check_jade` → `check_porcelain` → `check_cargo`
+   → `check_jade` → `check_porcelain` → `check_cargo`
    → `check_safety` → `establish_prices`.
 
 ---
@@ -529,13 +520,10 @@ Since it starts at 0, Li Yuen asks at the very start of a game that begins with 
 
 The player has a warehouse in Hong Kong (10000 capacity) used to stockpile goods.
 
-- **Transfer fee**: 0% in Hong Kong. Away from home, after month 12, a 1-in-6 chance
-  that a "lorcha" lets you transfer goods to/from the Hong Kong warehouse for a 5–9%
-  fee; otherwise transfers are unavailable away from home (`transfer = -1`).
-- **Transferring**: move a chosen good between ship's hold and warehouse. When only
-  one good is in the hold and the warehouse together, there's no menu: it goes
-  straight to the questions for that good. Otherwise goods in neither are disabled. The transfer fee skims a percentage off the quantity that
-  actually arrives.
+- **Transferring** (Hong Kong only, no fee): move a chosen good between ship's hold
+  and warehouse. When only one good is in the hold and the warehouse together, there's
+  no menu: it goes straight to the questions for that good. Otherwise goods in neither
+  are disabled.
 - **Warehouse upgrade** (home only, after month 12, 1-in-10): buy `+5000` capacity
   (`WAREHOUSE_SIZE_INCREMENT`) for a time/size-scaled cost.
 
@@ -762,7 +750,6 @@ Additions:
 - **Retiring and scoring** (§1.1): Retire replaces Exit; the game ends with a score
   and rank, with three ranks above Ma Tsu.
 - **Mugging on leaving the bank** (§4.4), at the harbor odds.
-- **The bank's representative** (§4.4) can turn up in foreign ports.
 - **Elder Brother Wu** is no longer on the port menu; like McHenry, you're offered a
   visit only on arrival in Hong Kong (§4.5). The offer now comes on every arrival,
   not only when you owe him.
@@ -780,5 +767,7 @@ Interface changes:
 - **Streamlined menus** (pypan-58): Sell, Transfer and the current port are disabled
   when they can't be used; selling a lone good and transferring a lone good skip the
   goods menu, and goods you can't buy, sell or transfer are disabled on its menu;
-  buying and repairs can draw on the bank wherever it can be visited; abroad, Leave
-  port is always third.
+  buying and repairs can draw on the bank in Hong Kong.
+- **No transfers or banking abroad**: pypan.py's lorcha (warehouse transfers from a
+  foreign port, for a 5–9% fee) is gone; the warehouse and the bank are Hong Kong
+  only.

@@ -6,31 +6,10 @@ import { makeHong } from "../helpers/hong";
 import { play, texts } from "../helpers/play";
 
 describe("checkWarehouse", () => {
-  it("makes transfers free at home", () => {
-    const h = makeHong({ transfer: -1 });
-    play(checkWarehouse(h, new ScriptedRng()));
-    expect(h.transfer).toBe(0);
-  });
-
-  it("makes transfers unavailable away from home in the first year", () => {
-    const h = makeHong({ location: SHANGHAI, time: 12 });
-    play(checkWarehouse(h, new ScriptedRng()));
-    expect(h.transfer).toBe(-1);
-  });
-
-  it("sometimes has a lorcha away from home after a year", () => {
-    const h = makeHong({ location: SHANGHAI, time: 13 });
-    const p = play(checkWarehouse(h, new ScriptedRng([0, 2])));
-    expect(texts(p)).toEqual([
-      "Good joss! A lorcha is waiting nearby and can transfer goods with your warehouse in Hong Kong for 7%, Taipan.",
-    ]);
-    expect(h.transfer).toBe(7);
-  });
-
-  it("usually has no lorcha", () => {
-    const h = makeHong({ location: SHANGHAI, time: 13 });
-    play(checkWarehouse(h, new ScriptedRng([1])));
-    expect(h.transfer).toBe(-1);
+  it("does nothing away from home, even after a year", () => {
+    // an empty script: any roll would throw
+    const p = play(checkWarehouse(makeHong({ location: SHANGHAI, time: 13 }), new ScriptedRng()));
+    expect(p.transcript).toEqual([]);
   });
 
   it("sometimes offers a bigger warehouse at home after a year", () => {
@@ -105,11 +84,9 @@ describe("transfer", () => {
     expect(texts(p)).toContain("You do not have that much in your warehouse, Taipan.");
   });
 
-  it("charges the lorcha's fee on goods in transit, both ways", () => {
-    const h = makeHong({ location: SHANGHAI, transfer: 7, shipGoods: [0, 0, 100, 0, 0] });
+  it("moves goods without a fee, both ways", () => {
+    const h = makeHong({ shipGoods: [0, 0, 100, 0, 0] });
     play(transfer(h), [100, 50]);
-    // 100 sent, 93 arrive; 50 brought back, 47 arrive
-    expect(h.warehouseGoods[SILK]).toBe(43);
-    expect(h.shipGoods[SILK]).toBe(47);
+    expect([h.warehouseGoods[SILK], h.shipGoods[SILK]]).toEqual([50, 50]);
   });
 });

@@ -40,10 +40,10 @@ export function toSave(h: Hong): Record<string, unknown> {
     extorted: h.extorted,
     bailout: h.bailout,
     location: h.location,
-    transfer: h.transfer,
+    // pypan.py's transfer fee: 0 in Hong Kong, -1 (no transfers) elsewhere
+    transfer: h.location === HONG_KONG ? 0 : -1,
     // our own additions, written only when they differ from pypan.py's game, so saves
     // otherwise match pypan.py's
-    ...(h.banker ? { banker: true } : {}),
     ...(h.grudge ? { grudge: h.grudge } : {}),
     prices: [...h.prices],
     ...(h.expedition ? { expedition: { ...h.expedition } } : {}),
@@ -89,9 +89,7 @@ export function fromSave(data: unknown): Hong {
     extorted: int(d, "extorted"),
     bailout: int(d, "bailout"),
     location,
-    transfer: int(d, "transfer", -1),
     // not in pypan.py saves
-    banker: d.banker === undefined ? false : bool(d, "banker"),
     grudge: d.grudge === undefined ? 0 : int(d, "grudge", 0, LI_YUEN_MAX_GRUDGE),
     prices,
     expedition: d.expedition == null ? null : expedition(d.expedition),

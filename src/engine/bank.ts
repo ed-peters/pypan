@@ -1,23 +1,14 @@
-// The bank (SPEC.md section 4.4). In Hong Kong, or wherever its representative
-// turns up; interest is applied on arrival.
+// The bank (SPEC.md section 4.4), in Hong Kong; interest is applied on arrival.
 
-import { BANK_RATE, HONG_KONG, LOAN_RATE, city } from "./constants";
-import { currentTime, type Hong } from "./hong";
+import { BANK_RATE, HONG_KONG, LOAN_RATE } from "./constants";
+import type { Hong } from "./hong";
 import { askNum, say, type Flow } from "./prompts";
 import type { Rng } from "./rng";
 import { checkRobbery } from "./safety";
 
-/** On arrival abroad: the same odds as a lorcha that the bank's man is in port. */
-export function* checkBanker(h: Hong, rng: Rng): Flow {
-  h.banker = h.location !== HONG_KONG && currentTime(h) > 12 && rng.chanceOf(6);
-  if (h.banker) {
-    yield* say(`Good joss!! A representative from your bank is in ${city(h.location)} for the month. You may transact with him as normal.`);
-  }
-}
-
-/** Whether the bank can be visited here. */
+/** Whether the bank can be visited here: only in Hong Kong. */
 export function bankAvailable(h: Hong): boolean {
-  return h.location === HONG_KONG || h.banker;
+  return h.location === HONG_KONG;
 }
 
 export function* visitBank(h: Hong, rng: Rng): Flow {
@@ -50,7 +41,7 @@ export function* visitBank(h: Hong, rng: Rng): Flow {
   yield* checkRobbery(h, rng);
 }
 
-/** What can be spent here: cash, plus the bank wherever it can be visited (pypan-58). */
+/** What can be spent here: cash, plus the bank in Hong Kong (pypan-58). */
 export function spendable(h: Hong): number {
   return h.cash + (bankAvailable(h) ? h.bank : 0);
 }

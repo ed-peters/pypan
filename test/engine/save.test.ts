@@ -11,7 +11,7 @@ describe("save format", () => {
     const h = fromSave(pythonSave);
     expect(h).toMatchObject({
       name: "Rising Sun", year: 1860, month: 1, cash: 0, debt: 0, shipGuns: 5,
-      shipSize: 60, pirateChance: 7, shipCargo: null, location: 0, transfer: 0,
+      shipSize: 60, pirateChance: 7, shipCargo: null, location: 0,
     });
     // the fifth price was jade's: porcelain's now, but hidden until we buy in
     expect(h.prices).toEqual([6, 170, 2200, 26000, 200000]);
@@ -62,7 +62,7 @@ describe("save format", () => {
     const h = newHong(new SeededRng(4), false);
     h.shipGoods = [1, 2, 3, 4, 0];
     h.shipCargo = { description: "party of 3", destination: 5, illegal: false, size: 9, value: 3171, due: 20 };
-    h.transfer = -1;
+    h.location = 5;
     expect(fromSaveString(toSaveString(h))).toEqual(h);
   });
 
@@ -98,11 +98,14 @@ describe("save format", () => {
     expect(toSave(old(true))).not.toHaveProperty("jade_deal");
   });
 
-  it("round-trips the bank's representative", () => {
+  it("writes pypan.py's transfer fee from the port, and ignores it (and the banker) on loading", () => {
     const h = newHong(new SeededRng(4), false);
-    expect(toSave(h)).not.toHaveProperty("banker");
-    h.banker = true;
-    expect(fromSaveString(toSaveString(h)).banker).toBe(true);
+    expect(toSave(h)).toMatchObject({ transfer: 0 });
+    h.location = 5;
+    expect(toSave(h)).toMatchObject({ transfer: -1 });
+    const loaded = fromSave({ ...pythonSave, location: 5, transfer: 7, banker: true });
+    expect(loaded).not.toHaveProperty("transfer");
+    expect(loaded).not.toHaveProperty("banker");
   });
 
   it("round-trips Li Yuen's grudge, written only when he holds one", () => {

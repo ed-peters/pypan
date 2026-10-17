@@ -1,7 +1,7 @@
 // The whole game: the opening choice, the comprador's port menu until the player
 // retires or sinks, then the final score (SPEC.md sections 2.2, 5 and 1).
 
-import { bankAvailable, visitBank } from "./bank";
+import { visitBank } from "./bank";
 import { HONG_KONG } from "./constants";
 import { checkExtortion } from "./extortion";
 import { Game } from "./game";
@@ -87,20 +87,12 @@ export function establishOpts(h: Hong, rng: Rng): Option[] {
     // selling and transferring are shown but disabled when there's nothing to move
     ["Sell goods", () => sellGoods(h), goodsAboard(h).length > 0],
   ];
-  const leave: Option = ["Leave port", () => sailAway(h, rng), true];
-  // abroad, where transfers and the bank come and go, Leave is always third
-  if (h.location !== HONG_KONG) {
-    opts.push(leave);
-  }
-  if (h.transfer >= 0) {
+  // transfers and the bank are only at home
+  if (h.location === HONG_KONG) {
     opts.push(["Transfer goods", () => transfer(h), goodsToTransfer(h).length > 0]);
-  }
-  if (bankAvailable(h)) {
     opts.push(["Visit the bank", () => visitBank(h, rng), true]);
   }
-  if (h.location === HONG_KONG) {
-    opts.push(leave);
-  }
+  opts.push(["Leave port", () => sailAway(h, rng), true]);
   // only a player who is out of debt can retire
   if (h.location === HONG_KONG && h.debt <= 0) {
     opts.push(["Retire", () => retire(), true]);

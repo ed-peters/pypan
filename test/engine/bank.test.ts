@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SHANGHAI } from "../../src/engine/constants";
-import { bankAvailable, accrueInterest, checkBanker, visitBank } from "../../src/engine/bank";
+import { bankAvailable, accrueInterest, visitBank } from "../../src/engine/bank";
 import { ScriptedRng } from "../../src/engine/rng";
 import { makeHong } from "../helpers/hong";
 import { play, texts } from "../helpers/play";
@@ -40,32 +40,10 @@ describe("visitBank", () => {
   });
 });
 
-describe("checkBanker", () => {
-  it("can bring the bank's man to a foreign port, at the lorcha's 1-in-6 odds", () => {
-    const h = makeHong({ time: 13, location: SHANGHAI });
-    const p = play(checkBanker(h, new ScriptedRng([0])));
-    expect(texts(p)).toEqual([
-      "Good joss!! A representative from your bank is in Shanghai for the month. You may transact with him as normal.",
-    ]);
-    expect(h.banker).toBe(true);
-    expect(bankAvailable(h)).toBe(true);
-  });
-
-  it("usually doesn't, and he leaves when you do", () => {
-    const h = makeHong({ time: 13, location: SHANGHAI, banker: true });
-    const p = play(checkBanker(h, new ScriptedRng([1])));
-    expect(p.transcript).toEqual([]);
-    expect(bankAvailable(h)).toBe(false);
-  });
-
-  it("never comes in the first year, or to Hong Kong", () => {
-    const rng = new ScriptedRng();
-    const abroad = makeHong({ time: 12, location: SHANGHAI });
-    const home = makeHong({ time: 13 });
-    play(checkBanker(abroad, rng));
-    play(checkBanker(home, rng));
-    expect([abroad.banker, home.banker]).toEqual([false, false]);
-    expect(bankAvailable(home)).toBe(true);
+describe("bankAvailable", () => {
+  it("is only in Hong Kong", () => {
+    expect(bankAvailable(makeHong())).toBe(true);
+    expect(bankAvailable(makeHong({ time: 13, location: SHANGHAI }))).toBe(false);
   });
 });
 

@@ -14,7 +14,7 @@ describe("newHong", () => {
     expect(h).toMatchObject({
       name: "Rising Sun", year: 1860, month: 1, cash: 400, debt: 5000, bank: 0,
       shipSize: 60, shipGuns: 0, pirateChance: 10, warehouseSize: 10000,
-      location: HONG_KONG, transfer: 0, shipCargo: null,
+      location: HONG_KONG, shipCargo: null,
     });
     expect(h.shipGoods).toEqual([0, 0, 0, 0, 0]);
     expect(h.warehouseGoods).toEqual([0, 0, 0, 0, 0]);

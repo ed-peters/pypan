@@ -63,10 +63,6 @@ export interface Hong {
   bailout: number;
   /** City index, or AT_SEA. */
   location: number;
-  /** Warehouse transfer fee percent; -1 means transfers are unavailable here. */
-  transfer: number;
-  /** Whether a representative from the bank is in this (foreign) port. */
-  banker: boolean;
   prices: number[];
   expedition: Expedition | null;
   /** Whether an expedition has failed, so Sir Beaumont-Finch is back after escaping. */
@@ -100,8 +96,6 @@ export function newHong(rng: Rng, guns: boolean, name: string = "Rising Sun"): H
     grudge: 0,
     bailout: 1,
     location: HONG_KONG,
-    transfer: 0,
-    banker: false,
     prices: setPrices(rng, HONG_KONG),
     expedition: null,
     expeditionFailed: false,

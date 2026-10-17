@@ -84,20 +84,11 @@ describe("the port menu", () => {
   });
 
   it("only lets you retire in Hong Kong", () => {
-    expect(labels(makeHong({ location: SHANGHAI, debt: 0, transfer: -1 }))).not.toContain("Retire");
+    expect(labels(makeHong({ location: SHANGHAI, debt: 0 }))).not.toContain("Retire");
   });
 
-  it("offers only trading and sailing elsewhere, plus transfers with a lorcha", () => {
-    expect(labels(makeHong({ location: SHANGHAI, transfer: -1 }))).toEqual(["Buy goods", "Sell goods", "Leave port"]);
-    expect(labels(makeHong({ location: SHANGHAI, transfer: 5 }))).toEqual([
-      "Buy goods", "Sell goods", "Leave port", "Transfer goods",
-    ]);
-  });
-
-  it("offers the bank elsewhere when its representative is in port", () => {
-    expect(labels(makeHong({ location: SHANGHAI, transfer: 5, banker: true }))).toEqual([
-      "Buy goods", "Sell goods", "Leave port", "Transfer goods", "Visit the bank",
-    ]);
+  it("offers only trading and sailing elsewhere", () => {
+    expect(labels(makeHong({ location: SHANGHAI }))).toEqual(["Buy goods", "Sell goods", "Leave port"]);
   });
 
   it("disables selling and transferring when there's nothing to move", () => {

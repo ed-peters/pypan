@@ -171,14 +171,7 @@ describe("buyGoods", () => {
     expect([h.cash, h.bank]).toEqual([300, 1000]);
   });
 
-  it("draws on the bank abroad when its representative is in port", () => {
-    const h = makeHong({ location: SHANGHAI, banker: true, cash: 400, bank: 1000 });
-    const p = play(buyGoods(h), [SILK, 1]);
-    expect(texts(p).at(-1)).toBe("The necessary funds will be sent from the bank, Taipan.");
-    expect([h.cash, h.bank, h.shipGoods[SILK]]).toEqual([0, 400, 1]);
-  });
-
-  it("doesn't draw on the bank abroad without its representative", () => {
+  it("doesn't draw on the bank abroad", () => {
     const p = play(buyGoods(makeHong({ location: SHANGHAI, cash: 400, bank: 1000 })));
     expect(p.transcript[0]!.prompt).toMatchObject({ disabled: [SILK, 3] });
   });

@@ -38,7 +38,7 @@ describe("sailAway", () => {
       ["Where shall we sail to, Taipan?", undefined],
       ["Arriving at Shanghai ... ", "boat"],
     ]);
-    expect(h).toMatchObject({ location: SHANGHAI, month: 2, debt: 5500, bank: 1005, transfer: -1 });
+    expect(h).toMatchObject({ location: SHANGHAI, month: 2, debt: 5500, bank: 1005 });
     expect(h.prices).toEqual([5, 80, 700, 8000, 50000]); // Shanghai
     expect(rng.remaining).toBe(0);
   });
@@ -105,7 +105,7 @@ describe("sailAway", () => {
   });
 
   it("runs the Hong Kong arrival events", () => {
-    const h = makeHong({ location: SHANGHAI, extorted: 1, transfer: -1 });
+    const h = makeHong({ location: SHANGHAI, extorted: 1 });
     // no pirates; no Li Yuen; no storm; (Wu: no rolls); extortion counter unchanged; prices
     const rng = new ScriptedRng([1, 1, 1, 1, ...PRICES]);
     const p = play(sailAway(h, rng), [HONG_KONG, false]);
@@ -113,7 +113,6 @@ describe("sailAway", () => {
       "Arriving at Hong Kong ... ",
       "Do you have business with Elder Brother Wu, the moneylender, Taipan?",
     ]);
-    expect(h.transfer).toBe(0);
-    expect(h.location).not.toBe(AT_SEA);
+    expect(h.location).toBe(HONG_KONG);
   });
 });

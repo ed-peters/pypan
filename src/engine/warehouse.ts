@@ -1,4 +1,4 @@
-// The Hong Kong warehouse, transfers and the lorcha (SPEC.md section 10).
+// The Hong Kong warehouse and transfers (SPEC.md section 10).
 
 import { HONG_KONG, WAREHOUSE_SIZE_INCREMENT, good } from "./constants";
 import { money } from "./format";
@@ -6,19 +6,8 @@ import { currentTime, hasAny, knownGoods, warehouseAvailable, type Hong } from "
 import { askNum, askOptOrCancel, askYn, say, type Flow } from "./prompts";
 import type { Rng } from "./rng";
 
-/** On arrival: set the transfer fee for this port, and maybe offer a bigger warehouse. */
+/** On arrival in Hong Kong: maybe offer a bigger warehouse. */
 export function* checkWarehouse(h: Hong, rng: Rng): Flow {
-  // establish the transfer price for goods to and from the warehouse
-  if (h.location === HONG_KONG) {
-    h.transfer = 0;
-  } else if (currentTime(h) > 12 && rng.chanceOf(6)) {
-    h.transfer = rng.randrange(5) + 5;
-    yield* say(`Good joss! A lorcha is waiting nearby and can transfer goods with your warehouse in Hong Kong for ${h.transfer}%, Taipan.`);
-  } else {
-    h.transfer = -1;
-  }
-
-  // if we're at home, we might be able to upgrade the warehouse
   if (h.location === HONG_KONG && currentTime(h) > 12 && rng.chanceOf(10)) {
     const time = currentTime(h);
     const cost = rng.randrange(1000 * (time + 5) / 6) * Math.trunc(h.warehouseSize / 500) + 1000;
@@ -60,7 +49,7 @@ export function* transfer(h: Hong): Flow {
       yield* say("You have no space in the warehouse, Taipan.");
     } else if (n > 0) {
       h.shipGoods[g]! -= n;
-      h.warehouseGoods[g]! += n - fee(h, n);
+      h.warehouseGoods[g]! += n;
     }
   }
 
@@ -71,11 +60,8 @@ export function* transfer(h: Hong): Flow {
       yield* say("You do not have that much in your warehouse, Taipan.");
     } else if (n > 0) {
       h.warehouseGoods[g]! -= n;
-      h.shipGoods[g]! += n - fee(h, n);
+      h.shipGoods[g]! += n;
     }
   }
 }
 
-function fee(h: Hong, n: number): number {
-  return Math.trunc(n * (h.transfer / 100));
-}

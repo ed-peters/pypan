@@ -36,11 +36,19 @@ the player's rank marked:
 
 | Rank | Score |
 |---|---|
-| Ma Tsu | 50,000 and over |
-| Master Taipan | 8,000 to 49,999 |
-| Taipan | 1,000 to 7,999 |
-| Compradore | 500 to 999 |
-| Galley Hand | less than 500 |
+| Jade Emperor | 250,000+ |
+| Lord of Ten Thousand Ships | 150,000+ |
+| Dragon of the Strait | 100,000+ |
+| Ma Tsu | 50,000+ |
+| Master Taipan | 8,000+ |
+| Taipan | 1,000+ |
+| Compradore | 500+ |
+| Galley Hand | below 500 |
+
+The three ranks above Ma Tsu are pypan-85's. In a 10-year game, Dragon of the Strait
+is about the top 10% of a decent player's games, Lord of Ten Thousand Ships the top
+few percent, and Jade Emperor the exceptional game (`etc/wealth-curve.md`). The
+ranges are written short so the table fits a phone screen.
 
 To stop playing without ending the game, the player just closes the app; the game is
 saved at every port menu and can be restored (§13).
@@ -700,7 +708,7 @@ Additions:
   greater numbers, and his next demand is larger, until you pay.
 - **Sinking** (§7.3): the ship can now be lost in battle, ending the game.
 - **Retiring and scoring** (§1.1): Retire replaces Exit; the game ends with a score
-  and rank.
+  and rank, with three ranks above Ma Tsu.
 - **Mugging on leaving the bank** (§4.4), at the harbor odds.
 - **The bank's representative** (§4.4) can turn up in foreign ports.
 - **Elder Brother Wu** is no longer on the port menu; like McHenry, you're offered a

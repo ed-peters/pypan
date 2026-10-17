@@ -146,12 +146,15 @@ describe("Terminal", () => {
     expect($(".message").textContent).toBe(
       "You have retired, Taipan.\n\n" +
       "Your score is 0.\n\n" +
-      "  Rank           Score\n" +
-      "  Ma Tsu         50,000 and over\n" +
-      "  Master Taipan  8,000 to 49,999\n" +
-      "  Taipan         1,000 to 7,999\n" +
-      "  Compradore     500 to 999\n" +
-      "> Galley Hand    less than 500\n\n" +
+      "  Rank                        Score\n" +
+      "  Jade Emperor                250,000+\n" +
+      "  Lord of Ten Thousand Ships  150,000+\n" +
+      "  Dragon of the Strait        100,000+\n" +
+      "  Ma Tsu                      50,000+\n" +
+      "  Master Taipan               8,000+\n" +
+      "  Taipan                      1,000+\n" +
+      "  Compradore                  500+\n" +
+      "> Galley Hand                 below 500\n\n" +
       "GAME OVER",
     );
     tap("New game");

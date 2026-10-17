@@ -146,9 +146,10 @@ porcelain profit plus that.
 7. **Players rarely sink.** About 93% are afloat after 10 years, so the survivors-only
    figures are close to the whole population.
 8. **Scores:** at 10 years, middling scores about 29,000–34,000 (Master Taipan) and
-   high about 92,000–96,000 (Ma Tsu), a little below the figures with jade, so the
-   ranks and pypan-85's proposals hold roughly, with their top thresholds slightly
-   high.
+   high about 92,000–96,000 (Ma Tsu, just short of Dragon of the Strait's 100,000).
+   The top 5% score about 127,000 (Dragon of the Strait) and the top 1% about
+   207,000 (Lord of Ten Thousand Ships); Jade Emperor (250,000) takes an exceptional
+   game or a longer one.
 
 ## Implications for tuning
 

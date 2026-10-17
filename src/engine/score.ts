@@ -3,13 +3,19 @@
 import { money } from "./format";
 import { currentTime, type Hong } from "./hong";
 
-/** Score ranks, best first: each applies from its minimum score upward. */
+/**
+ * Score ranks, best first: each applies from its minimum score upward. The three
+ * above Ma Tsu are pypan-85's. Ranges are short so the table fits a phone.
+ */
 export const RANKS = [
-  { title: "Ma Tsu", min: 50000, range: "50,000 and over" },
-  { title: "Master Taipan", min: 8000, range: "8,000 to 49,999" },
-  { title: "Taipan", min: 1000, range: "1,000 to 7,999" },
-  { title: "Compradore", min: 500, range: "500 to 999" },
-  { title: "Galley Hand", min: -Infinity, range: "less than 500" },
+  { title: "Jade Emperor", min: 250000, range: "250,000+" },
+  { title: "Lord of Ten Thousand Ships", min: 150000, range: "150,000+" },
+  { title: "Dragon of the Strait", min: 100000, range: "100,000+" },
+  { title: "Ma Tsu", min: 50000, range: "50,000+" },
+  { title: "Master Taipan", min: 8000, range: "8,000+" },
+  { title: "Taipan", min: 1000, range: "1,000+" },
+  { title: "Compradore", min: 500, range: "500+" },
+  { title: "Galley Hand", min: -Infinity, range: "below 500" },
 ] as const;
 
 export type Rank = (typeof RANKS)[number]["title"];

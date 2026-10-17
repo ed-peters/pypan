@@ -23,7 +23,10 @@ describe("score", () => {
 
 describe("rank", () => {
   it.each([
-    [1000000, "Ma Tsu"], [50000, "Ma Tsu"],
+    [1000000, "Jade Emperor"], [250000, "Jade Emperor"],
+    [249999, "Lord of Ten Thousand Ships"], [150000, "Lord of Ten Thousand Ships"],
+    [149999, "Dragon of the Strait"], [100000, "Dragon of the Strait"],
+    [99999, "Ma Tsu"], [50000, "Ma Tsu"],
     [49999, "Master Taipan"], [8000, "Master Taipan"],
     [7999, "Taipan"], [1000, "Taipan"],
     [999, "Compradore"], [500, "Compradore"],
@@ -50,13 +53,22 @@ describe("scoreReport", () => {
   it("announces the score and marks the player's rank in the table", () => {
     expect(scoreReport(1234)).toBe(
       "Your score is 1,234.\n\n" +
-      "  Rank           Score\n" +
-      "  Ma Tsu         50,000 and over\n" +
-      "  Master Taipan  8,000 to 49,999\n" +
-      "> Taipan         1,000 to 7,999\n" +
-      "  Compradore     500 to 999\n" +
-      "  Galley Hand    less than 500",
+      "  Rank                        Score\n" +
+      "  Jade Emperor                250,000+\n" +
+      "  Lord of Ten Thousand Ships  150,000+\n" +
+      "  Dragon of the Strait        100,000+\n" +
+      "  Ma Tsu                      50,000+\n" +
+      "  Master Taipan               8,000+\n" +
+      "> Taipan                      1,000+\n" +
+      "  Compradore                  500+\n" +
+      "  Galley Hand                 below 500",
     );
+  });
+
+  it("fits a phone: no row is over 40 characters", () => {
+    const rows = scoreReport(300000).split("\n").slice(2);
+    expect(Math.max(...rows.map((r) => r.length))).toBeLessThanOrEqual(40);
+    expect(rows).toContain(">".padEnd(2) + "Jade Emperor".padEnd(26) + "  250,000+");
   });
 
   it("shows negative scores", () => {

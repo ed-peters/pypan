@@ -120,13 +120,13 @@ describe("game endings", () => {
     expect(game.done).toBe(false);
   });
 
-  it("scores a retirement: cash plus bank, less debt, per month, over 100", () => {
-    const { game } = retiree({ cash: 700000, bank: 500000, time: 12 });
+  it("scores a retirement: cash plus bank, less debt, per month, over 200", () => {
+    const { game } = retiree({ cash: 1400000, bank: 1000000, time: 12 });
     const seen = drive(game, [2, false, RETIRE, true]);
     expect(seen.at(-1)).toBe("You're a M I L L I O N A I R E !!!");
     expect(game.result).toEqual({
       ending: "retired",
-      position: 1200000,
+      position: 2400000,
       score: 1000,
       rank: "Taipan",
       report: expect.stringMatching(/^Your score is 1,000\./),
@@ -137,7 +137,7 @@ describe("game endings", () => {
     const { game } = retiree({ cash: 5000, time: 12 });
     const seen = drive(game, [2, false, RETIRE, true]);
     expect(seen.at(-1)).toBe("Are you sure you want to retire, Taipan?");
-    expect(game.result).toMatchObject({ ending: "retired", position: 5000, score: 4, rank: "Galley Hand" });
+    expect(game.result).toMatchObject({ ending: "retired", position: 5000, score: 2, rank: "Galley Hand" });
   });
 
   it("ends with 'sunk' when the ship sinks, without saving afterwards", () => {

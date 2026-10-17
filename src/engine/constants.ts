@@ -6,6 +6,8 @@ import type { Rng } from "./rng";
 // Tuning
 
 export const BASED_PRICES = true;
+/** The score is the final position per month played, divided by this (100 in pypan.py). */
+export const SCORE_DIVISOR = 200;
 export const START_CASH = 400;
 export const START_DEBT = 5000;
 export const START_YEAR = 1860;
@@ -77,11 +79,11 @@ export const ARMS_OFFER_CHANCE = 6;
 export const ARMS_RETURN = [-0.15, 0.3] as const;
 export const ARMS_SHUTDOWN_CHANCE = 30;
 /** A share in the porcelain trade is offered in Hong Kong only after this many months (pypan-87) ... */
-export const PORCELAIN_MIN_MONTHS = 24;
+export const PORCELAIN_MIN_MONTHS = 48;
 /** ... to a player whose cash position (cash + bank - debt) is over this ... */
 export const PORCELAIN_WORTH_LEVEL = 2000000;
 /** ... for this share of the cash position. */
-export const PORCELAIN_FEE_SHARE = 0.5;
+export const PORCELAIN_FEE_SHARE = 0.75;
 /** The offer comes 1-in-N arrivals in Hong Kong: 1-in-20 at first, one better every few months, to 1-in-3. */
 export const PORCELAIN_ODDS_START = 20;
 export const PORCELAIN_ODDS_MIN = 3;

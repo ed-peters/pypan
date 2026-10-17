@@ -6,19 +6,19 @@ import { ScriptedRng } from "../../src/engine/rng";
 import { makeHong } from "../helpers/hong";
 import { play, texts } from "../helpers/play";
 
-// month 25 in Hong Kong, out of debt, worth 5,000,400
-const rich = (overrides = {}) => makeHong({ time: 25, debt: 0, bank: 5000000, ...overrides });
+// month 49 in Hong Kong, out of debt, worth 5,000,400
+const rich = (overrides = {}) => makeHong({ time: 49, debt: 0, bank: 5000000, ...overrides });
 
-const OFFER = "Taipan, a merchant house from Jingdezhen offers us a share in the porcelain trade for 2,500,000. With it we may buy and sell porcelain in every port. Shall we buy in?";
+const OFFER = "Taipan, a merchant house from Jingdezhen offers us a share in the porcelain trade for 3,750,000. With it we may buy and sell porcelain in every port. Shall we buy in?";
 
 describe("porcelainOdds", () => {
-  it("starts at 1-in-20 after month 24 and gets better every three months, to 1-in-3", () => {
+  it("starts at 1-in-20 after month 48 and gets better every three months, to 1-in-3", () => {
     const odds = (time: number) => porcelainOdds(rich({ time }));
-    expect([25, 27, 28, 31, 52, 75, 76, 120].map(odds)).toEqual([20, 20, 19, 18, 11, 4, 3, 3]);
+    expect([49, 51, 52, 55, 76, 99, 100, 150].map(odds)).toEqual([20, 20, 19, 18, 11, 4, 3, 3]);
   });
 
   it.each([
-    ["before month 25", { time: 24 }],
+    ["before month 49", { time: 48 }],
     ["outside Hong Kong", { location: SHANGHAI }],
     ["to a player worth 2,000,000 or less", { bank: 1999600 }],
     ["counting debt against worth", { debt: 3000401 }],
@@ -31,7 +31,7 @@ describe("porcelainOdds", () => {
 });
 
 describe("checkPorcelain", () => {
-  it("offers a share for half of our cash position, paid from cash and then the bank", () => {
+  it("offers a share for three-quarters of our cash position, paid from cash and then the bank", () => {
     const h = rich();
     const p = play(checkPorcelain(h, new ScriptedRng([0])), [true]);
     expect(texts(p)).toEqual([
@@ -39,7 +39,7 @@ describe("checkPorcelain", () => {
       "The necessary funds will be sent from the bank, Taipan.",
       "Very well, Taipan. We are in the porcelain trade. Mind how it's stowed: it breaks!",
     ]);
-    expect([h.cash, h.bank, h.porcelain]).toEqual([0, 2500400, true]);
+    expect([h.cash, h.bank, h.porcelain]).toEqual([0, 1250400, true]);
     expect(marketGoods(h)).toContain(PORCELAIN);
   });
 
@@ -53,7 +53,7 @@ describe("checkPorcelain", () => {
   });
 
   it("comes only 1-in-N", () => {
-    const h = rich({ time: 76, location: HONG_KONG });
+    const h = rich({ time: 100, location: HONG_KONG });
     // 1-in-3: a roll of 3 brings it, 1 doesn't
     expect(play(checkPorcelain(h, new ScriptedRng([1]))).transcript).toEqual([]);
     expect(texts(play(checkPorcelain(h, new ScriptedRng([3])), [false]))).toHaveLength(1);

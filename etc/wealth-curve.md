@@ -3,13 +3,13 @@
 Starting estimates for the money thresholds, rates and prices in the late-game
 recommendations (`etc/recommendations/`).
 
-**Calculated after 02d48fd, with the improved bot** (ventures: godowns and arms
-smuggling replacing general cargo and arms, then the jade expedition; porcelain as
-the top good; the bank and warehouse transfers in Hong Kong only; bank interest at
-0.5% a month). The figures go out of date when the game engine changes. To list
-engine changes since then:
+**Calculated after 5019dce, with porcelain offered from month 48 for three-quarters
+of the cash position and scores divided by 200** (ventures: godowns and arms
+smuggling replacing general cargo and arms, then the jade expedition; the bank and
+warehouse transfers in Hong Kong only; bank interest at 0.5% a month). The figures go
+out of date when the game engine changes. To list engine changes since then:
 
-    git log --oneline 02d48fd.. -- src/engine
+    git log --oneline 5019dce.. -- src/engine
 
 **The bot was improved at the same time,** which roughly doubled every figure here
 compared with earlier versions of this page. It used to sell a good only when the
@@ -62,16 +62,16 @@ any share in the jade mine. Goods aboard don't count. Amounts are in k (thousand
 | Stage | Afloat | Low (P25) | Middling (P50) | High (P90) |
 |---|---|---|---|---|
 | Early (2 years) | 99.9% | 117k | 1.2M | 7.8M |
-| Mid (5 years) | 98.4% | 21M | 50M | 240M |
-| Late (10 years) | 96.0% | 972M | 1.46B | 3.08B |
+| Mid (5 years) | 98.3% | 18M | 37M | 92M |
+| Late (10 years) | 96.3% | 499M | 983M | 2.37B |
 
 ### Debt start (no guns)
 
 | Stage | Afloat | Low (P25) | Middling (P50) | High (P90) |
 |---|---|---|---|---|
 | Early (2 years) | 99.9% | 18k | 190k | 4.1M |
-| Mid (5 years) | 97.7% | 12M | 32M | 199M |
-| Late (10 years) | 94.8% | 856M | 1.32B | 2.62B |
+| Mid (5 years) | 97.5% | 10M | 25M | 65M |
+| Late (10 years) | 94.4% | 456M | 847M | 2.00B |
 
 The guns start does better. With no cash, the bot fights the early pirates and wins
 booty, and it never pays Wu's 10% a month.
@@ -82,22 +82,22 @@ booty, and it never pays Wu's 10% a month.
 |---|---|---|---|---|
 | 12 | 100% | 7k | 32k | 558k |
 | 24 | 100% | 117k | 1.2M | 7.8M |
-| 36 | 100% | 1.7M | 7.9M | 25M |
-| 48 | 99% | 8.2M | 21M | 82M |
-| 60 | 98% | 21M | 50M | 240M |
-| 72 | 98% | 47M | 119M | 552M |
-| 84 | 97% | 128M | 315M | 980M |
-| 96 | 97% | 318M | 625M | 1.58B |
-| 108 | 97% | 617M | 1.01B | 2.34B |
-| 120 | 96% | 972M | 1.46B | 3.08B |
+| 36 | 100% | 2.5M | 8.5M | 24M |
+| 48 | 99% | 9.9M | 20M | 49M |
+| 60 | 98% | 18M | 37M | 92M |
+| 72 | 98% | 34M | 66M | 219M |
+| 84 | 97% | 56M | 111M | 505M |
+| 96 | 97% | 93M | 237M | 999M |
+| 108 | 97% | 225M | 547M | 1.58B |
+| 120 | 96% | 499M | 983M | 2.37B |
 
 ### The middling player's ship and money (guns start)
 
 | Stage | Hold | Guns | Cash on hand | Bank |
 |---|---|---|---|---|
 | Early (2 years) | 260 | 5 | 32k | 135k |
-| Mid (5 years) | 660 | 8 | 200k | 26M |
-| Late (10 years) | 1,370 | 10 | 40M | 928M |
+| Mid (5 years) | 640 | 8 | 156k | 23M |
+| Late (10 years) | 1,360 | 10 | 28M | 535M |
 
 The middling player is out of debt by year 2 in both starts.
 
@@ -106,52 +106,55 @@ The middling player is out of debt by year 2 in both starts.
 | Stage | Trading | Bank interest | Booty | Robbery | Opium seized | Repairs | Ships | Li Yuen |
 |---|---|---|---|---|---|---|---|---|
 | Early (2 years) | 2.2M | 9k | 28k | 0 | 0 | 7k | 24k | 0 |
-| Mid (5 years) | 67M | 2.2M | 117k | 72k | 2.9M | 832k | 315k | 25k |
-| Late (10 years) | 1.67B | 107M | 438k | 23M | 13M | 17M | 2.7M | 8.9M |
+| Mid (5 years) | 49M | 2.1M | 126k | 56k | 3.3M | 921k | 305k | 21k |
+| Late (10 years) | 1.27B | 52M | 444k | 7.0M | 15M | 17M | 2.6M | 3.9M |
 
 | Stage | Share of trading profit: Silk | Opium | Porcelain |
 |---|---|---|---|
 | Early (2 years) | 12% | 87% | 0% |
-| Mid (5 years) | 2% | 32% | 65% |
-| Late (10 years) | 1% | 10% | 90% |
+| Mid (5 years) | 5% | 77% | 18% |
+| Late (10 years) | 1% | 14% | 85% |
 
 ### Porcelain and ventures (at 10 years)
 
 | Start | In the porcelain trade | Bought in (median month) | Porcelain profit (share of income) | Lost to breakage |
 |---|---|---|---|---|
-| Guns | 99% | 60 | 74% | 12% |
-| Debt | 99% | 62 | 75% | 11% |
+| Guns | 98% | 79 | 72% | 12% |
+| Debt | 99% | 80 | 74% | 11% |
 
 | Start | Holding godowns | Arms smuggling | Jade mine | Shares (median, of position) | Venture income, share of gross: P10 / P50 / P90 |
 |---|---|---|---|---|---|
-| Guns | 95% | 93% | 56% | 25% | 4% / 9% / 29% |
-| Debt | 94% | 93% | 56% | 24% | 4% / 9% / 28% |
+| Guns | 95% | 93% | 53% | 26% | 3% / 7% / 22% |
+| Debt | 93% | 93% | 53% | 25% | 2% / 6% / 21% |
 
 | Backed the jade expedition | Stake (median share of worth) | Expeditions backed (median) | Won per expedition | Position: won at least once | backed, never won |
 |---|---|---|---|---|---|
-| 98% | 28% | 3 | 33% | 1.67B | 1.11B |
+| 93% | 27% | 3 | 32% | 1.30B | 690M |
 
 ## Findings
 
 1. **Trading is still most of it, and porcelain carries the late game.** Opium
-   carries the first five years; once a player is in the porcelain trade (about
-   month 60) it's 90% of trading profit. Ventures are about 9% of income, the bank
-   5%, booty and consignments next to nothing.
-2. **A decent player gets rich fast.** Money multiplies about 40× in year 2, 6× in
-   year 3, and 2–2.7× a year from year 4 to year 8, slowing to about 1.5× by year 10.
-3. **The spread is moderate.** High is about 6× middling at 2 years and about 2× at
-   10. Low is about two-thirds of middling at 10 years.
-4. **Ventures are a steady second income.** Nearly everyone holds godowns and the
+   carries the first six or seven years; once a player is in the porcelain trade
+   (about month 80) it's 85% of trading profit by 10 years. Ventures are about 7% of
+   income, the bank 4%, booty and consignments next to nothing.
+2. **Fast early, slower middle, porcelain late.** Money multiplies about 40× in year
+   2 and 7× in year 3, then about 1.7–2.4× a year in years 4 to 7, and 1.8–2.3× a
+   year once porcelain arrives.
+3. **The spread is wide late.** High is about 6× middling at 2 years, about 2.5× at
+   5 and 10. Low is about half of middling at 10 years.
+4. **Porcelain's fee is the biggest fall.** Three-quarters of the cash position in
+   one payment shows as a 75% fall in worth (the share isn't counted as an asset), so
+   the median worst fall after year 5 is about 62%.
+5. **Ventures are a steady second income.** Nearly everyone holds godowns and the
    arms smuggling at 10 years (the bot always buys and tops up), worth about a
    quarter of its position. The jade expedition is offered once both are held.
-5. **Players rarely sink.** About 95% are afloat after 10 years, so the survivors-only
+6. **Players rarely sink.** About 95% are afloat after 10 years, so the survivors-only
    figures are close to the whole population.
-6. **Scores outgrow the ranks.** At 10 years, middling scores about 110,000–120,000
-   (Dragon of the Strait), high about 215,000–255,000 (Lord of Ten Thousand Ships or
-   Jade Emperor), the top 5% about 280,000–305,000 and the top 1% about
-   400,000–450,000. With
-   the better bot, the ranks set in pypan-85 (Ma Tsu at 50,000, Jade Emperor at
-   250,000) are too easy and should be rescaled.
+7. **Scores** (the final position per month, divided by 200): at 10 years, middling
+   scores about 35,000–41,000 (Master Taipan), high about 82,000–98,000 (Ma Tsu), the
+   top 5% about 107,000–129,000 (Dragon of the Strait) and the top 1% about
+   150,000–196,000 (Lord of Ten Thousand Ships). Jade Emperor (250,000) takes an
+   exceptional game or a longer one.
 
 ## Implications for tuning
 
@@ -160,9 +163,10 @@ The middling player is out of debt by year 2 in both starts.
   the player's own money (as consignments, ventures and the porcelain fee do), or
   pick the stage a feature is meant for and read its threshold from the tables above.
 - **The jade expedition's 2,000,000 in the bank** (and the porcelain share's
-  2,000,000 cash position) is reached by the middling player in year 2 or 3.
-- **Rates competing with trading:** the middling player's money grows about 6–9% a
-  month from year 4 to year 8. A 0.5% bank rate is safety, not income, and the
+  2,000,000 cash position, offered from month 48) is reached by the middling player
+  in year 2 or 3.
+- **Rates competing with trading:** the middling player's money grows about 5% a
+  month in years 4 to 7, and 6–7% a month once porcelain arrives. A 0.5% bank rate is safety, not income, and the
   ventures' few percent a quarter are a sideline.
 - **Recommendations that still assume 5% bank interest** (pypan-54, pypan-59 and
   pypan-60) should be revisited.

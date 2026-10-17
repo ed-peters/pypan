@@ -10,7 +10,7 @@ import { currentTime, type Hong } from "../../src/engine/hong";
 import { newGame } from "../../src/engine/pypan";
 import { SeededRng } from "../../src/engine/rng";
 import { rank } from "../../src/engine/score";
-import { GOODS, PORCELAIN } from "../../src/engine/constants";
+import { GOODS, PORCELAIN, SCORE_DIVISOR } from "../../src/engine/constants";
 import { finalPosition } from "../../src/engine/score";
 import { sharesValue } from "../../src/engine/ventures";
 import { Bot, worth, type Ledger } from "./bot";
@@ -80,7 +80,7 @@ function play(seed: number, start: "debt" | "guns"): Run {
           position, worth: worth(h), cash: h.cash, bank: h.bank, debt: h.debt,
           shares: sharesValue(h), holds: { godowns: !!h.godowns, arms: !!h.arms, mine: !!h.mine },
           shipSize: h.shipSize, guns: h.shipGuns,
-          score: Math.floor(position / currentTime(h) / 100),
+          score: Math.floor(position / currentTime(h) / SCORE_DIVISOR),
           atCost: bot.worthAtCost(h),
           ledger: { ...bot.ledger, byGood: [...bot.ledger.byGood] },
         });
@@ -288,7 +288,7 @@ function main(): void {
       const pos = sorted(ss.map((x) => x.position));
       return [s.label, ...TIERS.map((t) => {
         const v = percentile(pos, t.p);
-        const score = Math.floor(v / (s.months + 1) / 100);
+        const score = Math.floor(v / (s.months + 1) / SCORE_DIVISOR);
         return `${fmt(v)} (score ${fmt(score)}, ${rank(score)})`;
       })];
     }),

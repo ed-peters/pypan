@@ -1,5 +1,6 @@
 // Final score when the game ends, by retiring or sinking.
 
+import { SCORE_DIVISOR } from "./constants";
 import { money } from "./format";
 import { currentTime, type Hong } from "./hong";
 
@@ -30,9 +31,9 @@ export function finalPosition(h: Hong): number {
   return cashPosition(h) + (h.mine?.value ?? 0) + (h.godowns?.value ?? 0) + (h.arms?.value ?? 0);
 }
 
-/** Final position per month played, divided by 100, rounded down. */
+/** Final position per month played, divided by SCORE_DIVISOR, rounded down. */
 export function score(h: Hong): number {
-  return Math.floor(finalPosition(h) / currentTime(h) / 100);
+  return Math.floor(finalPosition(h) / currentTime(h) / SCORE_DIVISOR);
 }
 
 export function rank(s: number): Rank {

@@ -31,7 +31,8 @@ applies):
 - Below 0: "The crew has requested that you stay on shore for their safety!!"
 - Below 1,000: "Have you considered a land-based job?"
 
-The **score** is `final position / months played / 100`, rounded down (it can be
+The **score** is `final position / months played / 200` (`SCORE_DIVISOR`; pypan.py
+divided by 100), rounded down (it can be
 negative). The final screen says "Your score is N." and shows the ranking table with
 the player's rank marked:
 
@@ -156,11 +157,12 @@ unlock only after certain thresholds:
 
 - **> 1 month**: price shocks and emergency bailout loans can occur.
 - **> 6 months**: new-ship and new-gun offers appear.
-- **> 12 months**: Wu robbery risk, larger Li Yuen demands, warehouse upgrades, and
-  harbor-police / mugging / fire events.
+- **> 12 months**: Wu robbery risk, larger Li Yuen demands, warehouse upgrades,
+  harbor-police / mugging / fire events, and the godowns (§4.8).
 - **>= 18 months**: special cargo consignments begin to appear.
-- **> 24 months**: the jade expedition (§4.6) and the porcelain share (§4.7) can be
-  offered.
+- **> 24 months**: the arms smuggling (§4.8), and then the jade expedition (§4.6), can
+  be offered.
+- **> 48 months**: the porcelain share (§4.7) can be offered.
 
 ---
 
@@ -351,12 +353,12 @@ porcelain is left out of the condition report, the buy, sell, transfer and dump
 menus, price shocks, and the hold and warehouse panes.
 
 - **The offer** (`check_porcelain`, on arrival, after the jade expedition): in Hong
-  Kong after month 24, while your cash position (cash + bank − debt) is over
+  Kong after month 48, while your cash position (cash + bank − debt) is over
   2,000,000 (`PORCELAIN_WORTH_LEVEL`), a merchant house from Jingdezhen offers a
   share in the porcelain trade. The chance is 1-in-20 per arrival at first, one
-  better every 3 months (1-in-19 from month 28, 1-in-18 from month 31, ...), down to
-  1-in-3 from month 76 (`PORCELAIN_ODDS_START`, `_MIN`, `PORCELAIN_RAMP_MONTHS`).
-- **The fee** is half your cash position (`PORCELAIN_FEE_SHARE`, rounded to the
+  better every 3 months (1-in-19 from month 52, 1-in-18 from month 55, ...), down to
+  1-in-3 from month 100 (`PORCELAIN_ODDS_START`, `_MIN`, `PORCELAIN_RAMP_MONTHS`).
+- **The fee** is three-quarters of your cash position (`PORCELAIN_FEE_SHARE`, rounded to the
   thousand), paid from cash and then the bank. Declining costs nothing, and the
   offer comes again on a later arrival.
 - **Owning it** makes porcelain a regular good at every port for the rest of the
@@ -675,15 +677,16 @@ after the save's date.
 | `MINE_SEIZURE_CHANCE` | 80 | 1-in-N quarters, rebels seize the mine |
 | `MINE_VEIN_CHANCE` / `MINE_VEIN_PAYOUT` | 40 / 2 | 1-in-N quarters, a rich vein pays this many times the share |
 | `JADE_MAX_OFFERS` | 3 | Times the expedition can be offered in a game |
-| `PORCELAIN_MIN_MONTHS` | 24 | Months before the porcelain share can be offered (§4.7) |
+| `PORCELAIN_MIN_MONTHS` | 48 | Months before the porcelain share can be offered (§4.7) |
 | `PORCELAIN_WORTH_LEVEL` | 2000000 | Cash position above which it can be offered |
-| `PORCELAIN_FEE_SHARE` | 0.5 | Share of the cash position it costs |
+| `PORCELAIN_FEE_SHARE` | 0.75 | Share of the cash position it costs |
 | `PORCELAIN_ODDS_START` / `_MIN` | 20 / 3 | 1-in-N per Hong Kong arrival, from first to best |
 | `PORCELAIN_RAMP_MONTHS` | 3 | Months for each step from 1-in-20 toward 1-in-3 |
 | `STORM_BREAKAGE` | 20–50 | Percent of the porcelain aboard a storm breaks |
 | `ROUGH_SEAS_BREAKAGE` / `ROUGH_SEAS_CHANCE` | 10–30 / 3 | Rough seas: percent broken, and 1-in-N voyages without a storm |
 | `VOLLEY_BREAKAGE` | 5–20 | Percent broken by each enemy volley |
 | `BASED_PRICES` | true | Port-based prices (§4.1); false for fully random |
+| `SCORE_DIVISOR` | 200 | The score is the final position per month played, divided by this (§1.1) |
 | `ENEMY_HEALTH_START` / `_BUMP` | 20 / 10 | Pirate health base + per-year growth |
 | `ENEMY_DAMAGE_START` / `_BUMP` | 0.5 / 0.5 | Pirate damage base + per-year growth |
 | `LI_YUEN_MIN_SHIPS` | 5 | Smallest fleet Li Yuen sends |
@@ -787,7 +790,8 @@ Additions:
 - **Ventures** (§4.8): shares in cargo godowns and arms smuggling replace trading
   general cargo and arms, and lead on to the jade expedition.
 - **Porcelain** (§4.7), a fragile top good unlocked by buying a share in the trade
-  for half your fortune. Storms, rough seas and cannon fire break it.
+  for three-quarters of your fortune, from month 48. Storms, rough seas and cannon
+  fire break it.
 - **Li Yuen's demand tracks your fortune** (§8, pypan-88) rather than only the
   calendar, and refusing him earns a grudge: his fleet hunts you more often and in
   greater numbers, and his next demand is larger, until you pay.

@@ -412,7 +412,11 @@ Each voyage has a `1-in-pirate_chance` chance of an encounter with the regular
 - **Booty** (awarded on victory): scales with elapsed time and pirate count
   (`current_time/4 * 1000 * pirates + randrange(1000) + 250`).
 
-The battle opens with "N hostile ships approaching, Taipan!" (regular fleet) or
+The battle opens with "N ((pirates)) approaching, Taipan!" (regular fleet), where the
+pirates are picked at random, as the last setup roll, from `PIRATE_NAMES`: hostile
+ships, war junks of the Black Hand, Malay prahus, lorchas flying the red flag, junks
+of the Ladrone pirates, or snake boats of the Widow Ching's fleet (singular for one
+ship: "1 hostile ship approaching, Taipan!"). Li Yuen's fleet opens with
 "N ships of Li Yuen's pirate fleet, Taipan!!!".
 
 ### 7.2 Turn Structure

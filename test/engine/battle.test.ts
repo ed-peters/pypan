@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { GENERAL, SILK } from "../../src/engine/constants";
-import { PIRATE_KING, PirateBattle, checkPirates, liYuenSighting } from "../../src/engine/battle";
+import { PIRATE_KING, PIRATE_NAMES, PirateBattle, checkPirates, liYuenSighting } from "../../src/engine/battle";
 import { newHong, type Hong } from "../../src/engine/hong";
 import { ScriptedRng, SeededRng } from "../../src/engine/rng";
 import { makeHong } from "../helpers/hong";
@@ -9,7 +9,10 @@ import { play, texts } from "../helpers/play";
 // Battle setup rolls: pirate count randrange(shipSize/10 + guns), health float,
 // booty randrange(1000). With these, at time 1: 3 pirates, health 30, booty
 // trunc(1/4 * 1000 * 3 + 100 + 250) = 1100.
-const SETUP = [2, 0.5, 100];
+// The last setup roll picks who the pirates are: 0 is "hostile ships". Li Yuen's
+// fleet doesn't roll for it.
+const SETUP = [2, 0.5, 100, 0];
+const KING_SETUP = [2, 0.5, 100];
 
 // Each round of a regular battle starts with a 1-in-20 roll for Li Yuen to interrupt.
 const NO_LI_YUEN = 1;
@@ -20,7 +23,7 @@ function gunHong(overrides: Partial<Hong> = {}): Hong {
 }
 
 function battle(h: Hong, rolls: number[], against?: number): { b: PirateBattle; rng: ScriptedRng } {
-  const rng = new ScriptedRng([...SETUP, ...rolls]);
+  const rng = new ScriptedRng([...(against === PIRATE_KING ? KING_SETUP : SETUP), ...rolls]);
   return { b: new PirateBattle(h, rng, against), rng };
 }
 
@@ -70,7 +73,7 @@ describe("fighting", () => {
   it("holds fire once every ship is sunk", () => {
     const h = gunHong({ shipGuns: 2 });
     // one ship, sunk by the first gun; the second gun doesn't fire
-    const rng = new ScriptedRng([0, 0.5, 100, NO_LI_YUEN, 29, 0]);
+    const rng = new ScriptedRng([0, 0.5, 100, 0, NO_LI_YUEN, 29, 0]);
     const b = new PirateBattle(h, rng);
     expect(b.pirates).toBe(1);
     const p = play(b.execute(), [0]);
@@ -80,10 +83,21 @@ describe("fighting", () => {
     expect(rng.remaining).toBe(0);
   });
 
+  it("names the pirates at random, one ship or several", () => {
+    const named = (pirates: number, name: number) =>
+      // stops at the first choice, after the announcement
+      texts(play(new PirateBattle(makeHong(), new ScriptedRng([pirates - 1, 0.5, 100, name, NO_LI_YUEN])).execute()))[0];
+    expect(PIRATE_NAMES).toHaveLength(6);
+    expect(named(3, 0)).toBe("3 hostile ships approaching, Taipan!");
+    expect(named(1, 0)).toBe("1 hostile ship approaching, Taipan!");
+    expect(named(4, 1)).toBe("4 war junks of the Black Hand approaching, Taipan!");
+    expect(named(1, 5)).toBe("1 snake boat of the Widow Ching's fleet approaching, Taipan!");
+  });
+
   it("takes return fire after a miss", () => {
     const h = gunHong({ shipGuns: 1 });
     // one 10-point hit; gun-hit roll 50 (no); damage = trunc(0.5 * 3 * 1 * 0.5 + 1.5)
-    const rng = new ScriptedRng([2, 0.5, 100, NO_LI_YUEN, 0, 50, 0.5, NO_LI_YUEN]);
+    const rng = new ScriptedRng([2, 0.5, 100, 0, NO_LI_YUEN, 0, 50, 0.5, NO_LI_YUEN]);
     const p = play(new PirateBattle(h, rng).execute(), [0]);
     expect(texts(p).slice(3)).toEqual([
       "Aye, we'll fire our cannons at 'em, Taipan!\n\nThey're still after us!",
@@ -97,7 +111,7 @@ describe("fighting", () => {
   it("smashes 5-20% of the porcelain aboard with every volley", () => {
     const h = gunHong({ shipGuns: 1, shipGoods: [0, 0, 0, 0, 50] });
     // as above, then inRange(5, 21) = 5 + 0: 5% of 50
-    const rng = new ScriptedRng([2, 0.5, 100, NO_LI_YUEN, 0, 50, 0.5, 0, NO_LI_YUEN]);
+    const rng = new ScriptedRng([2, 0.5, 100, 0, NO_LI_YUEN, 0, 50, 0.5, 0, NO_LI_YUEN]);
     const p = play(new PirateBattle(h, rng).execute(), [0]);
     expect(texts(p)).toContain("They're firing on us, Taipan!\n\nThey hit us!\n\nThey smashed 2 of our porcelain!");
     expect(h.shipGoods[4]).toBe(48);
@@ -106,7 +120,7 @@ describe("fighting", () => {
   it("always hits a gun when the ship is over 80% damaged", () => {
     const h = gunHong({ shipGuns: 1, shipDamage: 50 });
     // no gun-hit roll needed
-    const rng = new ScriptedRng([2, 0.5, 100, NO_LI_YUEN, 0, 0.5, NO_LI_YUEN]);
+    const rng = new ScriptedRng([2, 0.5, 100, 0, NO_LI_YUEN, 0, 0.5, NO_LI_YUEN]);
     const p = play(new PirateBattle(h, rng).execute(), [0]);
     expect(texts(p)).toContain("They're firing on us, Taipan!\n\nThe buggers hit a gun!");
     expect([h.shipGuns, h.shipSize]).toEqual([0, 70]);
@@ -271,7 +285,7 @@ describe("Li Yuen's fleet", () => {
   });
 
   it("hits twice as hard", () => {
-    const rng = new ScriptedRng([...SETUP, 0.5]);
+    const rng = new ScriptedRng([...KING_SETUP, 0.5]);
     const b = new PirateBattle(gunHong(), rng, PIRATE_KING);
     // 7 ships: trunc(0.5 * 7 * 2 * 0.5 + 3.5)
     expect(b.calculateDamage()).toBe(7);

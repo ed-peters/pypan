@@ -15,6 +15,16 @@ import type { Rng } from "./rng";
 export const PIRATE_FLEET = 1;
 export const PIRATE_KING = 2;
 
+/** Who the regular pirates are, one ship and several; one is picked for each battle. */
+export const PIRATE_NAMES: readonly (readonly [one: string, many: string])[] = [
+  ["hostile ship", "hostile ships"],
+  ["war junk of the Black Hand", "war junks of the Black Hand"],
+  ["Malay prahu", "Malay prahus"],
+  ["lorcha flying the red flag", "lorchas flying the red flag"],
+  ["junk of the Ladrone pirates", "junks of the Ladrone pirates"],
+  ["snake boat of the Widow Ching's fleet", "snake boats of the Widow Ching's fleet"],
+];
+
 /** The smallest fleet Li Yuen sends. */
 export const LI_YUEN_MIN_SHIPS = 5;
 
@@ -32,6 +42,8 @@ export class PirateBattle {
   runIk = 1;
   runOk = 3;
   readonly booty: number;
+  /** Which of PIRATE_NAMES the regular pirates are. */
+  readonly name: number;
   fled = false;
 
   constructor(
@@ -55,12 +67,13 @@ export class PirateBattle {
     this.currHealth = Math.trunc(this.baseHealth * rng.float()) + 20;
     this.enemyDamage = ENEMY_DAMAGE_START + years * ENEMY_DAMAGE_BUMP;
     this.booty = Math.trunc((currentTime(h) / 4) * 1000 * this.pirates + rng.randrange(1000) + 250);
+    this.name = this.id === PIRATE_FLEET ? rng.randrange(PIRATE_NAMES.length) : 0;
   }
 
   *execute(): Flow<BattleOutcome> {
     yield* say(
       this.id === PIRATE_FLEET
-        ? `${this.pirates} hostile ships approaching, Taipan!`
+        ? `${this.pirates} ${PIRATE_NAMES[this.name]![this.pirates === 1 ? 0 : 1]} approaching, Taipan!`
         : `${this.pirates} ships of Li Yuen's pirate fleet, Taipan!!!`,
     );
     return yield* withArt("pirates", this.fight());

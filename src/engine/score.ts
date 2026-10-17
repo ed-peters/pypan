@@ -20,14 +20,19 @@ export const RANKS = [
 
 export type Rank = (typeof RANKS)[number]["title"];
 
-/** What the player is worth at the end: cash plus bank, less debt. Goods don't count. */
+/** Cash plus bank, less debt: the money the player can lay hands on. Goods don't count. */
 export function cashPosition(h: Hong): number {
   return h.cash + h.bank - h.debt;
 }
 
-/** Cash position per month played, divided by 100, rounded down. */
+/** What the player is worth at the end: the cash position, plus any share in the jade mine (pypan-89). */
+export function finalPosition(h: Hong): number {
+  return cashPosition(h) + (h.mine?.value ?? 0);
+}
+
+/** Final position per month played, divided by 100, rounded down. */
 export function score(h: Hong): number {
-  return Math.floor(cashPosition(h) / currentTime(h) / 100);
+  return Math.floor(finalPosition(h) / currentTime(h) / 100);
 }
 
 export function rank(s: number): Rank {

@@ -7,8 +7,9 @@ fortune.
 
 **Calculated on commit 81f21de,** except for the sections "Li Yuen reworked"
 (after pypan-88), "Jade as a payout" (after pypan-86, which took jade off the
-market) and "Porcelain" (after pypan-87, which added porcelain as the top good).
-Each later section changes the game under the earlier ones. The figures go out of date when the game engine
+market), "Porcelain" (after pypan-87, which added porcelain as the top good) and
+"The jade mine" (after pypan-89). Each later section changes the game under the
+earlier ones. The figures go out of date when the game engine
 changes (`git log --oneline 81f21de.. -- src/engine`). Rerun with:
 
     npm run sim -- --compare --runs 1000 --start guns    # and --start debt
@@ -332,6 +333,52 @@ porcelain.
 - **Not simulated:** the bot doesn't use the warehouse, where porcelain is safe, and
   never declines the share. Pirates and storms don't change their odds when you
   carry porcelain.
+
+## The jade mine (pypan-89)
+
+A successful expedition no longer pays a lump sum. It makes the stake a share in the
+mine worth 2–5 times as much. Every 3 months the share returns −10% to +20% of its
+value: gains go into the bank, and a loss is a call for funds, where refusing costs
+half the share. Rarely the mine strikes a rich vein (1-in-40 quarters, paying twice
+the share) or is seized by rebels (1-in-80, the share is lost). The share counts
+toward the score but can't be sold (SPEC.md §4.6).
+
+1,000 games per start, guns start first and the debt start in parentheses; ships
+afloat at 10 years. "Before" is the one-time payout of 2–5 times the stake, with
+today's porcelain. "Jade" is the mine's dividends and rich veins; losses count failed
+stakes, calls for funds and share value lost.
+
+| Scenario | P25 / P50 / P90 at 10 years | Jade (share of income) | Bank | Losses | Worst drawdown after year 5 (median) | Biggest windfall after year 5 (median) |
+|---|---|---|---|---|---|---|
+| Before (one-time payout) | 134M / 406M / 1.16B (101M / 351M / 1.11B) | 1.5% (1.8%) | 5.4% (5.4%) | 33% (31%) | 61% (61%) | 64% (70%) |
+| **The jade mine (the game now)** | 142M / 400M / 1.21B (111M / 332M / 1.09B) | 2.3% (1.8%) | 5.1% (4.7%) | 34% (32%) | 56% (55%) | 21% (19%) |
+| Small jade stakes (about 1M) | 151M / 417M / 1.19B (107M / 345M / 1.03B) | 0.3% (0.3%) | 6.0% (5.8%) | 28% (26%) | 53% (53%) | 14% (14%) |
+
+Among players holding a share at 10 years (53%, or 54% from the debt start):
+
+| Scenario | Share (median, of position) | Mine income, share of gross: P10 / P50 / P90 |
+|---|---|---|
+| The jade mine | 13% (13%) | 1% / 8% / 33% (1% / 7% / 28%) |
+| Small jade stakes | 1% (1%) | 0.1% / 1% / 6% (0.2% / 1% / 5%) |
+| No porcelain | 21% (21%) | 6% / 19% / 48% (4% / 18% / 47%) |
+
+- **Wealth is about the same as with the lump sum.** The middling fortune at 10
+  years is 400M (406M before). A share worth 2–5× the stake hands winners about what
+  the lump sum did, and then keeps paying.
+- **The mine is a second income for those who hold it.** It's about 8% of income
+  for the median holder and a third for the luckiest 10%. Next to porcelain
+  it's a sideline; without porcelain (the No porcelain scenario) it's a fifth of
+  income for the median holder.
+- **It's riskier than the bank, in the open.** Each quarter's return is reported, a
+  bad quarter comes as a call for funds the player must answer, and about one share
+  in five is seized within five years. About four in five players who win a share
+  still hold one at 10 years.
+- **The late game is smoother.** With the payout spread over quarters, the biggest
+  late windfall falls from about two-thirds of worth to a fifth, and the worst late
+  drawdown eases from 61% to 56%. The expedition is still the moonshot: two in three
+  lose the stake.
+- **Not simulated:** the bot pays every call for funds. A player who refuses keeps
+  the cash but loses half the share each time.
 
 ## Caveats
 

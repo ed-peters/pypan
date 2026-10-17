@@ -30,6 +30,13 @@ export interface Expedition {
   stake: number;
 }
 
+/** A share in the jade mine (pypan-89): what it's worth, and when it next settles. */
+export interface Mine {
+  value: number;
+  /** The month (as currentTime) of the next quarter's return. */
+  due: number;
+}
+
 export interface Hong {
   name: string;
   year: number;
@@ -66,6 +73,7 @@ export interface Hong {
   expeditionFailed: boolean;
   /** How many times Sir Beaumont-Finch has sought backers, up to JADE_MAX_OFFERS. */
   jadeOffers: number;
+  mine: Mine | null;
   /** Whether we own a share in the porcelain trade; until then porcelain is hidden. */
   porcelain: boolean;
 }
@@ -98,6 +106,7 @@ export function newHong(rng: Rng, guns: boolean, name: string = "Rising Sun"): H
     expedition: null,
     expeditionFailed: false,
     jadeOffers: 0,
+    mine: null,
     porcelain: false,
   };
 }

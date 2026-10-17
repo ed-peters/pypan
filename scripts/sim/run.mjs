@@ -111,6 +111,12 @@ function compare(rows) {
     ["Scenario", "In the trade", "Bought in (median month)", "Porcelain profit lost to breakage"],
     rows.map(({ s, sum }) => [s.title, pct(sum.porcelain.owned), fmt(sum.porcelain.month), pct(sum.porcelain.broken)]),
   ));
+  out.push("\nThe jade mine (ships afloat at 10 years; income shares among holders):\n");
+  out.push(table(
+    ["Scenario", "Holding a share", "Share (of position)", "Mine income P10 / P50 / P90"],
+    rows.map(({ s, sum }) => [s.title, pct(sum.mine.held), pct(sum.mine.ofPosition),
+      `${pct(sum.mine.incomeP10)} / ${pct(sum.mine.incomeP50)} / ${pct(sum.mine.incomeP90)}`]),
+  ));
   out.push("\nThe jade moonshot (ships afloat at 10 years):\n");
   out.push(table(
     ["Scenario", "Backed", "Stake (share of worth)", "Won per expedition", "Jade (share of income)", "Position: won", "backed, never won", "didn't back"],

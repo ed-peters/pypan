@@ -21,6 +21,8 @@ describe("panes", () => {
 
   it("shows placeholders before the game starts", () => {
     expect(statusRows(null).every(([, v]) => v === "-")).toBe(true);
+    expect(statusRows(makeHong()).map(([k]) => k)).not.toContain("Jade mine");
+    expect(statusRows(makeHong({ mine: { value: 1500000, due: 31 } }))).toContainEqual(["Jade mine", "1,500,000"]);
     expect(holdRows(null).every(([, v]) => v === "-")).toBe(true);
     expect(holdRows(null).map(([g]) => g)).toEqual(["General", "Arms", "Silk", "Opium", "Capacity"]);
     expect(cargoLines(null)).toEqual(["(none)"]);

@@ -49,6 +49,15 @@ describe("save format", () => {
     expect(fromSaveString(toSaveString(h))).toEqual(h);
   });
 
+  it("round-trips a share in the jade mine, written only when held", () => {
+    const h = newHong(new SeededRng(4), false);
+    expect(toSave(h)).not.toHaveProperty("mine");
+    h.mine = { value: 1500000, due: 31 };
+    expect(toSave(h)).toMatchObject({ mine: { value: 1500000, due: 31 } });
+    expect(fromSaveString(toSaveString(h))).toEqual(h);
+    expect(() => fromSave({ ...pythonSave, mine: { value: -1, due: 3 } })).toThrow(SaveFormatError);
+  });
+
   it("round-trips through a string, including special cargo", () => {
     const h = newHong(new SeededRng(4), false);
     h.shipGoods = [1, 2, 3, 4, 0];

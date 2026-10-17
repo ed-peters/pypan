@@ -23,6 +23,8 @@ export function statusRows(h: Hong | null): Row[] {
     ["Cash", h ? money(h.cash) : "-"],
     ["Debt", h ? money(h.debt) : "-"],
     ["Bank", h ? money(h.bank) : "-"],
+    // a share in the jade mine, only once we hold one
+    ...(h?.mine ? [["Jade mine", money(h.mine.value)] as Row] : []),
     ["Guns", h ? money(h.shipGuns) : "-"],
     ["Repair", h ? `${repairPercent(h)}%` : "-"],
   ];

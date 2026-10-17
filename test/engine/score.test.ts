@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cashPosition, positionComment, rank, score, scoreReport } from "../../src/engine/score";
+import { cashPosition, finalPosition, positionComment, rank, score, scoreReport } from "../../src/engine/score";
 import { makeHong } from "../helpers/hong";
 
 describe("cashPosition", () => {
@@ -9,7 +9,19 @@ describe("cashPosition", () => {
   });
 });
 
+describe("finalPosition", () => {
+  it("adds any share in the jade mine to the cash position", () => {
+    expect(finalPosition(makeHong({ cash: 1000, debt: 0 }))).toBe(1000);
+    expect(finalPosition(makeHong({ cash: 1000, debt: 0, mine: { value: 50000, due: 9 } }))).toBe(51000);
+    expect(cashPosition(makeHong({ cash: 1000, debt: 0, mine: { value: 50000, due: 9 } }))).toBe(1000);
+  });
+});
+
 describe("score", () => {
+  it("counts a share in the jade mine", () => {
+    expect(score(makeHong({ cash: 0, debt: 0, time: 12, mine: { value: 1200000, due: 15 } }))).toBe(1000);
+  });
+
   it("is cash position per month played, divided by 100", () => {
     // 1,200,000 over 12 months
     expect(score(makeHong({ cash: 1200000, debt: 0, time: 12 }))).toBe(1000);

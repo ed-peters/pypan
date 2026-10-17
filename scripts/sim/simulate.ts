@@ -36,6 +36,8 @@ interface Snapshot {
   shipSize: number;
   guns: number;
   score: number;
+  /** The jade mine share's value, 0 if none. */
+  mine: number;
   /** Cash + bank - debt + what was paid for the goods aboard. */
   atCost: number;
   ledger: Ledger;
@@ -69,9 +71,10 @@ function play(seed: number, start: "debt" | "guns"): Run {
     onSave: (h: Hong) => {
       const played = currentTime(h) - 1;
       if (!at.has(played)) {
-        const position = h.cash + h.bank - h.debt;
+        // the final position, as scored: a jade mine share counts
+        const position = h.cash + h.bank - h.debt + (h.mine?.value ?? 0);
         at.set(played, {
-          position, worth: worth(h), cash: h.cash, bank: h.bank, debt: h.debt,
+          position, worth: worth(h), cash: h.cash, bank: h.bank, debt: h.debt, mine: h.mine?.value ?? 0,
           shipSize: h.shipSize, guns: h.shipGuns,
           score: Math.floor(position / currentTime(h) / 100),
           atCost: bot.worthAtCost(h),
@@ -111,6 +114,8 @@ export interface Summary {
   position: Record<number, { p25: number; p50: number; p90: number }>;
   /** Median share of each source in gross income, and losses against it. */
   shares: { trading: number; shocks: number; bank: number; booty: number; consignments: number; jade: number; losses: number; porcelain: number };
+  /** Games holding a mine share at 10 years, its median share of their position, and the jade mine's income share among them (P10 / P50 / P90). */
+  mine: { held: number; ofPosition: number; incomeP10: number; incomeP50: number; incomeP90: number };
   /** Share of games in the porcelain trade, the median month they bought in, and the share of porcelain profit lost to breakage. */
   porcelain: { owned: number; month: number; broken: number };
   shocks: { perGame: number; upSold: number; downBought: number; gain: number };
@@ -161,6 +166,15 @@ function summarize(results: Run[], runs: number, start: string): Summary {
       consignments: share("consignments"), jade: share("jade"), losses: share("losses"),
       porcelain: share("porcelain"),
     },
+    mine: (() => {
+      const holders = last.map((x, i) => [x, income[i]!] as const).filter(([x]) => x.mine > 0);
+      const shares = holders.map(([, inc]) => inc.jade).sort((a, b) => a - b);
+      return {
+        held: frac(holders),
+        ofPosition: med(holders.map(([x]) => x.mine / Math.max(1, x.position))),
+        incomeP10: percentile(shares, 10), incomeP50: percentile(shares, 50), incomeP90: percentile(shares, 90),
+      };
+    })(),
     porcelain: {
       owned: frac(ledgers.filter((l) => l.porcelainMonth !== null)),
       month: med(ledgers.flatMap((l) => (l.porcelainMonth === null ? [] : [l.porcelainMonth]))),
@@ -364,6 +378,12 @@ function main(): void {
   out.push(table(
     ["In the trade", "Bought in (median month)", "Porcelain profit (share of income)", "Lost to breakage"],
     [[pct(sum.porcelain.owned), fmt(sum.porcelain.month), pct(sum.shares.porcelain), pct(sum.porcelain.broken)]],
+  ));
+  out.push("");
+  out.push("The jade mine, among ships afloat at 10 years:\n");
+  out.push(table(
+    ["Holding a share", "Share (median, of position)", "Mine income, share of gross: P10", "P50", "P90"],
+    [[pct(sum.mine.held), pct(sum.mine.ofPosition), pct(sum.mine.incomeP10), pct(sum.mine.incomeP50), pct(sum.mine.incomeP90)]],
   ));
   out.push("");
   out.push("The jade expedition (moonshot), among ships afloat at 10 years:\n");

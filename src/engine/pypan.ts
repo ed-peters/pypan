@@ -9,7 +9,7 @@ import { newHong, type Hong } from "./hong";
 import { checkLender } from "./lender";
 import { askOpt, askYn, checkpoint, pick, say, type Flow } from "./prompts";
 import type { Rng } from "./rng";
-import { cashPosition, positionComment, rank, score, scoreReport, type Rank } from "./score";
+import { finalPosition, positionComment, rank, score, scoreReport, type Rank } from "./score";
 import { buyGoods, conditionReport, goodsAboard, sellGoods } from "./trade";
 import { sailAway } from "./voyage";
 import { goodsToTransfer, transfer } from "./warehouse";
@@ -50,7 +50,7 @@ export function* playPyPan(s: Session, saved: Hong | null = null): Flow<GameOver
 
 /** Comment on the final cash position, and work out the score. */
 function* gameOver(h: Hong, ending: Ending): Flow<GameOver> {
-  const position = cashPosition(h);
+  const position = finalPosition(h);
   const comment = positionComment(position);
   if (comment) {
     yield* say(comment);

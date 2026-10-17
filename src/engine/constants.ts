@@ -46,9 +46,20 @@ export const JADE_STAKE_SHARE = 0.25;
 export const JADE_INVESTMENT = 1000000;
 /** Months from the offer until the expedition succeeds or fails. */
 export const JADE_EXPEDITION_MONTHS = 3;
-/** A success pays backers 2-5 times their stake. */
-export const JADE_PAYOUT_MIN = 2;
-export const JADE_PAYOUT_MAX = 5;
+/** A success makes the stake a share in the mine worth 2-5 times as much (pypan-89) ... */
+export const MINE_SHARE_MIN = 2;
+export const MINE_SHARE_MAX = 5;
+/** ... which settles every few months, ... */
+export const MINE_QUARTER_MONTHS = 3;
+/** ... returning -10% to +20% of the share's value: a loss is a call for funds. */
+export const MINE_RETURN_MIN = -0.1;
+export const MINE_RETURN_MAX = 0.2;
+/** Refusing a call loses this share of the share. */
+export const MINE_REFUSAL_LOSS = 0.5;
+/** 1-in-80 quarters, rebels seize the mine; 1-in-40, a rich vein pays this many times the share. */
+export const MINE_SEIZURE_CHANCE = 80;
+export const MINE_VEIN_CHANCE = 40;
+export const MINE_VEIN_PAYOUT = 2;
 /** Sir Beaumont-Finch seeks backers at most this many times a game. */
 export const JADE_MAX_OFFERS = 3;
 /** A share in the porcelain trade is offered in Hong Kong only after this many months (pypan-87) ... */

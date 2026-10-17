@@ -5,7 +5,7 @@ import {
   BASE_PRICES, CITIES, HONG_KONG, JADE_INVESTMENT, LI_YUEN_MAX_GRUDGE, NUM_GOODS, PORCELAIN,
   START_YEAR,
 } from "./constants";
-import type { Cargo, Expedition, Hong } from "./hong";
+import type { Cargo, Expedition, Hong, Mine } from "./hong";
 
 /**
  * Saves from before pypan-87 have no porcelain. Those written between pypan-86 and
@@ -50,6 +50,7 @@ export function toSave(h: Hong): Record<string, unknown> {
     ...(h.expeditionFailed ? { expedition_failed: true } : {}),
     ...(h.jadeOffers ? { jade_offers: h.jadeOffers } : {}),
     ...(h.porcelain ? { porcelain: true } : {}),
+    ...(h.mine ? { mine: { ...h.mine } } : {}),
   };
 }
 
@@ -97,6 +98,7 @@ export function fromSave(data: unknown): Hong {
     expeditionFailed: d.expedition_failed === undefined ? false : bool(d, "expedition_failed"),
     jadeOffers: d.jade_offers === undefined ? 0 : int(d, "jade_offers", 0),
     porcelain,
+    mine: d.mine == null ? null : mine(d.mine),
   };
 }
 
@@ -196,4 +198,9 @@ function expedition(v: unknown): Expedition {
     resolves: int(e, "resolves"),
     stake,
   };
+}
+
+function mine(v: unknown): Mine {
+  const m = record(v, "mine");
+  return { value: int(m, "value", 0), due: int(m, "due") };
 }

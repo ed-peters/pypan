@@ -22,15 +22,15 @@ in a pirate battle (§7.3). Either way the game is over for good and is scored.
 
 ### 1.1 Scoring
 
-When the game ends, the **final cash position** is cash + bank − debt (goods don't
-count). The captain comments on it, if it deserves a comment (only the first that
+When the game ends, the **final position** is cash + bank − debt, plus the value of
+any share in the jade mine (§4.6); goods don't count. The captain comments on it, if it deserves a comment (only the first that
 applies):
 
 - Over 1,000,000: "You're a M I L L I O N A I R E !!!"
 - Below 0: "The crew has requested that you stay on shore for their safety!!"
 - Below 1,000: "Have you considered a land-based job?"
 
-The **score** is `cash position / months played / 100`, rounded down (it can be
+The **score** is `final position / months played / 100`, rounded down (it can be
 negative). The final screen says "Your score is N." and shows the ranking table with
 the player's rank marked:
 
@@ -88,6 +88,7 @@ house). It is fully serializable to JSON for save/load. Key fields:
 | `expedition` | The jade expedition under way: `port`, `resolves` (month), `stake` (0 if you didn't back it); saved only when set | none |
 | `expedition_failed` | Whether a jade expedition has failed, so later offers say Sir Beaumont-Finch escaped; saved only when true | false |
 | `jade_offers` | How many times the jade expedition has been offered (§4.6); saved only when not 0 | 0 |
+| `mine` | A share in the jade mine (§4.6): `value`, `due` (month of the next return); saved only when held | none |
 | `porcelain` | Whether you own a share in the porcelain trade (§4.7); saved only when true | false |
 
 **Older saves.** Saves without `porcelain` come from before porcelain:
@@ -268,11 +269,11 @@ Debt pressure (`check_lender`, Hong Kong only, triggered on arrival):
 Wu can also cover a shortfall when you can't afford a repair (§9) or Li Yuen's
 "donation" (§8), adding the difference to your debt.
 
-### 4.6 The Jade Expedition (pypan-33, pypan-86)
+### 4.6 The Jade Expedition and the Jade Mine (pypan-33, pypan-86, pypan-89)
 
-The game's moonshot: a Burmese jade mining expedition that pays its backers once,
-if it succeeds (`check_jade`, on arrival, before consignments). Jade is never a
-tradeable good.
+The game's moonshot: a Burmese jade mining expedition which, if it succeeds, gives
+its backers a share in the mine: a passive asset like the bank, but riskier
+(`check_jade`, on arrival, before consignments). Jade is never a tradeable good.
 
 - **Offer:** after month 24, if no expedition is under way, it has been offered fewer
   than 3 times this game (`JADE_MAX_OFFERS`, counting declined offers), the bank
@@ -286,15 +287,33 @@ tradeable good.
 - **Outcome:** on the first arrival once it's due, it succeeds 1-in-3; otherwise
   Sir Beaumont-Finch is captured by rebels, and a new expedition can be offered later:
   he has escaped and is back seeking investment.
-- **Success** pays backers 2–5 times their stake (`JADE_PAYOUT_MIN`,
-  `JADE_PAYOUT_MAX`, rolled, rounded to the thousand), into the bank: "His jade has
-  fetched a fine price in London, and our share of ((amount)) has been deposited in
-  the bank." Players who didn't back it hear the rumor of a new mine and get nothing.
-  He may be back with another expedition after a success too, up to the limit of
-  three offers.
+- **Success** turns the stake into a share in the jade mine worth 2–5 times as much
+  (`MINE_SHARE_MIN`, `MINE_SHARE_MAX`, rolled, rounded to the thousand): "Our
+  ((stake)) has become a share in the jade mine worth ((value)), which will settle
+  with us every three months." A later success adds to the share. Players who didn't
+  back it hear the rumor of a new mine and get nothing. He may be back with another
+  expedition after a success too, up to the limit of three offers.
 
-On average a stake returns about 1.17 times itself, but two expeditions in three
-lose it all.
+**The mine** settles every 3 months (`MINE_QUARTER_MONTHS`), on the first arrival
+(anywhere) once it's due, starting 3 months after the success:
+
+- **Seized** (1-in-80, `MINE_SEIZURE_CHANCE`): "Rebels have seized the jade mine, and
+  our share in it is lost."
+- **Rich vein** (else 1-in-40, `MINE_VEIN_CHANCE`): pays twice the share's value
+  (`MINE_VEIN_PAYOUT`) into the bank.
+- **Otherwise** a return of −10% to +20% of the share's value (`MINE_RETURN_MIN`,
+  `_MAX`, rounded to the thousand). A gain is paid into the bank. Zero is "broken
+  even". A loss is a **call for funds**: "the jade mine has had a bad quarter, and
+  needs ((amount)) more from its backers. Shall we pay our part?" Paying takes it
+  from the bank, then cash (wherever you are, as the stake was). If that's not
+  enough, Elder Brother Wu can make up the difference, adding it to your debt.
+  Refusing, or turning Wu down, costs half the share (`MINE_REFUSAL_LOSS`): "The
+  other backers have taken half of our share in the jade mine."
+
+The share's value only changes with new successes, refusals and seizure; returns are
+paid out. It can't be sold, but it counts toward the final score (§1.1), and the
+status pane shows it ("Jade mine") while you hold one. On average a quarter returns
+about 5% of the share, plus 5% from rich veins, less about 1% lost to seizure.
 
 ### 4.7 Porcelain (pypan-87)
 
@@ -614,7 +633,12 @@ after the save's date.
 | `JADE_STAKE_SHARE` | 0.25 | The stake asked for is 1–2 times this share of the bank ... |
 | `JADE_INVESTMENT` | 1000000 | ... but at least this |
 | `JADE_EXPEDITION_MONTHS` | 3 | Months from the offer until the expedition resolves |
-| `JADE_PAYOUT_MIN` / `_MAX` | 2 / 5 | A success pays backers this many times their stake |
+| `MINE_SHARE_MIN` / `_MAX` | 2 / 5 | A success makes the stake a mine share worth this many times as much |
+| `MINE_QUARTER_MONTHS` | 3 | Months between the mine's returns |
+| `MINE_RETURN_MIN` / `_MAX` | −0.1 / 0.2 | Each quarter's return, as a share of the share's value |
+| `MINE_REFUSAL_LOSS` | 0.5 | Share of the share lost for refusing a call for funds |
+| `MINE_SEIZURE_CHANCE` | 80 | 1-in-N quarters, rebels seize the mine |
+| `MINE_VEIN_CHANCE` / `MINE_VEIN_PAYOUT` | 40 / 2 | 1-in-N quarters, a rich vein pays this many times the share |
 | `JADE_MAX_OFFERS` | 3 | Times the expedition can be offered in a game |
 | `PORCELAIN_MIN_MONTHS` | 24 | Months before the porcelain share can be offered (§4.7) |
 | `PORCELAIN_WORTH_LEVEL` | 2000000 | Cash position above which it can be offered |
@@ -715,7 +739,8 @@ Additions:
   correctly mapped, and port-based prices are on by default.
 - **Li Yuen's pirate fleet** (§7.4), which was defined but never used.
 - **The jade expedition** (§4.6) replaces jade as a good: a stake of a quarter to
-  half of the bank, which pays its backers 2–5 times over if it succeeds.
+  half of the bank, which if it succeeds gives its backers a share in the mine worth
+  2–5 times as much, paying (or calling for funds) every three months.
 - **Contraband consignments** (§12), which pay five times as much but can be seized
   by the harbor police, with a fine, like opium. pypan.py's `illegal` flag was never
   set.

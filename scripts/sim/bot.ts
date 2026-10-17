@@ -438,8 +438,8 @@ export class Bot {
       this.ledger.booty += num(m[1]!);
       this.windfall(num(m[1]!), this.worthAtCost(h), h);
     }
-    const up = (MSG_POS_SHOCK as readonly string[]).indexOf(text);
-    const down = (MSG_NEG_SHOCK as readonly string[]).indexOf(text);
+    const up = MSG_POS_SHOCK.findIndex((ms) => ms.includes(text));
+    const down = MSG_NEG_SHOCK.findIndex((ms) => ms.includes(text));
     if (up >= 0) {
       this.pendingShock = { good: up, up: true };
       this.ledger.shocksUp += 1;

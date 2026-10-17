@@ -51,7 +51,8 @@ export function cargoLines(h: Hong | null): string[] {
   if (!c) {
     return ["(none)"];
   }
-  const title = c.description.replace(/\b\w/g, (ch) => ch.toUpperCase());
+  // capitalize each word, but not after an apostrophe ("Consul's Piano")
+  const title = c.description.replace(/(^|\s)\w/g, (ch) => ch.toUpperCase());
   return [title, `Bound for ${city(c.destination)}`, ...(c.illegal ? ["Contraband!"] : [])];
 }
 

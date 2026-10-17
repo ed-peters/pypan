@@ -209,7 +209,8 @@ Either way the result keeps the good's usual granularity: it is rounded down to 
 multiple of its magnitude (General 1, Arms 10, Silk 100, ...), and is at least one
 magnitude.
 
-Each shock prints a themed flavor message (see `MSG_POS_SHOCK` / `MSG_NEG_SHOCK`).
+Each shock prints a themed flavor message, picked at random from three for that good
+and direction (see `MSG_POS_SHOCK` / `MSG_NEG_SHOCK`).
 
 ### 4.3 Buying and Selling
 
@@ -535,7 +536,7 @@ The player has a warehouse in Hong Kong (10000 capacity) used to stockpile goods
 
 Occasionally the player is offered a one-off consignment to carry to a specific
 city for a fee, occupying some hold space. A `Cargo` has a description (e.g.
-"bronze statue", "party of 3", "secret document"), a destination
+"bronze statue", "party of 3", "consul's piano"), a destination
 (any other city), a size (5–30% of ship size), a payout value, and a `due` month
 (the month after it was offered, as `current_time`). Only one special cargo can be
 carried at a time, and it can't be dumped in battle.
@@ -550,8 +551,8 @@ They're priced on the player's **money**, `cash + bank - debt` (goods don't coun
   or 3,500 per unit of space, times the size, plus 0–99.
 - **Good joss:** 1-in-15 offers pay triple, and the offer begins "Good joss!!".
 - **Contraband** (pypan-83): 1-in-4 offers are illegal (`CONTRABAND_CHANCE`; the
-  `Cargo`'s `illegal` flag), described as a "crate of rifles", "stolen temple idol",
-  "chest of forged silver" or "party of fugitives". They pay 5 times as much
+  `Cargo`'s `illegal` flag), described as, for example, a "crate of rifles", "Taiping
+  war chest" or "pirate's hoard". They pay 5 times as much
   (`CONTRABAND_PAY`, before any good joss), and the offer warns "It's contraband: the
   harbor police may seize it, and fine us." The cargo pane marks it "Contraband!".
   Like opium, it's at risk on every foreign arrival (§11), including at its

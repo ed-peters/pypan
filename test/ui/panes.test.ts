@@ -60,4 +60,11 @@ describe("panes", () => {
     });
     expect(cargoLines(h)).toEqual(["Crate Of Rifles", "Bound for Nagasaki", "Contraband!"]);
   });
+
+  it("capitalizes each word, but not after an apostrophe", () => {
+    const h = makeHong({
+      shipCargo: { description: "consul's piano", destination: NAGASAKI, illegal: false, size: 9, value: 1, due: 19 },
+    });
+    expect(cargoLines(h)[0]).toBe("Consul's Piano");
+  });
 });

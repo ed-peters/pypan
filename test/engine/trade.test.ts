@@ -38,14 +38,14 @@ describe("establishPrices", () => {
   it("keeps a crashed price at its good's granularity", () => {
     const h = makeHong({ time: 2 });
     // shock; silk; factor = 7; negative: 500 / 7 = 71.4 -> 0 -> at least 100
-    play(establishPrices(h, new ScriptedRng([...MIN_PRICES, 0, SILK, 2, 1])));
+    play(establishPrices(h, new ScriptedRng([...MIN_PRICES, 0, SILK, 2, 1, 0])));
     expect(h.prices[SILK]).toBe(100);
   });
 
   it("rounds a crashed price down to its good's granularity", () => {
     const h = makeHong({ time: 2 });
     // opium rolled x3 = 15000; shock; opium; factor = 7; negative: 2142 -> 2000
-    play(establishPrices(h, new ScriptedRng([0, 0, 0, 2, 0, 0, OPIUM, 2, 1])));
+    play(establishPrices(h, new ScriptedRng([0, 0, 0, 2, 0, 0, OPIUM, 2, 1, 0])));
     expect(h.prices[OPIUM]).toBe(2000);
   });
 
@@ -54,7 +54,7 @@ describe("establishPrices", () => {
       for (let f = 0; f < 5; f++) {
         for (const dir of [0, 1]) {
           const h = makeHong({ time: 2, porcelain: true });
-          play(establishPrices(h, new ScriptedRng([2, 2, 2, 2, 2, 0, g, f, dir])));
+          play(establishPrices(h, new ScriptedRng([2, 2, 2, 2, 2, 0, g, f, dir, 0])));
           const m = 10 ** g;
           expect(h.prices[g]! % m).toBe(0);
           expect(h.prices[g]!).toBeGreaterThanOrEqual(m);
@@ -66,10 +66,10 @@ describe("establishPrices", () => {
   it("doesn't shock porcelain until we're in the porcelain trade", () => {
     const h = makeHong({ time: 2 });
     // shock; good roll 4 is out of range for four goods, so wraps round to general
-    const p = play(establishPrices(h, new ScriptedRng([...MIN_PRICES, 0, PORCELAIN, 2, 1])));
-    expect(texts(p)).toEqual([MSG_NEG_SHOCK[GENERAL]]);
-    const q = play(establishPrices(makeHong({ time: 2, porcelain: true }), new ScriptedRng([...MIN_PRICES, 0, PORCELAIN, 2, 0])));
-    expect(texts(q)).toEqual([MSG_POS_SHOCK[PORCELAIN]]);
+    const p = play(establishPrices(h, new ScriptedRng([...MIN_PRICES, 0, PORCELAIN, 2, 1, 0])));
+    expect(texts(p)).toEqual([MSG_NEG_SHOCK[GENERAL]![0]]);
+    const q = play(establishPrices(makeHong({ time: 2, porcelain: true }), new ScriptedRng([...MIN_PRICES, 0, PORCELAIN, 2, 0, 0])));
+    expect(texts(q)).toEqual([MSG_POS_SHOCK[PORCELAIN]![0]]);
   });
 
   it("never shocks prices in the first month", () => {
@@ -88,19 +88,27 @@ describe("establishPrices", () => {
     expect(p.transcript).toEqual([]);
   });
 
+  it("picks one of the good's three messages at random", () => {
+    const say = (roll: number, dir: number) =>
+      texts(play(establishPrices(makeHong({ time: 2 }), new ScriptedRng([...MIN_PRICES, 0, OPIUM, 0, dir, roll]))));
+    expect([0, 1, 2].map((r) => say(r, 0)[0])).toEqual(MSG_POS_SHOCK[OPIUM]);
+    expect([0, 1, 2].map((r) => say(r, 1)[0])).toEqual(MSG_NEG_SHOCK[OPIUM]);
+    expect(new Set([...MSG_POS_SHOCK, ...MSG_NEG_SHOCK].flat()).size).toBe(30);
+  });
+
   it("can multiply a price by 5-9", () => {
     const h = makeHong({ time: 2 });
     // shock; silk; factor = 5 + randrange(5) = 9; positive
-    const p = play(establishPrices(h, new ScriptedRng([...MIN_PRICES, 0, SILK, 4, 0])));
-    expect(texts(p)).toEqual([MSG_POS_SHOCK[SILK]]);
+    const p = play(establishPrices(h, new ScriptedRng([...MIN_PRICES, 0, SILK, 4, 0, 0])));
+    expect(texts(p)).toEqual([MSG_POS_SHOCK[SILK]![0]]);
     expect(h.prices).toEqual([5, 60, 4500, 5000, 50000]);
   });
 
   it("can divide a price by 5-9, but not below 1", () => {
     const h = makeHong({ time: 2 });
     // shock; general; factor = 5; negative
-    const p = play(establishPrices(h, new ScriptedRng([...MIN_PRICES, 0, GENERAL, 0, 1])));
-    expect(texts(p)).toEqual([MSG_NEG_SHOCK[GENERAL]]);
+    const p = play(establishPrices(h, new ScriptedRng([...MIN_PRICES, 0, GENERAL, 0, 1, 0])));
+    expect(texts(p)).toEqual([MSG_NEG_SHOCK[GENERAL]![0]]);
     expect(h.prices).toEqual([1, 60, 500, 5000, 50000]);
   });
 });

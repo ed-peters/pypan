@@ -8,21 +8,63 @@ import { setPrices } from "./prices";
 import { askNum, askOptOrCancel, askYn, say, type Flow } from "./prompts";
 import type { Rng } from "./rng";
 
-export const MSG_POS_SHOCK = [
-  "Famine in South China, Taipan! General cargo prices have risen to the heavens!",
-  "An agent for the Moro rebels has been spotted in the area, Taipan! Arms are sky-high here!",
-  "Taipan! The wharves here have been burned by rebel samurai! All the silk was destroyed!",
-  "Taipan! A fire has swept the area! The price of opium has leaped because of hospital use!",
-  "European buyers have been paying a fortune for porcelain here, Taipan! Prices are sky-high!",
-] as const;
+/** Price rises, by good: one is picked at random for each shock. */
+export const MSG_POS_SHOCK: readonly (readonly string[])[] = [
+  [
+    "Famine in South China, Taipan! General cargo prices have risen to the heavens!",
+    "Taipan! A typhoon has sunk the junks bound here, and general cargo is fetching a fortune!",
+    "The Viceroy has ordered supplies for his army, Taipan! General cargo prices have soared!",
+  ],
+  [
+    "An agent for the Moro rebels has been spotted in the area, Taipan! Arms are sky-high here!",
+    "Taiping rebels are buying every musket they can find, Taipan! Arms prices are sky-high!",
+    "Taipan! War has broken out up the coast, and arms are fetching a fortune here!",
+  ],
+  [
+    "Taipan! The wharves here have been burned by rebel samurai! All the silk was destroyed!",
+    "Blight has struck the silkworms, Taipan! Silk prices have soared!",
+    "The Empress of the French has made silk the fashion in Paris, Taipan! Prices here are sky-high!",
+  ],
+  [
+    "Taipan! A fire has swept the area! The price of opium has leaped because of hospital use!",
+    "Taipan! The mandarins have burned the local opium stocks! Prices have gone through the roof!",
+    "A cholera outbreak has the doctors buying up all the opium, Taipan! Prices are sky-high!",
+  ],
+  [
+    "European buyers have been paying a fortune for porcelain here, Taipan! Prices are sky-high!",
+    "Taipan! A Dutch collector is buying up every piece of porcelain in port! Prices are sky-high!",
+    "Rebels have overrun the kilns at Jingdezhen, Taipan! Porcelain is fetching a fortune!",
+  ],
+];
 
-export const MSG_NEG_SHOCK = [
-  "Malay pirates have flooded the area with cheap general cargo from their booty, Taipan!",
-  "Taipan! A period of relative peace has resulted in surplus arms being made available on the local market!",
-  "A rival hong has dumped surplus silk on the market here, Taipan! Prices have crashed!",
-  "Taipan, a Yankee captain is selling Turkish opium at below-market prices here!",
-  "Taipan! A Jingdezhen kiln has flooded the market here with cheap porcelain!",
-] as const;
+/** Price crashes, by good: one is picked at random for each shock. */
+export const MSG_NEG_SHOCK: readonly (readonly string[])[] = [
+  [
+    "Malay pirates have flooded the area with cheap general cargo from their booty, Taipan!",
+    "Taipan! A convoy of junks has just unloaded, and the market is glutted with general cargo!",
+    "A bumper harvest has filled every godown here, Taipan! General cargo is going for a song!",
+  ],
+  [
+    "Taipan! A period of relative peace has resulted in surplus arms being made available on the local market!",
+    "Taipan! The rebels have been routed, and their muskets are being sold off for a pittance!",
+    "A British gunrunner has flooded the market with cheap rifles, Taipan! Arms prices have collapsed!",
+  ],
+  [
+    "A rival hong has dumped surplus silk on the market here, Taipan! Prices have crashed!",
+    "Taipan! A record silk harvest has flooded the market! Prices have crashed!",
+    "The French fashion for silk has passed, Taipan! Merchants here can't give it away!",
+  ],
+  [
+    "Taipan, a Yankee captain is selling Turkish opium at below-market prices here!",
+    "Taipan! A smugglers' fleet has slipped past the customs men, and opium is everywhere! Prices have crashed!",
+    "Indian opium has flooded the market here, Taipan! Prices are at rock bottom!",
+  ],
+  [
+    "Taipan! A Jingdezhen kiln has flooded the market here with cheap porcelain!",
+    "A shipwreck's cargo of porcelain has been salvaged and sold off cheap, Taipan!",
+    "Taipan! The European craze for porcelain has cooled, and prices here have collapsed!",
+  ],
+];
 
 /**
  * Current prices followed by a message (pypan.py's get_condition_report). Prices
@@ -54,11 +96,12 @@ export function* establishPrices(h: Hong, rng: Rng): Flow {
   if (currentTime(h) > 1 && rng.chanceOf(10)) {
     const g = rng.randrange(knownGoods(h).length);
     const f = rng.inRange(0, 5) + 5;
-    if (rng.chanceOf(2)) {
-      yield* say(MSG_POS_SHOCK[g]!);
+    // rising or falling, with one of that good's messages at random
+    const up = rng.chanceOf(2);
+    yield* say(rng.choice((up ? MSG_POS_SHOCK : MSG_NEG_SHOCK)[g]!));
+    if (up) {
       h.prices[g]! *= f;
     } else {
-      yield* say(MSG_NEG_SHOCK[g]!);
       h.prices[g] = h.prices[g]! / f;
     }
     // keep the good's usual granularity: whole, tens, hundreds, ...

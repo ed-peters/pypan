@@ -16,6 +16,11 @@ export const CARGO_DESCRIPTIONS = [
   "party of 3",
   "secret document",
   "crate of spices",
+  "lacquered screen",
+  "temple bell",
+  "sack of mail",
+  "consul's piano",
+  "case of medicines",
 ] as const;
 
 /** Contraband (pypan-83): it pays five times as much, if the police don't seize it. */
@@ -24,6 +29,11 @@ export const CONTRABAND_DESCRIPTIONS = [
   "stolen temple idol",
   "chest of forged silver",
   "party of fugitives",
+  "crate of untaxed salt",
+  "Taiping war chest",
+  "keg of gunpowder",
+  "cask of smuggled brandy",
+  "pirate's hoard",
 ] as const;
 
 /** On arrival: deliver (or chase up) any consignment aboard, then maybe offer a new one. */

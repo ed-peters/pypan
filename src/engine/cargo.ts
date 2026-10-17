@@ -2,12 +2,13 @@
 
 import {
   CONSIGNMENT_LATE_LIMIT, CONSIGNMENT_LATE_PENALTY, CONSIGNMENT_MONEY_LIMIT, CONSIGNMENT_RATE,
-  city, randomOtherCity,
+  CONTRABAND_CHANCE, CONTRABAND_PAY, city, randomOtherCity,
 } from "./constants";
 import { money } from "./format";
 import { currentTime, type Cargo, type Hong } from "./hong";
 import { askYn, say, type Flow } from "./prompts";
 import type { Rng } from "./rng";
+import { checkContraband } from "./safety";
 
 export const CARGO_DESCRIPTIONS = [
   "bronze statue",
@@ -17,6 +18,14 @@ export const CARGO_DESCRIPTIONS = [
   "crate of spices",
 ] as const;
 
+/** Contraband (pypan-83): it pays five times as much, if the police don't seize it. */
+export const CONTRABAND_DESCRIPTIONS = [
+  "crate of rifles",
+  "stolen temple idol",
+  "chest of forged silver",
+  "party of fugitives",
+] as const;
+
 /** On arrival: deliver (or chase up) any consignment aboard, then maybe offer a new one. */
 export function* checkCargo(h: Hong, rng: Rng): Flow {
   // cargo doesn't show up until later in the game
@@ -24,6 +33,8 @@ export function* checkCargo(h: Hong, rng: Rng): Flow {
     return;
   }
 
+  // the police may seize contraband before it's delivered
+  yield* checkContraband(h, rng);
   const c = h.shipCargo;
   if (c) {
     const late = Math.max(0, currentTime(h) - c.due);
@@ -48,12 +59,13 @@ export function* checkCargo(h: Hong, rng: Rng): Flow {
   // if we don't have cargo, we might get offered to carry some
   const odds = offerOdds(h);
   if (!h.shipCargo && odds !== null && rng.chanceOf(odds)) {
-    const c = randomCargo(h, rng);
+    const c = randomCargo(h, rng, rng.chanceOf(CONTRABAND_CHANCE));
     const joss = rng.chanceOf(15);
     if (joss) {
       c.value *= 3;
     }
-    if (yield* askYn(`${joss ? "Good joss!! " : ""}Should I accept a special consignment of a ${c.description} to transport to ${city(c.destination)} for ${money(c.value)}, Taipan? (It will take up ${c.size} space in the ship's hold.)`)) {
+    const warning = c.illegal ? " It's contraband: the harbor police may seize it, and fine us." : "";
+    if (yield* askYn(`${joss ? "Good joss!! " : ""}Should I accept a special consignment of a ${c.description} to transport to ${city(c.destination)} for ${money(c.value)}, Taipan? (It will take up ${c.size} space in the ship's hold.${warning})`)) {
       h.shipCargo = c;
     }
   }
@@ -81,9 +93,10 @@ export function latePay(c: Cargo, late: number): number {
 /**
  * A new consignment, due next month. It pays CONSIGNMENT_RATE (+/- 20%) of your
  * money, scaled by its share of the hold, but never less than the old per-space fee.
+ * Contraband pays CONTRABAND_PAY times that.
  */
-export function randomCargo(h: Hong, rng: Rng): Cargo {
-  const description = rng.choice(CARGO_DESCRIPTIONS);
+export function randomCargo(h: Hong, rng: Rng, illegal = false): Cargo {
+  const description = rng.choice(illegal ? CONTRABAND_DESCRIPTIONS : CARGO_DESCRIPTIONS);
   // the old per-space fee: 35, 350 or 3500
   const unit = Math.trunc(35 * 10 ** rng.randrange(3));
   const destination = randomOtherCity(rng, h.location);
@@ -91,5 +104,5 @@ export function randomCargo(h: Hong, rng: Rng): Cargo {
   const minimum = unit * size + rng.randrange(100);
   const rate = CONSIGNMENT_RATE * (0.8 + 0.4 * rng.float());
   const value = Math.max(minimum, Math.trunc(rate * consignmentMoney(h) * size / h.shipSize));
-  return { description, destination, illegal: false, size, value, due: currentTime(h) + 1 };
+  return { description, destination, illegal, size, value: illegal ? value * CONTRABAND_PAY : value, due: currentTime(h) + 1 };
 }

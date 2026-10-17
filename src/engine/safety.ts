@@ -1,6 +1,6 @@
 // Harbor police, muggers and warehouse fires (SPEC.md section 11).
 
-import { HONG_KONG, NUM_GOODS, OPIUM, ROBBERY_CASH_LIMIT } from "./constants";
+import { HONG_KONG, NUM_GOODS, OPIUM, POLICE_CHANCE, ROBBERY_CASH_LIMIT, city } from "./constants";
 import { money } from "./format";
 import { currentTime, warehouseAvailable, type Hong } from "./hong";
 import { say, type Flow } from "./prompts";
@@ -13,14 +13,8 @@ export function* checkSafety(h: Hong, rng: Rng): Flow {
   }
 
   // the police might confiscate your opium
-  if (h.location !== HONG_KONG && h.shipGoods[OPIUM]! > 0 && rng.chanceOf(10)) {
-    if (h.cash > 0) {
-      const fine = Math.trunc((h.cash / 1.8) * rng.float()) + 1;
-      yield* say(`Bad joss! Harbor police have confiscated your opium and fined you an additional ${money(fine)}, Taipan!`);
-      h.cash -= fine;
-    } else {
-      yield* say("Bad joss! Harbor police have confiscated your opium, Taipan!");
-    }
+  if (h.location !== HONG_KONG && h.shipGoods[OPIUM]! > 0 && rng.chanceOf(POLICE_CHANCE)) {
+    yield* fined(h, rng, "Bad joss! Harbor police have confiscated your opium");
     h.shipGoods[OPIUM] = 0;
   }
 
@@ -38,6 +32,31 @@ export function* checkSafety(h: Hong, rng: Rng): Flow {
         h.warehouseGoods[g] = Math.max(Math.trunc(h.warehouseGoods[g]! / f), 1);
       }
     }
+  }
+}
+
+/**
+ * On arrival abroad, before any delivery: the police might seize a contraband
+ * consignment, as they do opium (pypan-83). Returns whether they did.
+ */
+export function* checkContraband(h: Hong, rng: Rng): Flow<boolean> {
+  const c = h.shipCargo;
+  if (!c?.illegal || h.location === HONG_KONG || !rng.chanceOf(POLICE_CHANCE)) {
+    return false;
+  }
+  yield* fined(h, rng, `Bad joss! Harbor police have seized the ${c.description} bound for ${city(c.destination)}`);
+  h.shipCargo = null;
+  return true;
+}
+
+/** The police's news, with a fine of up to cash / 1.8 if you have any cash. */
+function* fined(h: Hong, rng: Rng, news: string): Flow {
+  if (h.cash > 0) {
+    const fine = Math.trunc((h.cash / 1.8) * rng.float()) + 1;
+    yield* say(`${news} and fined you an additional ${money(fine)}, Taipan!`);
+    h.cash -= fine;
+  } else {
+    yield* say(`${news}, Taipan!`);
   }
 }
 

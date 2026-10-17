@@ -52,7 +52,7 @@ export function cargoLines(h: Hong | null): string[] {
     return ["(none)"];
   }
   const title = c.description.replace(/\b\w/g, (ch) => ch.toUpperCase());
-  return [title, `Bound for ${city(c.destination)}`];
+  return [title, `Bound for ${city(c.destination)}`, ...(c.illegal ? ["Contraband!"] : [])];
 }
 
 /** One-line summary of hold and warehouse for the collapsed mobile view. */

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { HONG_KONG, NAGASAKI, SHANGHAI } from "../../src/engine/constants";
-import { CARGO_DESCRIPTIONS, checkCargo, latePay, offerOdds, randomCargo } from "../../src/engine/cargo";
+import { CARGO_DESCRIPTIONS, CONTRABAND_DESCRIPTIONS, checkCargo, latePay, offerOdds, randomCargo } from "../../src/engine/cargo";
 import { ScriptedRng } from "../../src/engine/rng";
 import { makeHong } from "../helpers/hong";
 import { play, texts } from "../helpers/play";
@@ -11,6 +11,9 @@ import { play, texts } from "../helpers/play";
 const CARGO_ROLLS = [2, 0, HONG_KONG, NAGASAKI, 10, 7, 0.75];
 const NO_JOSS = 1;
 const JOSS = 0;
+// 1-in-4 offers are contraband
+const LEGAL = 1;
+const CONTRABAND = 0;
 
 // money = 50,000, so value = trunc(0.165 * 50000 * 9 / 60) = 1237
 const MIDDLING = { cash: 30000, bank: 25000, debt: 5000 };
@@ -26,7 +29,7 @@ describe("checkCargo", () => {
 
   it("offers a consignment due next month", () => {
     const h = makeHong({ time: 18, ...MIDDLING });
-    const p = play(checkCargo(h, new ScriptedRng([0, ...CARGO_ROLLS, NO_JOSS])), [true]);
+    const p = play(checkCargo(h, new ScriptedRng([0, LEGAL, ...CARGO_ROLLS, NO_JOSS])), [true]);
     expect(texts(p)).toEqual([
       "Should I accept a special consignment of a party of 3 to transport to Nagasaki for 1,237, Taipan? (It will take up 9 space in the ship's hold.)",
     ]);
@@ -37,14 +40,24 @@ describe("checkCargo", () => {
 
   it("triples the value on good joss", () => {
     const h = makeHong({ time: 18, ...MIDDLING });
-    const p = play(checkCargo(h, new ScriptedRng([0, ...CARGO_ROLLS, JOSS])), [true]);
+    const p = play(checkCargo(h, new ScriptedRng([0, LEGAL, ...CARGO_ROLLS, JOSS])), [true]);
     expect(texts(p)[0]).toMatch(/^Good joss!! Should I accept .* for 3,711, Taipan\?/);
     expect(h.shipCargo?.value).toBe(3711);
   });
 
+  it("offers contraband 1-in-4, for five times the pay, and says so", () => {
+    const h = makeHong({ time: 18, ...MIDDLING });
+    // contraband; description roll 0; then as above
+    const p = play(checkCargo(h, new ScriptedRng([0, CONTRABAND, 0, ...CARGO_ROLLS.slice(1), NO_JOSS])), [true]);
+    expect(texts(p)).toEqual([
+      "Should I accept a special consignment of a crate of rifles to transport to Nagasaki for 6,185, Taipan? (It will take up 9 space in the ship's hold. It's contraband: the harbor police may seize it, and fine us.)",
+    ]);
+    expect(h.shipCargo).toMatchObject({ description: "crate of rifles", illegal: true, value: 1237 * 5 });
+  });
+
   it("can be declined", () => {
     const h = makeHong({ time: 18, ...MIDDLING });
-    play(checkCargo(h, new ScriptedRng([0, ...CARGO_ROLLS, NO_JOSS])), [false]);
+    play(checkCargo(h, new ScriptedRng([0, LEGAL, ...CARGO_ROLLS, NO_JOSS])), [false]);
     expect(h.shipCargo).toBeNull();
   });
 
@@ -109,6 +122,49 @@ describe("offerOdds", () => {
 describe("latePay", () => {
   it("drops 20% of the value per month", () => {
     expect([0, 1, 2, 3, 4, 5, 6].map((n) => latePay(cargo(0), n))).toEqual([5000, 4000, 3000, 2000, 1000, 0, 0]);
+  });
+});
+
+describe("contraband", () => {
+  const rifles = (destination: number) =>
+    ({ description: "crate of rifles", destination, illegal: true, size: 9, value: 25000, due: 19 });
+
+  it("can be seized by the harbor police, even at its destination, with a fine", () => {
+    const h = makeHong({ time: 19, location: NAGASAKI, cash: 1000, shipCargo: rifles(NAGASAKI) });
+    // police (1-in-10); fine = trunc(1000 / 1.8 * 0.5) + 1; no offer
+    const p = play(checkCargo(h, new ScriptedRng([0, 0.5, 1])));
+    expect(texts(p)).toEqual([
+      "Bad joss! Harbor police have seized the crate of rifles bound for Nagasaki and fined you an additional 278, Taipan!",
+    ]);
+    expect([h.cash, h.shipCargo]).toEqual([722, null]);
+  });
+
+  it("is seized without a fine when you have no cash", () => {
+    const h = makeHong({ time: 19, location: SHANGHAI, cash: 0, shipCargo: rifles(NAGASAKI) });
+    const p = play(checkCargo(h, new ScriptedRng([0, 1])));
+    expect(texts(p)).toEqual(["Bad joss! Harbor police have seized the crate of rifles bound for Nagasaki, Taipan!"]);
+    expect(h.shipCargo).toBeNull();
+  });
+
+  it("is delivered and paid as usual when the police don't come", () => {
+    const h = makeHong({ time: 19, location: NAGASAKI, shipCargo: rifles(NAGASAKI) });
+    const p = play(checkCargo(h, new ScriptedRng([1, 1])));
+    expect(texts(p)).toEqual(["We have successfully delivered the crate of rifles that was bound for Nagasaki, Taipan."]);
+    expect([h.cash, h.shipCargo]).toEqual([25400, null]);
+  });
+
+  it("is safe in Hong Kong", () => {
+    const h = makeHong({ time: 19, location: HONG_KONG, shipCargo: rifles(HONG_KONG) });
+    // no police roll: only the offer roll
+    const rng = new ScriptedRng([1]);
+    play(checkCargo(h, rng));
+    expect([h.cash, rng.remaining]).toEqual([25400, 0]);
+  });
+
+  it("has its own descriptions", () => {
+    const c = randomCargo(makeHong(), new ScriptedRng([3, 0, NAGASAKI, 0, 0, 0]), true);
+    expect([c.description, c.illegal]).toEqual(["party of fugitives", true]);
+    expect(CONTRABAND_DESCRIPTIONS.some((d) => (CARGO_DESCRIPTIONS as readonly string[]).includes(d))).toBe(false);
   });
 });
 

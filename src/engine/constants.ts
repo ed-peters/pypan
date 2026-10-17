@@ -30,6 +30,12 @@ export const CONSIGNMENT_MONEY_LIMIT = 100000;
 export const CONSIGNMENT_LATE_PENALTY = 0.2;
 /** Months late before a consignment is offloaded unpaid. */
 export const CONSIGNMENT_LATE_LIMIT = 5;
+/** 1-in-N consignments offered are contraband (pypan-83) ... */
+export const CONTRABAND_CHANCE = 4;
+/** ... and pay this many times as much. */
+export const CONTRABAND_PAY = 5;
+/** Harbor police seize opium, and contraband consignments, 1-in-N foreign arrivals. */
+export const POLICE_CHANCE = 10;
 /** The jade expedition is offered only after this many months (pypan-33). */
 export const JADE_MIN_MONTHS = 24;
 /** ... and only to a player with more than this much in the bank. */

@@ -519,8 +519,9 @@ The player has a warehouse in Hong Kong (10000 capacity) used to stockpile goods
 
 ## 11. Law & Hazards (`check_safety`, after month 12)
 
-- **Opium confiscation** (1-in-10 if carrying opium away from home): harbor police
-  seize all opium and, if you have cash, levy a fine of up to ~`cash/1.8`.
+- **Opium confiscation** (1-in-10 if carrying opium away from home, `POLICE_CHANCE`):
+  harbor police seize all opium and, if you have cash, levy a fine of up to
+  ~`cash/1.8`. They seize contraband consignments the same way (§12).
 - **Mugging** (1-in-20 away from home if cash > 20000, `ROBBERY_CASH_LIMIT`):
   bodyguards beaten, you lose up to ~`cash/1.4`. The same check runs on leaving
   the bank (§4.4).
@@ -548,6 +549,16 @@ They're priced on the player's **money**, `cash + bank - debt` (goods don't coun
   `size / ship_size`. It's never less than the original fee: a pay rate of 35, 350
   or 3,500 per unit of space, times the size, plus 0–99.
 - **Good joss:** 1-in-15 offers pay triple, and the offer begins "Good joss!!".
+- **Contraband** (pypan-83): 1-in-4 offers are illegal (`CONTRABAND_CHANCE`; the
+  `Cargo`'s `illegal` flag), described as a "crate of rifles", "stolen temple idol",
+  "chest of forged silver" or "party of fugitives". They pay 5 times as much
+  (`CONTRABAND_PAY`, before any good joss), and the offer warns "It's contraband: the
+  harbor police may seize it, and fine us." The cargo pane marks it "Contraband!".
+  Like opium, it's at risk on every foreign arrival (§11), including at its
+  destination, before it's delivered: 1-in-10 (`POLICE_CHANCE`), the harbor police
+  seize it ("Bad joss! Harbor police have seized the ((description)) bound for
+  ((city))") and, if you have cash, fine you up to ~`cash/1.8`. A seized consignment
+  is gone, unpaid. Hong Kong is safe.
 - **Delivery:** arriving at the destination pays out and frees the space. Each
   month past `due` takes 20% of the value off the pay
   (`CONSIGNMENT_LATE_PENALTY`). Arriving anywhere else, the compradore reminds you
@@ -594,6 +605,9 @@ after the save's date.
 | `CONSIGNMENT_MONEY_LIMIT` | 100000 | Money above which no consignments are offered |
 | `CONSIGNMENT_LATE_PENALTY` | 0.2 | Share of a consignment's pay lost per month late |
 | `CONSIGNMENT_LATE_LIMIT` | 5 | Months late before a consignment is offloaded |
+| `CONTRABAND_CHANCE` | 4 | 1-in-N consignments offered are contraband |
+| `CONTRABAND_PAY` | 5 | Contraband pays this many times as much |
+| `POLICE_CHANCE` | 10 | 1-in-N foreign arrivals on which police seize opium or contraband |
 | `JADE_MIN_MONTHS` | 24 | Months before the jade expedition can be offered (§4.6) |
 | `JADE_BANK_LEVEL` | 2000000 | Bank balance above which the jade expedition can be offered |
 | `JADE_STAKE_SHARE` | 0.25 | The stake asked for is 1–2 times this share of the bank ... |
@@ -701,6 +715,9 @@ Additions:
 - **Li Yuen's pirate fleet** (§7.4), which was defined but never used.
 - **The jade expedition** (§4.6) replaces jade as a good: a stake of a quarter to
   half of the bank, which pays its backers 2–5 times over if it succeeds.
+- **Contraband consignments** (§12), which pay five times as much but can be seized
+  by the harbor police, with a fine, like opium. pypan.py's `illegal` flag was never
+  set.
 - **Porcelain** (§4.7), a fragile top good unlocked by buying a share in the trade
   for half your fortune. Storms, rough seas and cannon fire break it.
 - **Li Yuen's demand tracks your fortune** (§8, pypan-88) rather than only the

@@ -53,4 +53,11 @@ describe("panes", () => {
     });
     expect(cargoLines(h)).toEqual(["Party Of 3", "Bound for Nagasaki"]);
   });
+
+  it("marks contraband", () => {
+    const h = makeHong({
+      shipCargo: { description: "crate of rifles", destination: NAGASAKI, illegal: true, size: 9, value: 1, due: 19 },
+    });
+    expect(cargoLines(h)).toEqual(["Crate Of Rifles", "Bound for Nagasaki", "Contraband!"]);
+  });
 });

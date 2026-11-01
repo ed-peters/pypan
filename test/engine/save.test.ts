@@ -129,6 +129,21 @@ describe("save format", () => {
     expect(() => fromSave({ ...toSave(h), bank_streak: 4 })).toThrow(SaveFormatError);
   });
 
+  it("round-trips Mr. Framji's series, written only once it has begun", () => {
+    const h = newHong(new SeededRng(4), false);
+    const empty = toSave(h);
+    for (const k of ["framji_concern", "framji_investment", "framji_offer_due"]) {
+      expect(empty).not.toHaveProperty(k);
+    }
+    Object.assign(h, { framjiConcern: 3, framjiInvestment: { concern: 2, stake: 40000, due: 30 }, framjiOfferDue: 27 });
+    expect(fromSaveString(toSaveString(h))).toMatchObject({
+      framjiConcern: 3, framjiInvestment: { concern: 2, stake: 40000, due: 30 }, framjiOfferDue: 27,
+    });
+    expect(fromSave(pythonSave)).toMatchObject({ framjiConcern: 0, framjiInvestment: null, framjiOfferDue: 0 });
+    expect(() => fromSave({ ...toSave(h), framji_concern: 8 })).toThrow(SaveFormatError);
+    expect(() => fromSave({ ...toSave(h), framji_investment: { concern: 7, stake: 1, due: 1 } })).toThrow(SaveFormatError);
+  });
+
   it("round-trips when the first warehouse may be offered again, written only once declined", () => {
     const h = newHong(new SeededRng(4), false);
     expect(toSave(h)).toMatchObject({ warehouse_size: 0 });

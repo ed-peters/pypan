@@ -23,8 +23,8 @@ in a pirate battle (§7.3). Either way the game is over for good and is scored.
 ### 1.1 Scoring
 
 When the game ends, the **final position** is cash + bank − debt, plus the value of
-any shares in ventures (the godowns, the arms smuggling and the jade mine, §4.8);
-goods don't count. The captain comments on it, if it deserves a comment (only the first that
+any shares in ventures (the godowns, the arms smuggling and the jade mine, §4.8),
+plus any stake out with Mr. Framji at face value (§4.9); goods don't count. The captain comments on it, if it deserves a comment (only the first that
 applies):
 
 - Over 1,000,000: "You're a M I L L I O N A I R E !!!"
@@ -94,6 +94,9 @@ house). It is fully serializable to JSON for save/load. Key fields:
 | `godowns`, `arms` | Shares in the Nanking godowns and the Red Wind gang's smuggling (§4.8), as `mine`; saved only when held | none |
 | `godowns_bought`, `arms_bought` | Whether you've ever bought into them, so general cargo or arms are off your market (§4.8); saved only when true | false |
 | `porcelain` | Whether you own a share in the porcelain trade (§4.7); saved only when true | false |
+| `framji_concern` | The next of Mr. Framji's seven concerns to offer, 7 once he has offered them all (§4.9); saved only when not 0 | 0 |
+| `framji_investment` | A stake out with Mr. Framji: `concern`, `stake`, `due` (month of the result); saved only when set | none |
+| `framji_offer_due` | The month from which Mr. Framji may make his next offer; saved only when not 0 | 0 |
 
 **Older saves.** Saves without `porcelain` come from before porcelain:
 - Those written between pypan-86 and pypan-87 have four goods. They load with no
@@ -276,8 +279,9 @@ gives their offer:
 > are)). ((The offer.))
 
 Later offers from the same person name them briefly and need no introduction. So far
-this is how the first warehouse comes (§10); new game-expanding features should come
-the same way (`canIntroduce` and `introduction` in `bank.ts`).
+this is how the first warehouse (§10) and Mr. Framji's concerns (§4.9) come; new
+game-expanding features should come the same way (`canIntroduce` and `introduction`
+in `bank.ts`).
 
 ### 4.5 Debt & the Moneylender (Elder Brother Wu, Hong Kong only)
 
@@ -410,6 +414,59 @@ menus, price shocks, and the hold and warehouse panes.
   each is reported ("The storm broke 12 of our porcelain, Taipan!"). The rolls are
   made only when there's porcelain aboard.
 
+### 4.9 Mr. Framji's Concerns in Distant Lands (pypan-101)
+
+**Mr. Ardeshir Framji**, a Parsi merchant of Bombay, offers a fixed series of seven
+one-time investments in concerns far from the China coast (`check_framji`, on
+arrival, after the ventures). Mijnheer Brouwer introduces him (§4.4.1), so he comes
+only once the bank account is open; after the introduction he is "Mr. Framji".
+
+- **Offer** (Hong Kong only): after month 18 (`FRAMJI_MIN_MONTHS`), with no stake out
+  with him, at least 3 months after his last result or a declined offer
+  (`FRAMJI_GAP_MONTHS`), and with a cash position (cash + bank − debt) of at least
+  100,000 (`FRAMJI_WORTH_LEVEL`), 1-in-2 arrivals (`FRAMJI_OFFER_CHANCE`). He names
+  the stake: 10–20% of the cash position (`FRAMJI_STAKE_SHARE` times 1 to 2, rolled,
+  rounded to the thousand), so at least 10,000. You can't choose the amount. The first
+  offer comes with the introduction:
+
+  > Taipan, Mijnheer Brouwer of De Wisselbank has introduced us to Mr. Ardeshir
+  > Framji, a Parsi merchant of Bombay. Mr. Framji invites us to put ((stake)) into a
+  > pepper concern on the Malabar Coast of India, which will return in three months.
+  > Shall we invest?
+
+  Later ones begin "Taipan, Mr. Framji of Bombay invites us to put ((stake)) into
+  ...". Yes pays (cash first, then the bank): "Mr. Framji will write to us when the
+  ((concern)) returns." No: "Mr. Framji will find other partners for the
+  ((concern))." Either way that concern is gone, and the next offer is of the next.
+  If an offer can't be made (too little money, a bad roll), it waits.
+- **Result** (on the first arrival anywhere at least 3 months later,
+  `FRAMJI_RETURN_MONTHS`): a letter from Mr. Framji. If it pays off, the stake times
+  the concern's payout (rounded to the thousand) goes into the bank: "Taipan!! A
+  letter from Mr. Framji: ((news)). Our ((stake)) has returned ((amount)), which has
+  been deposited with Mijnheer Brouwer." If it fails the stake is lost ("Bad joss,
+  Taipan! A letter from Mr. Framji: ((news)). Our ((stake)) is lost."), except for the
+  Ceylon cinnamon, where he saves half. **The most you can lose is the stake:** there
+  are no calls for funds.
+- **The series**, in order, riskier and richer as it goes:
+
+  | # | Concern | Pays off | Returns | If it fails | On average |
+  |---|---|---|---|---|---|
+  | 1 | A pepper concern on the Malabar Coast of India | 3 in 4 | 1.5× | lost | 1.13× |
+  | 2 | An indigo plantation in Bengal | 2 in 3 | 1.75× | lost | 1.17× |
+  | 3 | A cinnamon estate in Ceylon | 2 in 3 | 1.5× | half saved | 1.17× |
+  | 4 | A coffee caravan from Mocha in Arabia | 3 in 5 | 2× | lost | 1.20× |
+  | 5 | A clove plantation on Zanzibar | 1 in 2 | 2.25× | lost | 1.13× |
+  | 6 | A tea garden in Assam | 1 in 2 | 2.5× | lost | 1.25× |
+  | 7 | A pearl fishery in the Persian Gulf | 1 in 4 | 5× | lost | 1.25× |
+
+- **Farewell:** once the seventh concern has returned or been declined, "Taipan, a
+  last letter from Mr. Framji: he is retiring to Bombay, and thanks us for our
+  partnership in distant lands. He wishes our hong good joss." He makes no more
+  offers.
+- **A stake out** shows in the status pane ("Bombay") and counts at face value toward
+  the final position and score (§1.1). Saves from before pypan-101 start at the
+  beginning of the series.
+
 ---
 
 ## 5. The Voyage Loop
@@ -443,7 +500,7 @@ The game auto-saves at the top of every menu iteration.
 7. Runs the arrival event sequence:
    `check_lender` → `check_bank_invite` (§4.4) → `check_extortion` → `check_upgrades` → `check_warehouse`
    → `check_ventures` (shares, the godown and arms offers, then `check_jade`)
-   → `check_porcelain` → `check_cargo`
+   → `check_framji` (§4.9) → `check_porcelain` → `check_cargo`
    → `check_safety` → `establish_prices`.
 
 ---
@@ -760,6 +817,12 @@ after the save's date.
 | `PORCELAIN_FEE_SHARE` | 0.75 | Share of the cash position it costs |
 | `PORCELAIN_ODDS_START` / `_MIN` | 10 / 3 | 1-in-N per Hong Kong arrival, from first to best |
 | `PORCELAIN_RAMP_MONTHS` | 3 | Months for each step from 1-in-10 toward 1-in-3 |
+| `FRAMJI_MIN_MONTHS` | 18 | Mr. Framji is introduced only after this month (§4.9) |
+| `FRAMJI_WORTH_LEVEL` | 100000 | Cash position needed for each of his offers |
+| `FRAMJI_OFFER_CHANCE` | 2 | 1-in-N Hong Kong arrivals once an offer can be made |
+| `FRAMJI_STAKE_SHARE` | 0.1 | His stake is this share of the cash position, up to twice it |
+| `FRAMJI_RETURN_MONTHS` | 3 | Months until a stake pays off or fails |
+| `FRAMJI_GAP_MONTHS` | 3 | Months after a result, or a declined offer, before the next offer |
 | `STORM_BREAKAGE` | 20–50 | Percent of the porcelain aboard a storm breaks |
 | `ROUGH_SEAS_BREAKAGE` / `ROUGH_SEAS_CHANCE` | 10–30 / 3 | Rough seas: percent broken, and 1-in-N voyages without a storm |
 | `VOLLEY_BREAKAGE` | 5–20 | Percent broken by each enemy volley |

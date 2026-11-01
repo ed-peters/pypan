@@ -231,6 +231,7 @@ export class Terminal {
       ...(v.Godowns ? [el("span", `Godowns ${v.Godowns}`)] : []),
       ...(v.Smuggling ? [el("span", `Smuggling ${v.Smuggling}`)] : []),
       ...(v["Jade mine"] ? [el("span", `Mine ${v["Jade mine"]}`)] : []),
+      ...(v.Bombay ? [el("span", `Bombay ${v.Bombay}`)] : []),
       el("span", `Guns ${v.Guns}`),
       el("span", `Hull ${v.Repair}`),
     );

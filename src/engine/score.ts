@@ -26,9 +26,13 @@ export function cashPosition(h: Hong): number {
   return h.cash + h.bank - h.debt;
 }
 
-/** What the player is worth at the end: the cash position, plus any shares in ventures (pypan-89, pypan-91). */
+/**
+ * What the player is worth at the end: the cash position, plus any shares in ventures
+ * (pypan-89, pypan-91) and any stake out with Mr. Framji, at face value (pypan-101).
+ */
 export function finalPosition(h: Hong): number {
-  return cashPosition(h) + (h.mine?.value ?? 0) + (h.godowns?.value ?? 0) + (h.arms?.value ?? 0);
+  return cashPosition(h) + (h.mine?.value ?? 0) + (h.godowns?.value ?? 0) + (h.arms?.value ?? 0)
+    + (h.framjiInvestment?.stake ?? 0);
 }
 
 /** Final position per month played, divided by SCORE_DIVISOR, rounded down. */

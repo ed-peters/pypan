@@ -13,6 +13,7 @@ describe("finalPosition", () => {
   it("adds any share in the jade mine to the cash position", () => {
     expect(finalPosition(makeHong({ cash: 1000, debt: 0 }))).toBe(1000);
     expect(finalPosition(makeHong({ cash: 1000, debt: 0, mine: { value: 50000, due: 9 } }))).toBe(51000);
+    expect(finalPosition(makeHong({ cash: 1000, debt: 0, framjiInvestment: { concern: 0, stake: 30000, due: 9 } }))).toBe(31000);
     expect(cashPosition(makeHong({ cash: 1000, debt: 0, mine: { value: 50000, due: 9 } }))).toBe(1000);
   });
 });

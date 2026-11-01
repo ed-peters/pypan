@@ -25,6 +25,7 @@ describe("panes", () => {
     expect(statusRows(makeHong({ mine: { value: 1500000, due: 31 } }))).toContainEqual(["Jade mine", "1,500,000"]);
     const rows = statusRows(makeHong({ godowns: { value: 35000, due: 9 }, arms: { value: 70000, due: 9 } })).map(([k]) => k);
     expect(rows).toEqual(["Location", "Cash", "Debt", "Bank", "Godowns", "Smuggling", "Guns", "Repair"]);
+    expect(statusRows(makeHong({ framjiInvestment: { concern: 0, stake: 30000, due: 22 } }))).toContainEqual(["Bombay", "30,000"]);
   });
 
   it("leaves out goods a venture has replaced", () => {

@@ -5,7 +5,8 @@ import {
   BANK_INVITE_VOYAGES, CITIES, HONG_KONG, JADE_INVESTMENT, LI_YUEN_MAX_GRUDGE, NUM_GOODS, PORCELAIN,
   START_YEAR,
 } from "./constants";
-import type { Cargo, Expedition, Hong, Share } from "./hong";
+import { CONCERNS } from "./framji";
+import type { Cargo, Expedition, Hong, Investment, Share } from "./hong";
 import { usualPrice } from "./prices";
 
 /**
@@ -60,6 +61,9 @@ export function toSave(h: Hong): Record<string, unknown> {
     ...(h.bankOpen ? {} : { bank_closed: true }),
     ...(h.bankStreak ? { bank_streak: h.bankStreak } : {}),
     ...(h.warehouseOfferDue ? { warehouse_offer_due: h.warehouseOfferDue } : {}),
+    ...(h.framjiConcern ? { framji_concern: h.framjiConcern } : {}),
+    ...(h.framjiInvestment ? { framji_investment: { ...h.framjiInvestment } } : {}),
+    ...(h.framjiOfferDue ? { framji_offer_due: h.framjiOfferDue } : {}),
   };
 }
 
@@ -113,6 +117,9 @@ export function fromSave(data: unknown): Hong {
     armsBought: d.arms_bought === undefined ? false : bool(d, "arms_bought"),
     bankOpen: d.bank_closed === undefined ? true : !bool(d, "bank_closed"),
     bankStreak: d.bank_streak === undefined ? 0 : int(d, "bank_streak", 0, BANK_INVITE_VOYAGES),
+    framjiConcern: d.framji_concern === undefined ? 0 : int(d, "framji_concern", 0, CONCERNS.length),
+    framjiInvestment: d.framji_investment == null ? null : investment(d.framji_investment),
+    framjiOfferDue: d.framji_offer_due === undefined ? 0 : int(d, "framji_offer_due", 0),
   };
 }
 
@@ -205,6 +212,11 @@ function expedition(v: unknown): Expedition {
     resolves: int(e, "resolves"),
     stake,
   };
+}
+
+function investment(v: unknown): Investment {
+  const i = record(v, "framji_investment");
+  return { concern: int(i, "concern", 0, CONCERNS.length - 1), stake: int(i, "stake", 0), due: int(i, "due") };
 }
 
 function share(v: unknown, key: string): Share {

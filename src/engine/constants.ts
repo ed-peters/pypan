@@ -98,6 +98,18 @@ export const PORCELAIN_FEE_SHARE = 0.75;
 /** The offer comes 1-in-N arrivals in Hong Kong: 1-in-10 at first, one better every few months, to 1-in-3. */
 export const PORCELAIN_ODDS_START = 10;
 export const PORCELAIN_ODDS_MIN = 3;
+/** Mr. Framji of Bombay is introduced in Hong Kong only after this many months (pypan-101) ... */
+export const FRAMJI_MIN_MONTHS = 18;
+/** ... to a player whose cash position (cash + bank - debt) is at least this ... */
+export const FRAMJI_WORTH_LEVEL = 100000;
+/** ... and offers 1-in-N arrivals in Hong Kong (1-in-2, so most players see the whole series in ten years) ... */
+export const FRAMJI_OFFER_CHANCE = 2;
+/** ... a stake of this share of the cash position, up to twice it ... */
+export const FRAMJI_STAKE_SHARE = 0.1;
+/** ... which returns this many months later. */
+export const FRAMJI_RETURN_MONTHS = 3;
+/** Months after a return, or a declined offer, before he offers the next concern. */
+export const FRAMJI_GAP_MONTHS = 3;
 export const PORCELAIN_RAMP_MONTHS = 3;
 /** Percent of the porcelain aboard broken by a storm, rough seas and each enemy volley. */
 export const STORM_BREAKAGE = [20, 50] as const;

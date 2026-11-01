@@ -88,6 +88,12 @@ export interface Ledger {
   porcelainMonth: number | null;
   porcelainFee: number;
   porcelainBroken: number;
+  /** Mr. Framji (pypan-101): the month of his introduction, concerns backed, staked and returned, and whether he said farewell. */
+  framjiMonth: number | null;
+  framjiBacked: number;
+  framjiStaked: number;
+  framjiReturned: number;
+  framjiDone: boolean;
 }
 
 export function newLedger(): Ledger {
@@ -97,6 +103,7 @@ export function newLedger(): Ledger {
     shockGain: 0, shocksUp: 0, shocksUpSold: 0, shocksDown: 0, shocksDownBought: 0,
     biggestWindfall: 0, biggestLateWindfall: 0, jadeOffers: 0, jadeStake: 0, jadeStakeShare: 0, jadeOutcome: null, jadeBacked: 0, jadeWins: 0,
     ventureGain: 0, ventureLost: 0, thinVoyages: 0, thinRun: 0, bankMonth: null, porcelainMonth: null, porcelainFee: 0, porcelainBroken: 0,
+    framjiMonth: null, framjiBacked: 0, framjiStaked: 0, framjiReturned: 0, framjiDone: false,
   };
 }
 
@@ -254,6 +261,14 @@ export class Bot {
     // it never uses a warehouse, so it never buys one
     if (/^Senhor Remedios has a new warehouse with an additional|^Taipan, Mijnheer Brouwer of De Wisselbank has introduced us to Senhor Jacinto Remedios, |^Taipan, Senhor Remedios offers again to sell us a warehouse/.test(text)) {
       return false;
+    }
+    // Mr. Framji's concerns: always back them
+    m = /Mr\. Framji (?:of Bombay )?invites us to put ([\d,]+) into /.exec(text);
+    if (m) {
+      this.ledger.framjiMonth ??= currentTime(h);
+      this.ledger.framjiBacked += 1;
+      this.ledger.framjiStaked += num(m[1]!);
+      return true;
     }
     if (/^Taipan, Hendrik Brouwer of De Wisselbank, .* invites us to open an account\./.test(text)) {
       this.ledger.bankMonth = currentTime(h);
@@ -475,7 +490,14 @@ export class Bot {
 
   /** Track money from messages: booty, consignments, robbery, fines, shocks, jade. */
   private observe(text: string, h: Hong): void {
-    let m = /captured some booty worth ([\d,]+)/.exec(text);
+    let m = /^Taipan!! A letter from Mr\. Framji: .* has returned ([\d,]+),|^Bad joss, Taipan! A letter from Mr\. Framji: .* He has saved ([\d,]+) of our/.exec(text);
+    if (m) {
+      this.ledger.framjiReturned += num((m[1] ?? m[2])!);
+    }
+    if (/^Taipan, a last letter from Mr\. Framji: /.test(text)) {
+      this.ledger.framjiDone = true;
+    }
+    m = /captured some booty worth ([\d,]+)/.exec(text);
     if (m) {
       this.ledger.booty += num(m[1]!);
       this.windfall(num(m[1]!), this.worthAtCost(h), h);

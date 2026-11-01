@@ -37,6 +37,15 @@ export interface Share {
   due: number;
 }
 
+/** A stake out with Mr. Framji of Bombay (pypan-101): which concern, how much, and when it returns. */
+export interface Investment {
+  /** Index into CONCERNS (framji.ts). */
+  concern: number;
+  stake: number;
+  /** The month (as currentTime) it pays off or fails. */
+  due: number;
+}
+
 export interface Hong {
   name: string;
   year: number;
@@ -86,6 +95,12 @@ export interface Hong {
   bankOpen: boolean;
   /** Arrivals in a row with a cash position of at least BANK_INVITE_LEVEL, up to BANK_INVITE_VOYAGES, while the bank is closed. */
   bankStreak: number;
+  /** The next of Mr. Framji's concerns to offer (pypan-101); CONCERNS.length once he's offered them all. */
+  framjiConcern: number;
+  /** A stake out with Mr. Framji. */
+  framjiInvestment: Investment | null;
+  /** The month (as currentTime) from which Mr. Framji may offer the next concern. */
+  framjiOfferDue: number;
 }
 
 /** A new game in Hong Kong, starting with either guns or debt. */
@@ -123,6 +138,9 @@ export function newHong(rng: Rng, guns: boolean, name: string = "Rising Sun"): H
     porcelain: false,
     bankOpen: false,
     bankStreak: 0,
+    framjiConcern: 0,
+    framjiInvestment: null,
+    framjiOfferDue: 0,
   };
 }
 

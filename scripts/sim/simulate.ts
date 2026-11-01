@@ -128,6 +128,8 @@ export interface Summary {
   };
   /** Share of games in the porcelain trade, the median month they bought in, and the share of porcelain profit lost to breakage. */
   porcelain: { owned: number; month: number; broken: number };
+  /** Mr. Framji: share of games he was introduced in, the median month, concerns backed and net gain (returned less staked), and share who heard his farewell. */
+  framji: { met: number; month: number; backed: number; gain: number; mean: number; done: number };
   shocks: { perGame: number; upSold: number; downBought: number; gain: number };
   windfall: { median: number; over10: number; over25: number; late: number; lateOver10: number };
   risk: { drawdown: number; over25: number; over50: number; late: number; lateOver25: number };
@@ -204,6 +206,14 @@ function summarize(results: Run[], runs: number, start: string): Summary {
       month: med(ledgers.flatMap((l) => (l.porcelainMonth === null ? [] : [l.porcelainMonth]))),
       broken: med(ledgers.flatMap((l) => (l.porcelainMonth === null ? [] : [l.porcelainBroken / Math.max(1, l.byGood[PORCELAIN]! + l.porcelainBroken)]))),
     },
+    framji: {
+      met: frac(ledgers.filter((l) => l.framjiMonth !== null)),
+      month: med(ledgers.flatMap((l) => (l.framjiMonth === null ? [] : [l.framjiMonth]))),
+      backed: med(ledgers.filter((l) => l.framjiMonth !== null).map((l) => l.framjiBacked)),
+      gain: med(ledgers.filter((l) => l.framjiMonth !== null).map((l) => l.framjiReturned - l.framjiStaked)),
+      mean: mean(ledgers.filter((l) => l.framjiMonth !== null).map((l) => l.framjiReturned - l.framjiStaked)),
+      done: frac(ledgers.filter((l) => l.framjiDone)),
+    },
     shocks: {
       perGame: med(ledgers.map((l) => l.shocksUp + l.shocksDown)),
       upSold: ledgers.reduce((a, l) => a + l.shocksUpSold, 0) / Math.max(1, ledgers.reduce((a, l) => a + l.shocksUp, 0)),
@@ -243,6 +253,10 @@ function percentile(sorted: number[], p: number): number {
   const lo = Math.floor(i);
   const hi = Math.ceil(i);
   return sorted[lo]! + (sorted[hi]! - sorted[lo]!) * (i - lo);
+}
+
+function mean(xs: number[]): number {
+  return xs.length === 0 ? NaN : xs.reduce((a, b) => a + b, 0) / xs.length;
 }
 
 function median(xs: number[]): number {
@@ -414,6 +428,12 @@ function main(): void {
   out.push(table(
     ["In the trade", "Bought in (median month)", "Porcelain profit (share of income)", "Lost to breakage"],
     [[pct(sum.porcelain.owned), fmt(sum.porcelain.month), pct(sum.shares.porcelain), pct(sum.porcelain.broken)]],
+  ));
+  out.push("");
+  out.push("Mr. Framji's concerns (pypan-101), among ships afloat at 10 years (backed and net gain among those he met):\n");
+  out.push(table(
+    ["Met him", "Introduced (median month)", "Concerns backed (median)", "Net gain: median", "Mean", "Heard his farewell"],
+    [[pct(sum.framji.met), fmt(sum.framji.month), fmt(sum.framji.backed), fmt(sum.framji.gain), fmt(sum.framji.mean), pct(sum.framji.done)]],
   ));
   out.push("");
   out.push("Ventures, among ships afloat at 10 years (income shares among those holding any):\n");

@@ -27,6 +27,8 @@ export function statusRows(h: Hong | null): Row[] {
     ...(h?.godowns ? [["Godowns", money(h.godowns.value)] as Row] : []),
     ...(h?.arms ? [["Smuggling", money(h.arms.value)] as Row] : []),
     ...(h?.mine ? [["Jade mine", money(h.mine.value)] as Row] : []),
+    // a stake out with Mr. Framji (pypan-101)
+    ...(h?.framjiInvestment ? [["Bombay", money(h.framjiInvestment.stake)] as Row] : []),
     ["Guns", h ? money(h.shipGuns) : "-"],
     ["Repair", h ? `${repairPercent(h)}%` : "-"],
   ];

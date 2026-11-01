@@ -8,7 +8,7 @@ three-quarters of the cash position), the arms smuggling held back until porcela
 and scores divided by 330** (the bank opens only
 once it invites the player, after three arrivals in a row at a cash position of
 20,000 or more; ventures: godowns and arms smuggling replacing general cargo and
-arms, then the jade expedition; the bank and warehouse transfers in Hong Kong only;
+arms, then the jade expedition; Mr. Framji's seven concerns, pypan-101; the bank and warehouse transfers in Hong Kong only;
 bank interest at 0.5% a month; debt interest rounded up). The figures go out of date
 when the game engine changes. To list engine changes since this page was last
 updated:
@@ -49,6 +49,7 @@ usually costs where, but not today's prices elsewhere. It:
 - buys into the godowns and the arms smuggling (and adds to them) whenever offered,
   backs the jade expedition whenever it has twice the stake in the bank, and pays
   every call for funds
+- backs every one of Mr. Framji's concerns (pypan-101)
 - buys into the porcelain trade whenever it's offered, and doesn't allow for
   porcelain breaking when it plans
 - fights when it has at least half as many guns as there are pirates, and otherwise
@@ -66,17 +67,17 @@ any share in the jade mine. Goods aboard don't count. Amounts are in k (thousand
 
 | Stage | Afloat | Low (P25) | Middling (P50) | High (P90) |
 |---|---|---|---|---|
-| Early (2 years) | 99.9% | 97k | 1.4M | 8.0M |
-| Mid (5 years) | 99.0% | 9.3M | 34M | 184M |
-| Late (10 years) | 95.5% | 1.06B | 1.52B | 3.09B |
+| Early (2 years) | 99.9% | 105k | 1.3M | 7.6M |
+| Mid (5 years) | 98.6% | 10M | 32M | 182M |
+| Late (10 years) | 96.1% | 977M | 1.48B | 3.16B |
 
 ### Debt start (no guns)
 
 | Stage | Afloat | Low (P25) | Middling (P50) | High (P90) |
 |---|---|---|---|---|
-| Early (2 years) | 99.7% | 12k | 126k | 3.9M |
-| Mid (5 years) | 97.5% | 4.7M | 22M | 150M |
-| Late (10 years) | 94.3% | 877M | 1.33B | 2.70B |
+| Early (2 years) | 99.7% | 12k | 163k | 4.0M |
+| Mid (5 years) | 97.9% | 5.8M | 24M | 143M |
+| Late (10 years) | 94.7% | 841M | 1.36B | 2.73B |
 
 The guns start does better. With no cash, the bot fights the early pirates and wins
 booty, and it never pays Wu's 10% a month.
@@ -85,24 +86,24 @@ booty, and it never pays Wu's 10% a month.
 
 | Months | Afloat | Low (P25) | Middling (P50) | High (P90) |
 |---|---|---|---|---|
-| 12 | 100% | 7k | 22k | 627k |
-| 24 | 100% | 97k | 1.4M | 8.0M |
-| 36 | 100% | 2.0M | 7.7M | 23M |
-| 48 | 99% | 4.2M | 16M | 47M |
-| 60 | 99% | 9.3M | 34M | 184M |
-| 72 | 99% | 35M | 116M | 467M |
-| 84 | 98% | 151M | 337M | 915M |
-| 96 | 97% | 390M | 658M | 1.52B |
-| 108 | 96% | 688M | 1.04B | 2.23B |
-| 120 | 96% | 1.06B | 1.52B | 3.09B |
+| 12 | 100% | 7k | 23k | 491k |
+| 24 | 100% | 105k | 1.3M | 7.6M |
+| 36 | 99% | 2.1M | 8.2M | 24M |
+| 48 | 99% | 4.2M | 16M | 48M |
+| 60 | 99% | 10M | 32M | 182M |
+| 72 | 98% | 38M | 128M | 472M |
+| 84 | 97% | 136M | 330M | 930M |
+| 96 | 97% | 347M | 635M | 1.58B |
+| 108 | 97% | 638M | 1.00B | 2.29B |
+| 120 | 96% | 977M | 1.48B | 3.16B |
 
 ### The middling player's ship and money (guns start)
 
 | Stage | Hold | Guns | Cash on hand | Bank |
 |---|---|---|---|---|
-| Early (2 years) | 260 | 5 | 35k | 9k |
-| Mid (5 years) | 660 | 7 | 252k | 12M |
-| Late (10 years) | 1,390 | 10 | 37M | 962M |
+| Early (2 years) | 260 | 5 | 35k | 113k |
+| Mid (5 years) | 660 | 7 | 175k | 13M |
+| Late (10 years) | 1,370 | 10 | 26M | 901M |
 
 The middling player is out of debt by year 2 in both starts.
 
@@ -111,7 +112,7 @@ The middling player is out of debt by year 2 in both starts.
 | Start | Opened an account by 10 years | Month opened: P25 | Middling (P50) | P75 |
 |---|---|---|---|---|
 | Guns | 100% | 17 | 22 | 26 |
-| Debt | 100% | 22 | 27 | 33 |
+| Debt | 100% | 23 | 28 | 34 |
 
 The bot only goes home every six voyages, and the invitation waits for Hong Kong, so
 it opens its account later than its money alone would allow (the middling guns
@@ -129,9 +130,9 @@ the median game spent 45 voyages in a row with only silk and opium.)
 
 | Stage | Trading | Bank interest | Booty | Robbery | Opium seized | Repairs | Ships | Li Yuen |
 |---|---|---|---|---|---|---|---|---|
-| Early (2 years) | 2.6M | 4k | 27k | 0 | 0 | 6k | 24k | 0 |
-| Mid (5 years) | 63M | 1.8M | 114k | 132k | 2.7M | 799k | 327k | 8k |
-| Late (10 years) | 1.74B | 110M | 416k | 26M | 14M | 17M | 2.7M | 10M |
+| Early (2 years) | 2.6M | 3k | 27k | 0 | 0 | 6k | 23k | 0 |
+| Mid (5 years) | 60M | 1.7M | 106k | 91k | 3.0M | 795k | 322k | 3k |
+| Late (10 years) | 1.70B | 102M | 430k | 20M | 14M | 18M | 2.6M | 10M |
 
 | Stage | Share of trading profit: Silk | Opium | Porcelain |
 |---|---|---|---|
@@ -143,17 +144,31 @@ the median game spent 45 voyages in a row with only silk and opium.)
 
 | Start | In the porcelain trade | Bought in (median month) | Porcelain profit (share of income) | Lost to breakage |
 |---|---|---|---|---|
-| Guns | 99% | 57 | 74% | 12% |
-| Debt | 99% | 57 | 76% | 11% |
+| Guns | 99% | 56 | 75% | 12% |
+| Debt | 99% | 58 | 76% | 11% |
 
 | Start | Holding godowns | Arms smuggling | Jade mine | Shares (median, of position) | Venture income, share of gross: P10 / P50 / P90 |
 |---|---|---|---|---|---|
-| Guns | 95% | 92% | 58% | 26% | 3% / 10% / 31% |
-| Debt | 95% | 94% | 60% | 26% | 3% / 9% / 29% |
+| Guns | 94% | 92% | 59% | 25% | 3% / 9% / 28% |
+| Debt | 94% | 91% | 53% | 25% | 3% / 9% / 28% |
 
 | Backed the jade expedition | Stake (median share of worth) | Expeditions backed (median) | Won per expedition | Position: won at least once | backed, never won |
 |---|---|---|---|---|---|
-| 98% | 28% | 3 | 33% | 1.75B | 1.16B |
+| 98% | 28% | 3 | 32% | 1.70B | 1.09B |
+
+### Mr. Framji's concerns (pypan-101, at 10 years)
+
+| Start | Met him | Introduced (median month) | Concerns backed (median) | Net gain: median | Mean | Heard his farewell |
+|---|---|---|---|---|---|---|
+| Guns | 100% | 27 | 7 | −19M | +32M | 70% |
+| Debt | 100% | 33 | 7 | −12M | +46M | 64% |
+
+Every concern pays on average, but the median player loses on the series: stakes
+grow with the player's money, so the last and largest, the Persian Gulf pearls,
+dominates, and it fails three times in four. The bot goes home only every six
+voyages; at 1-in-3 Hong Kong arrivals only about a quarter of games heard his
+farewell in ten years, so the offer chance is 1-in-2. The effect on the curve is
+within the noise between runs.
 
 ## Findings
 

@@ -76,4 +76,25 @@ describe("accrueInterest", () => {
     accrueInterest(h);
     expect([h.debt, h.bank]).toEqual([5500, 3349]);
   });
+
+  it("rounds debt interest up, so even a debt of 1 grows", () => {
+    const h = makeHong({ debt: 1 });
+    accrueInterest(h);
+    expect(h.debt).toBe(2);
+    h.debt = 5001;
+    accrueInterest(h);
+    expect(h.debt).toBe(5502);
+  });
+
+  it("doesn't round exact debt interest up on float error", () => {
+    const h = makeHong({ debt: 30 });
+    accrueInterest(h);
+    expect(h.debt).toBe(33);
+  });
+
+  it("charges no interest on no debt", () => {
+    const h = makeHong({ debt: 0 });
+    accrueInterest(h);
+    expect(h.debt).toBe(0);
+  });
 });

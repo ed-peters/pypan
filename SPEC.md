@@ -243,7 +243,8 @@ Leaving the bank carries the same mugging risk as arriving at a foreign harbor
 
 ### 4.5 Debt & the Moneylender (Elder Brother Wu, Hong Kong only)
 
-Debt **accrues 10% interest per voyage** (`LOAN_RATE`), applied on arrival.
+Debt **accrues 10% interest per voyage** (`LOAN_RATE`), applied on arrival and
+rounded up, so any debt grows (a debt of 1 becomes 2).
 
 Visiting Wu (`visit_wu`):
 

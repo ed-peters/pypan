@@ -59,8 +59,14 @@ export function* pay(h: Hong, n: number): Flow {
 
 /** Debt and bank interest for one voyage. */
 export function accrueInterest(h: Hong): void {
-  // add the truncated interest, rather than truncating balance * (1 + rate), which
-  // can lose a unit to rounding (1000 * 1.005 is 1004.999...)
-  h.debt += Math.trunc(h.debt * LOAN_RATE);
+  // add the interest, rather than rounding balance * (1 + rate), which can lose a
+  // unit to float error (1000 * 1.005 is 1004.999...); debt interest rounds up so
+  // even a tiny debt grows, bank interest is truncated
+  h.debt += Math.ceil(withoutFloatError(h.debt * LOAN_RATE));
   h.bank += Math.trunc(h.bank * BANK_RATE);
+}
+
+/** Rounds away float error, so e.g. 30 * 0.1 (3.0000000000000004) is exactly 3. */
+function withoutFloatError(n: number): number {
+  return Math.round(n * 1e6) / 1e6;
 }

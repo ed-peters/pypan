@@ -188,6 +188,12 @@ function summarize(results: Run[], runs: number, start: string): Summary {
         incomeP10: percentile(shares, 10), incomeP50: percentile(shares, 50), incomeP90: percentile(shares, 90),
       };
     })(),
+    bank: {
+      opened: frac(ledgers.filter((l) => l.bankMonth !== null)),
+      p25: percentile(ledgers.flatMap((l) => (l.bankMonth === null ? [] : [l.bankMonth])).sort((a, b) => a - b), 25),
+      month: med(ledgers.flatMap((l) => (l.bankMonth === null ? [] : [l.bankMonth]))),
+      p75: percentile(ledgers.flatMap((l) => (l.bankMonth === null ? [] : [l.bankMonth])).sort((a, b) => a - b), 75),
+    },
     porcelain: {
       owned: frac(ledgers.filter((l) => l.porcelainMonth !== null)),
       month: med(ledgers.flatMap((l) => (l.porcelainMonth === null ? [] : [l.porcelainMonth]))),
@@ -385,6 +391,12 @@ function main(): void {
   out.push(table(
     ["Sunk by 10 years", "Median worst drawdown", "Games with a drawdown >= 25%", ">= 50%", "After year 5: median worst", ">= 25%"],
     [[pct(1 - sum.afloat[LAST]!), pct(sum.risk.drawdown), pct(sum.risk.over25), pct(sum.risk.over50), pct(sum.risk.late), pct(sum.risk.lateOver25)]],
+  ));
+  out.push("");
+  out.push("The bank account (pypan-94), among ships afloat at 10 years:\n");
+  out.push(table(
+    ["Opened", "Month opened: P25", "P50", "P75"],
+    [[pct(sum.bank.opened), fmt(sum.bank.p25), fmt(sum.bank.month), fmt(sum.bank.p75)]],
   ));
   out.push("");
   out.push("Porcelain, among ships afloat at 10 years (breakage against porcelain profit plus breakage):\n");

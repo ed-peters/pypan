@@ -25,7 +25,7 @@ describe("the jade mine", () => {
     const h = owner();
     // 2 + 3 x 0.5: +5%
     const p = settle(h, 0.5);
-    expect(texts(p)).toEqual(["Our share in the jade mine has paid us 50,000 this quarter, Taipan. It has been deposited in the bank."]);
+    expect(texts(p)).toEqual(["Our share in the jade mine has paid us 50,000 this quarter, Taipan. It has been deposited with Mijnheer Brouwer."]);
     expect([h.bank, h.mine]).toEqual([550000, { value: 1000000, due: 33 }]);
   });
 
@@ -80,7 +80,7 @@ describe("the jade mine", () => {
   it("can strike a rich vein, 1-in-40 quarters, paying twice the share", () => {
     const h = owner();
     const p = play(checkVentures(h, new ScriptedRng([1, 0])));
-    expect(texts(p)).toEqual(["Taipan!! The jade mine has struck a rich vein! Our share of 2,000,000 has been deposited in the bank."]);
+    expect(texts(p)).toEqual(["Taipan!! The jade mine has struck a rich vein! Our share of 2,000,000 has been deposited with Mijnheer Brouwer."]);
     expect([h.bank, h.mine]).toEqual([2500000, { value: 1000000, due: 33 }]);
   });
 });
@@ -154,9 +154,14 @@ describe("the Nanking godowns", () => {
     const h = owner();
     // not seized; -5% + 15% x 0.5 = +2.5%
     expect(texts(play(checkVentures(h, new ScriptedRng([1, 0.5]))))).toEqual([
-      "Our share in the Nanking godowns has paid us 25,000 this quarter, Taipan. It has been deposited in the bank.",
+      "Our share in the Nanking godowns has paid us 25,000 this quarter, Taipan. It has been deposited with Mijnheer Brouwer.",
     ]);
     expect([h.bank, h.godowns]).toEqual([125000, { value: 1000000, due: 19 }]);
+    const unbanked = trader({ location: NAGASAKI, time: 16, bank: 0, bankOpen: false, godowns: { value: 1000000, due: 16 }, godownsBought: true });
+    expect(texts(play(checkVentures(unbanked, new ScriptedRng([1, 0.5]))))).toEqual([
+      "Our share in the Nanking godowns has paid us 25,000 this quarter, Taipan. It has been paid to us in cash.",
+    ]);
+    expect([unbanked.cash, unbanked.bank]).toEqual([65000, 0]);
     const best = owner();
     play(checkVentures(best, new ScriptedRng([1, 0.9999])));
     expect(best.bank).toBe(200000);

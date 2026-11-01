@@ -19,6 +19,10 @@ export const GUN_SIZE = 10;
 export const LOAN_RATE = 0.1;
 /** Bank interest per voyage: 0.5% (pypan.py paid 5%). */
 export const BANK_RATE = 0.005;
+/** The bank invites a player to open an account in Hong Kong once their cash position has been at least this ... */
+export const BANK_INVITE_LEVEL = 20000;
+/** ... on this many arrivals in a row (pypan-94). Declining starts the count again. */
+export const BANK_INVITE_VOYAGES = 3;
 export const SHIP_SIZE_INCREMENT = 50;
 export const WAREHOUSE_SIZE_INCREMENT = 5000;
 export const DEBT_THREAT_LEVEL = 10000;

@@ -26,7 +26,7 @@ describe("checkJade", () => {
     const p = play(checkJade(h, new ScriptedRng(OFFER_ROLLS)), [true]);
     expect(texts(p)).toEqual([
       OFFER,
-      "Very well, Taipan. We will arrange for funds from Hong Kong and our friend Sir Beaumont-Finch will proceed from Singapore forthwith.",
+      "Very well, Taipan. Mijnheer Brouwer will arrange for funds from Hong Kong, and our friend Sir Beaumont-Finch will proceed from Singapore forthwith.",
     ]);
     expect([h.bank, h.cash, h.jadeOffers]).toEqual([2500000, 400, 1]);
     expect(h.expedition).toEqual({ port: SINGAPORE, resolves: 28, stake: 1500000 });

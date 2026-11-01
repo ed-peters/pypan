@@ -1,7 +1,7 @@
 // The whole game: the opening choice, the comprador's port menu until the player
 // retires or sinks, then the final score (SPEC.md sections 2.2, 5 and 1).
 
-import { visitBank } from "./bank";
+import { bankAvailable, visitBank } from "./bank";
 import { HONG_KONG } from "./constants";
 import { checkExtortion } from "./extortion";
 import { Game } from "./game";
@@ -87,10 +87,12 @@ export function establishOpts(h: Hong, rng: Rng): Option[] {
     // selling and transferring are shown but disabled when there's nothing to move
     ["Sell goods", () => sellGoods(h), goodsAboard(h).length > 0],
   ];
-  // transfers and the bank are only at home
+  // transfers and the bank are only at home, and the bank only once it has invited us
   if (h.location === HONG_KONG) {
     opts.push(["Transfer goods", () => transfer(h), goodsToTransfer(h).length > 0]);
-    opts.push(["Visit the bank", () => visitBank(h, rng), true]);
+  }
+  if (bankAvailable(h)) {
+    opts.push(["Visit De Wisselbank", () => visitBank(h, rng), true]);
   }
   opts.push(["Leave port", () => sailAway(h, rng), true]);
   // only a player who is out of debt can retire

@@ -1,19 +1,43 @@
-// The bank (SPEC.md section 4.4), in Hong Kong; interest is applied on arrival.
+// The bank (SPEC.md section 4.4), in Hong Kong once it has invited us; interest is
+// applied on arrival.
 
-import { BANK_RATE, HONG_KONG, LOAN_RATE } from "./constants";
+import { BANK_INVITE_LEVEL, BANK_INVITE_VOYAGES, BANK_RATE, HONG_KONG, LOAN_RATE } from "./constants";
 import type { Hong } from "./hong";
-import { askNum, say, type Flow } from "./prompts";
+import { askNum, askYn, say, type Flow } from "./prompts";
 import type { Rng } from "./rng";
 import { checkRobbery } from "./safety";
+import { cashPosition } from "./score";
 
-/** Whether the bank can be visited here: only in Hong Kong. */
+/** Whether the bank can be visited here: only in Hong Kong, once we have an account. */
 export function bankAvailable(h: Hong): boolean {
-  return h.location === HONG_KONG;
+  return h.bankOpen && h.location === HONG_KONG;
+}
+
+/**
+ * On arrival, until we have an account: count arrivals in a row with a cash position
+ * of at least BANK_INVITE_LEVEL, and once there have been BANK_INVITE_VOYAGES, invite
+ * us to open one in Hong Kong (pypan-94). Declining starts the count again.
+ */
+export function* checkBankInvite(h: Hong): Flow {
+  if (h.bankOpen) {
+    return;
+  }
+  h.bankStreak = cashPosition(h) >= BANK_INVITE_LEVEL ? Math.min(h.bankStreak + 1, BANK_INVITE_VOYAGES) : 0;
+  if (h.bankStreak < BANK_INVITE_VOYAGES || h.location !== HONG_KONG) {
+    return;
+  }
+  h.bankStreak = 0;
+  if (!(yield* askYn("Taipan, Hendrik Brouwer of De Wisselbank, a Dutch bank of good reputation, has heard of our success and invites us to open an account. Our money would be safe there from thieves, and De Wisselbank may open the way to investment opportunities in future. Shall we open an account?"))) {
+    yield* say("Very well, Taipan. Perhaps Mijnheer Brouwer will ask again.");
+    return;
+  }
+  h.bankOpen = true;
+  yield* say("Very well, Taipan. Our account at De Wisselbank is open: we may call on Mijnheer Brouwer whenever we are in Hong Kong.");
 }
 
 export function* visitBank(h: Hong, rng: Rng): Flow {
   if (h.cash === 0 && h.bank === 0) {
-    yield* say("You have no reason to go to the bank, Taipan.");
+    yield* say("You have no reason to call on Mijnheer Brouwer, Taipan.");
     return;
   }
 
@@ -30,7 +54,7 @@ export function* visitBank(h: Hong, rng: Rng): Flow {
   if (h.bank > 0) {
     const n = yield* askNum("How much shall I withdraw?", h.bank);
     if (n > h.bank) {
-      yield* say("You do not have that much in the bank, Taipan.");
+      yield* say("You do not have that much at De Wisselbank, Taipan.");
     } else {
       h.cash += n;
       h.bank -= n;
@@ -54,7 +78,7 @@ export function* pay(h: Hong, n: number): Flow {
   }
   h.bank -= n - h.cash;
   h.cash = 0;
-  yield* say("The necessary funds will be sent from the bank, Taipan.");
+  yield* say("Mijnheer Brouwer will send the necessary funds from De Wisselbank, Taipan.");
 }
 
 /** Debt and bank interest for one voyage. */

@@ -99,7 +99,7 @@ describe("offerRepair", () => {
     const h = makeHong({ cash: 100, bank: 1000, shipDamage: 10 });
     const p = play(offerRepair(h, new ScriptedRng(REPAIR_ROLL)), [true, 301]);
     expect(p.transcript[1]?.prompt).toMatchObject({ max: 301 });
-    expect(texts(p)).toContain("The necessary funds will be sent from the bank, Taipan.");
+    expect(texts(p)).toContain("Mijnheer Brouwer will send the necessary funds from De Wisselbank, Taipan.");
     expect([h.cash, h.bank, h.debt, h.shipDamage]).toEqual([0, 799, 5000, 0]);
   });
 
@@ -112,7 +112,7 @@ describe("offerRepair", () => {
   it("uses cash and the bank before Wu pays the difference", () => {
     const h = makeHong({ cash: 100, bank: 50, debt: 5000, shipDamage: 10 });
     const p = play(offerRepair(h, new ScriptedRng(REPAIR_ROLL)), [true, 301, true]);
-    expect(texts(p)).toContain("The necessary funds will be sent from the bank, Taipan.");
+    expect(texts(p)).toContain("Mijnheer Brouwer will send the necessary funds from De Wisselbank, Taipan.");
     expect([h.cash, h.bank, h.debt, h.shipDamage]).toEqual([0, 0, 5151, 0]);
   });
 

@@ -168,14 +168,14 @@ describe("buyGoods", () => {
     const h = makeHong({ cash: 400, bank: 1000 });
     const p = play(buyGoods(h), [SILK, 1]);
     expect(p.transcript[1]?.prompt).toMatchObject({ kind: "number", max: 1 });
-    expect(texts(p).at(-1)).toBe("The necessary funds will be sent from the bank, Taipan.");
+    expect(texts(p).at(-1)).toBe("Mijnheer Brouwer will send the necessary funds from De Wisselbank, Taipan.");
     expect([h.cash, h.bank, h.shipGoods[SILK]]).toEqual([0, 400, 1]);
   });
 
   it("pays from cash alone when it's enough", () => {
     const h = makeHong({ cash: 400, bank: 1000 });
     const p = play(buyGoods(h), [GENERAL, 10]);
-    expect(texts(p)).not.toContain("The necessary funds will be sent from the bank, Taipan.");
+    expect(texts(p)).not.toContain("Mijnheer Brouwer will send the necessary funds from De Wisselbank, Taipan.");
     expect([h.cash, h.bank]).toEqual([300, 1000]);
   });
 

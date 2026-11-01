@@ -108,8 +108,7 @@ function* settle(h: Hong, rng: Rng, v: Venture): Flow {
   }
   if (v.vein && rng.chanceOf(MINE_VEIN_CHANCE)) {
     const pay = s.value * MINE_VEIN_PAYOUT;
-    yield* say(`Taipan!! The jade mine has struck a rich vein! Our share of ${money(pay)} has been deposited in the bank.`);
-    h.bank += pay;
+    yield* say(`Taipan!! The jade mine has struck a rich vein! Our share of ${money(pay)} ${deposit(h, pay)}.`);
     return;
   }
 
@@ -119,13 +118,22 @@ function* settle(h: Hong, rng: Rng, v: Venture): Flow {
   if (amount === 0) {
     yield* say(`Our share in the ${v.name} has broken even this quarter, Taipan.`);
   } else if (r > 0) {
-    yield* say(`Our share in the ${v.name} has paid us ${money(amount)} this quarter, Taipan. It has been deposited in the bank.`);
-    h.bank += amount;
+    yield* say(`Our share in the ${v.name} has paid us ${money(amount)} this quarter, Taipan. It ${deposit(h, amount)}.`);
   } else if (!(yield* askYn(`Taipan, it has been a bad quarter for the ${v.name}, and the backers must put in ${money(amount)} more. Shall we pay our part?`))
     || !(yield* payCall(h, amount))) {
     s.value = Math.round(s.value * (1 - REFUSAL_LOSS) / 1000) * 1000;
     yield* say(`The other backers have taken half of our share in the ${v.name}, Taipan. It is now worth ${money(s.value)}.`);
   }
+}
+
+/** Pay n into the bank, or to us in cash before we have an account (pypan-94); returns how it was paid, after "has been". */
+function deposit(h: Hong, n: number): string {
+  if (h.bankOpen) {
+    h.bank += n;
+    return "has been deposited with Mijnheer Brouwer";
+  }
+  h.cash += n;
+  return "has been paid to us in cash";
 }
 
 /**

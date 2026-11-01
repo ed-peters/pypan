@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { SHANGHAI } from "../../src/engine/constants";
-import { bankAvailable, accrueInterest, visitBank } from "../../src/engine/bank";
+import { HONG_KONG, SHANGHAI } from "../../src/engine/constants";
+import { bankAvailable, accrueInterest, checkBankInvite, visitBank } from "../../src/engine/bank";
 import { ScriptedRng } from "../../src/engine/rng";
 import { makeHong } from "../helpers/hong";
 import { play, texts } from "../helpers/play";
@@ -8,7 +8,7 @@ import { play, texts } from "../helpers/play";
 describe("visitBank", () => {
   it("turns you away with nothing to bank", () => {
     const p = play(visitBank(makeHong({ cash: 0 }), new ScriptedRng()));
-    expect(texts(p)).toEqual(["You have no reason to go to the bank, Taipan."]);
+    expect(texts(p)).toEqual(["You have no reason to call on Mijnheer Brouwer, Taipan."]);
   });
 
   it("deposits, then offers a withdrawal", () => {
@@ -34,7 +34,7 @@ describe("visitBank", () => {
       "How much shall I deposit?",
       "You do not have that much cash on hand, Taipan.",
       "How much shall I withdraw?",
-      "You do not have that much in the bank, Taipan.",
+      "You do not have that much at De Wisselbank, Taipan.",
     ]);
     expect([h.cash, h.bank]).toEqual([400, 100]);
   });
@@ -44,6 +44,56 @@ describe("bankAvailable", () => {
   it("is only in Hong Kong", () => {
     expect(bankAvailable(makeHong())).toBe(true);
     expect(bankAvailable(makeHong({ time: 13, location: SHANGHAI }))).toBe(false);
+  });
+
+  it("is closed until we've opened an account", () => {
+    expect(bankAvailable(makeHong({ bankOpen: false }))).toBe(false);
+  });
+});
+
+describe("checkBankInvite", () => {
+  const INVITE = "Taipan, Hendrik Brouwer of De Wisselbank, a Dutch bank of good reputation, has heard of our success and invites us to open an account. Our money would be safe there from thieves, and De Wisselbank may open the way to investment opportunities in future. Shall we open an account?";
+  // a player without an account, out of debt, with 20,000 on hand
+  const closed = (overrides = {}) => makeHong({ bankOpen: false, cash: 20000, debt: 0, ...overrides });
+
+  it("counts arrivals in a row with a cash position of at least 20,000", () => {
+    const h = closed({ location: SHANGHAI });
+    play(checkBankInvite(h));
+    play(checkBankInvite(h));
+    expect(h.bankStreak).toBe(2);
+    h.debt = 1;
+    expect(play(checkBankInvite(h)).transcript).toEqual([]);
+    expect(h.bankStreak).toBe(0);
+  });
+
+  it("invites us on the third such arrival in Hong Kong, and opens the account", () => {
+    const h = closed({ bankStreak: 2 });
+    const p = play(checkBankInvite(h), [true]);
+    expect(texts(p)).toEqual([INVITE, "Very well, Taipan. Our account at De Wisselbank is open: we may call on Mijnheer Brouwer whenever we are in Hong Kong."]);
+    expect([h.bankOpen, bankAvailable(h)]).toEqual([true, true]);
+  });
+
+  it("waits for Hong Kong, while the streak holds", () => {
+    const h = closed({ location: SHANGHAI, bankStreak: 2 });
+    expect(play(checkBankInvite(h)).transcript).toEqual([]);
+    expect(h.bankStreak).toBe(3);
+    h.location = HONG_KONG;
+    expect(texts(play(checkBankInvite(h), [true]))[0]).toBe(INVITE);
+  });
+
+  it("asks again after three more arrivals if we decline", () => {
+    const h = closed({ bankStreak: 2 });
+    expect(texts(play(checkBankInvite(h), [false]))).toEqual([INVITE, "Very well, Taipan. Perhaps Mijnheer Brouwer will ask again."]);
+    expect([h.bankOpen, h.bankStreak]).toEqual([false, 0]);
+    expect(play(checkBankInvite(h)).transcript).toEqual([]);
+    expect(play(checkBankInvite(h)).transcript).toEqual([]);
+    expect(texts(play(checkBankInvite(h), [true]))[0]).toBe(INVITE);
+  });
+
+  it("does nothing once the account is open", () => {
+    const h = makeHong({ cash: 20000, debt: 0 });
+    expect(play(checkBankInvite(h)).transcript).toEqual([]);
+    expect(h.bankStreak).toBe(0);
   });
 });
 

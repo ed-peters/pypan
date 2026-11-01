@@ -116,6 +116,19 @@ describe("save format", () => {
     expect(() => fromSave({ ...toSave(h), grudge: 4 })).toThrow(SaveFormatError);
   });
 
+  it("round-trips the closed bank and the invitation streak; pypan.py's bank is open", () => {
+    const h = newHong(new SeededRng(4), false);
+    h.bankStreak = 2;
+    expect(toSave(h)).toMatchObject({ bank_closed: true, bank_streak: 2 });
+    expect(fromSaveString(toSaveString(h))).toMatchObject({ bankOpen: false, bankStreak: 2 });
+    h.bankOpen = true;
+    h.bankStreak = 0;
+    expect(toSave(h)).not.toHaveProperty("bank_closed");
+    expect(toSave(h)).not.toHaveProperty("bank_streak");
+    expect(fromSave(pythonSave)).toMatchObject({ bankOpen: true, bankStreak: 0 });
+    expect(() => fromSave({ ...toSave(h), bank_streak: 4 })).toThrow(SaveFormatError);
+  });
+
   it("copies arrays rather than sharing them", () => {
     const h = newHong(new SeededRng(4), false);
     const back = fromSave(toSave(h));

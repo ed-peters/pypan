@@ -36,7 +36,7 @@ describe("checkPorcelain", () => {
     const p = play(checkPorcelain(h, new ScriptedRng([0])), [true]);
     expect(texts(p)).toEqual([
       OFFER,
-      "The necessary funds will be sent from the bank, Taipan.",
+      "Mijnheer Brouwer will send the necessary funds from De Wisselbank, Taipan.",
       "Very well, Taipan. We are in the porcelain trade. Mind how it's stowed: it breaks!",
     ]);
     expect([h.cash, h.bank, h.porcelain]).toEqual([0, 1250400, true]);

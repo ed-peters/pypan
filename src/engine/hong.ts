@@ -79,6 +79,10 @@ export interface Hong {
   armsBought: boolean;
   /** Whether we own a share in the porcelain trade; until then porcelain is hidden. */
   porcelain: boolean;
+  /** Whether we've accepted the bank's invitation to open an account (pypan-94); until then the bank is closed to us. */
+  bankOpen: boolean;
+  /** Arrivals in a row with a cash position of at least BANK_INVITE_LEVEL, up to BANK_INVITE_VOYAGES, while the bank is closed. */
+  bankStreak: number;
 }
 
 /** A new game in Hong Kong, starting with either guns or debt. */
@@ -113,6 +117,8 @@ export function newHong(rng: Rng, guns: boolean, name: string = "Rising Sun"): H
     arms: null,
     armsBought: false,
     porcelain: false,
+    bankOpen: false,
+    bankStreak: 0,
   };
 }
 

@@ -75,7 +75,13 @@ describe("the port menu", () => {
 
   it("offers everything in Hong Kong, including retiring when out of debt", () => {
     expect(labels(makeHong({ debt: 0 }))).toEqual([
-      "Buy goods", "Sell goods", "Transfer goods", "Visit the bank", "Leave port", "Retire",
+      "Buy goods", "Sell goods", "Transfer goods", "Visit De Wisselbank", "Leave port", "Retire",
+    ]);
+  });
+
+  it("doesn't offer the bank until it has invited us", () => {
+    expect(labels(makeHong({ debt: 0, bankOpen: false }))).toEqual([
+      "Buy goods", "Sell goods", "Transfer goods", "Leave port", "Retire",
     ]);
   });
 
@@ -95,7 +101,7 @@ describe("the port menu", () => {
     const enabled = (h: Hong) => establishOpts(h, new ScriptedRng()).map(([l, , e]) => [l, e]);
     expect(enabled(makeHong())).toEqual([
       ["Buy goods", true], ["Sell goods", false], ["Transfer goods", false],
-      ["Visit the bank", true], ["Leave port", true],
+      ["Visit De Wisselbank", true], ["Leave port", true],
     ]);
     expect(enabled(makeHong({ warehouseGoods: [1, 0, 0, 0, 0] }))).toContainEqual(["Transfer goods", true]);
     expect(enabled(makeHong({ shipGoods: [1, 0, 0, 0, 0] }))).toEqual(expect.arrayContaining([
@@ -176,7 +182,7 @@ describe("a whole game", () => {
     const seen = drive(game, [
       1, false, false, //          debt start; refuse Li Yuen; no business with Wu
       0, GENERAL, 60, //           buy 60 general for 300
-      4, SHANGHAI, //              leave port for Shanghai
+      3, SHANGHAI, //              leave port for Shanghai (no bank yet)
       1, true, //                  sell all 60 general for 900
       2, HONG_KONG, //             leave port for Hong Kong
       false, true, //              no business with Wu; pay Li Yuen

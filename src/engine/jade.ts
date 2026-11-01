@@ -49,7 +49,7 @@ export function* checkJade(h: Hong, rng: Rng): Flow {
       : "Taipan, the East India Company man Sir Beaumont-Finch is gathering backers for an expedition to establish a jade mine.";
     const invested = yield* askYn(`${pitch} Would you like to invest ${money(amount)}?`);
     if (invested) {
-      yield* say(`Very well, Taipan. We will arrange for funds from Hong Kong and our friend Sir Beaumont-Finch will proceed from ${city(h.location)} forthwith.`);
+      yield* say(`Very well, Taipan. Mijnheer Brouwer will arrange for funds from Hong Kong, and our friend Sir Beaumont-Finch will proceed from ${city(h.location)} forthwith.`);
       h.bank -= amount;
     }
     // others back it if we don't

@@ -2,7 +2,7 @@
 // from the Python version can be imported. Keys are snake_case on disk.
 
 import {
-  CITIES, HONG_KONG, JADE_INVESTMENT, LI_YUEN_MAX_GRUDGE, NUM_GOODS, PORCELAIN,
+  BANK_INVITE_VOYAGES, CITIES, HONG_KONG, JADE_INVESTMENT, LI_YUEN_MAX_GRUDGE, NUM_GOODS, PORCELAIN,
   START_YEAR,
 } from "./constants";
 import type { Cargo, Expedition, Hong, Share } from "./hong";
@@ -56,6 +56,9 @@ export function toSave(h: Hong): Record<string, unknown> {
     ...(h.godownsBought ? { godowns_bought: true } : {}),
     ...(h.arms ? { arms: { ...h.arms } } : {}),
     ...(h.armsBought ? { arms_bought: true } : {}),
+    // pypan.py's bank is always open
+    ...(h.bankOpen ? {} : { bank_closed: true }),
+    ...(h.bankStreak ? { bank_streak: h.bankStreak } : {}),
   };
 }
 
@@ -106,6 +109,8 @@ export function fromSave(data: unknown): Hong {
     godownsBought: d.godowns_bought === undefined ? false : bool(d, "godowns_bought"),
     arms: d.arms == null ? null : share(d.arms, "arms"),
     armsBought: d.arms_bought === undefined ? false : bool(d, "arms_bought"),
+    bankOpen: d.bank_closed === undefined ? true : !bool(d, "bank_closed"),
+    bankStreak: d.bank_streak === undefined ? 0 : int(d, "bank_streak", 0, BANK_INVITE_VOYAGES),
   };
 }
 

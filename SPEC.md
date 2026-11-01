@@ -224,7 +224,7 @@ and direction (see `MSG_POS_SHOCK` / `MSG_NEG_SHOCK`).
   bank (abroad, cash only). Goods you
   can't afford any of are disabled on the menu. Goods go into the ship's hold. No explicit capacity check at purchase time —
   overload is caught when sailing. When cash doesn't cover it, the rest comes from
-  the bank: "The necessary funds will be sent from the bank, Taipan."
+  the bank: "Mijnheer Brouwer will send the necessary funds from De Wisselbank, Taipan."
 - **Sell**: limited by the quantity in the ship's hold; goods not aboard are disabled
   on the menu. Proceeds added to cash. With
   only one good aboard, there's no menu: "Would you like to sell all of your
@@ -233,7 +233,29 @@ and direction (see `MSG_POS_SHOCK` / `MSG_NEG_SHOCK`).
 Both show a condition report listing the current price of each good on the market
 (four goods until you're in the porcelain trade, §4.7), in two columns.
 
-### 4.4 Banking (Hong Kong only)
+### 4.4 Banking: De Wisselbank (Hong Kong only)
+
+The bank is **De Wisselbank**, a Dutch bank of good reputation, and its man in Hong
+Kong is **Hendrik Brouwer**. He is named in full when he first appears, in the
+invitation, and is "Mijnheer Brouwer" in every message about a bank action after
+that (sending funds for a purchase, receiving a venture's payout, arranging a jade
+stake).
+
+**The bank is closed to a new player** (pypan-94). On each arrival, a cash position
+(cash + bank − debt) of at least 20,000 (`BANK_INVITE_LEVEL`) adds one to a count;
+anything less resets it. Once the count reaches 3 (`BANK_INVITE_VOYAGES`), the next
+arrival in Hong Kong with the count still at 3 brings an invitation:
+
+> Taipan, Hendrik Brouwer of De Wisselbank, a Dutch bank of good reputation, has heard
+> of our success and invites us to open an account. Our money would be safe there
+> from thieves, and De Wisselbank may open the way to investment opportunities in
+> future. Shall we open an account?
+
+Yes opens the account ("Our account at De Wisselbank is open: we may call on Mijnheer
+Brouwer whenever we are in Hong Kong."), and "Visit De Wisselbank" joins the Hong Kong
+menu. No ("Perhaps Mijnheer Brouwer will ask again.") resets the count, so the invitation comes again after three more arrivals at 20,000 or above.
+Until the account is open, venture payouts (§4.8) are paid in cash rather than into
+the bank. Saves from pypan.py, and from before pypan-94, load with the bank open.
 
 Deposit cash into or withdraw from the bank, in Hong Kong. The bank balance **earns
 0.5% interest per voyage** (`BANK_RATE`), applied on arrival at any port.
@@ -382,7 +404,7 @@ and the lender, then repeatedly presents the port action menu. The menu
 - **Buy goods**
 - **Sell goods** (disabled when the hold has no goods)
 - In Hong Kong only: **Transfer goods** (disabled when there are no goods in the hold
-  or the warehouse) and **Visit the bank**
+  or the warehouse) and **Visit De Wisselbank**
 - **Leave port**
 - In Hong Kong only, and only when out of debt: **Retire**. It asks "Are you sure you
   want to retire, Taipan?" before ending the game (§1.1).
@@ -402,7 +424,7 @@ The game auto-saves at the top of every menu iteration.
 5. **Storm check** (see §6).
 6. Arrives; **debt and bank interest are applied**.
 7. Runs the arrival event sequence:
-   `check_lender` → `check_extortion` → `check_upgrades` → `check_warehouse`
+   `check_lender` → `check_bank_invite` (§4.4) → `check_extortion` → `check_upgrades` → `check_warehouse`
    → `check_ventures` (shares, the godown and arms offers, then `check_jade`)
    → `check_porcelain` → `check_cargo`
    → `check_safety` → `establish_prices`.
@@ -544,8 +566,8 @@ Since it starts at 0, Li Yuen asks at the very start of a game that begins with 
   gives the damage as a percent of ship size and a cost that scales with elapsed
   time, damage, and ship size. You pay what you choose, up to the full cost; damage
   is fixed in proportion to what you pay, and paying the full cost fixes everything.
-  Cash pays first, then the bank ("The necessary funds will be sent from the bank,
-  Taipan."). If you enter more than your cash and bank together, Wu can cover the
+  Cash pays first, then the bank ("Mijnheer Brouwer will send the necessary funds
+  from De Wisselbank, Taipan."). If you enter more than your cash and bank together, Wu can cover the
   difference (added to debt), after all your cash and bank funds are spent.
   Any repair ends with McHenry's "Aye, she'll be right as rain for ye!!"
 - **New ship** (after month 6, 1-in-4): buy a larger ship (`+50` capacity,
@@ -648,6 +670,8 @@ after the save's date.
 | `GUN_SIZE` | 10 | Hold space a gun occupies |
 | `LOAN_RATE` | 0.10 | Debt interest per voyage |
 | `BANK_RATE` | 0.005 | Bank interest per voyage (§4.4) |
+| `BANK_INVITE_LEVEL` | 20000 | Cash position that counts toward the bank's invitation (§4.4) |
+| `BANK_INVITE_VOYAGES` | 3 | Arrivals in a row at that level before the invitation |
 | `SHIP_SIZE_INCREMENT` | 50 | Capacity added by a new ship |
 | `WAREHOUSE_SIZE_INCREMENT` | 5000 | Capacity added by a warehouse upgrade |
 | `DEBT_THREAT_LEVEL` | 10000 | Debt at which Wu threatens (and can have you robbed) |

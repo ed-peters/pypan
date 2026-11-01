@@ -1,7 +1,7 @@
 // Sailing between ports (SPEC.md section 5.1).
 
 import { checkPirates } from "./battle";
-import { accrueInterest } from "./bank";
+import { accrueInterest, checkBankInvite } from "./bank";
 import { AT_SEA, CITIES, city } from "./constants";
 import { checkCargo } from "./cargo";
 import { checkExtortion } from "./extortion";
@@ -48,6 +48,7 @@ export function* sailAway(h: Hong, rng: Rng): Flow<"sunk" | void> {
 
   // check local events
   yield* checkLender(h, rng);
+  yield* checkBankInvite(h);
   yield* checkExtortion(h, rng);
   yield* checkUpgrades(h, rng);
   yield* checkWarehouse(h, rng);

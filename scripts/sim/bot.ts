@@ -79,6 +79,8 @@ export interface Ledger {
   /** Ventures' dividends and rich veins; and what was lost to them: failed jade stakes, calls for funds, and share value seized or taken for refusing. */
   ventureGain: number;
   ventureLost: number;
+  /** The month the bank invited us and we opened an account (pypan-94). */
+  bankMonth: number | null;
   /** The porcelain share: when it was bought (month), its fee, and what was paid for porcelain broken. */
   porcelainMonth: number | null;
   porcelainFee: number;
@@ -91,7 +93,7 @@ export function newLedger(): Ledger {
     robbery: 0, fines: 0, seized: 0, repairs: 0, ships: 0, guns: 0, bailouts: 0,
     shockGain: 0, shocksUp: 0, shocksUpSold: 0, shocksDown: 0, shocksDownBought: 0,
     biggestWindfall: 0, biggestLateWindfall: 0, jadeOffers: 0, jadeStake: 0, jadeStakeShare: 0, jadeOutcome: null, jadeBacked: 0, jadeWins: 0,
-    ventureGain: 0, ventureLost: 0, porcelainMonth: null, porcelainFee: 0, porcelainBroken: 0,
+    ventureGain: 0, ventureLost: 0, bankMonth: null, porcelainMonth: null, porcelainFee: 0, porcelainBroken: 0,
   };
 }
 
@@ -245,6 +247,10 @@ export class Bot {
     if (/^A new warehouse with an additional/.test(text)) {
       return false;
     }
+    if (/^Taipan, Hendrik Brouwer of De Wisselbank, .* invites us to open an account\./.test(text)) {
+      this.ledger.bankMonth = currentTime(h);
+      return true;
+    }
 
     // ---------------------------------------------------------------- consignments, jade
     m = /^(?:Good joss!! )?Should I accept a special consignment of a .* to transport to (.+) for ([\d,]+), Taipan\? \(It will take up (\d+) space/.exec(text);
@@ -312,7 +318,7 @@ export class Bot {
     }
     this.step = this.plan.shift()!;
     const label = {
-      sell: "Sell goods", buy: "Buy goods", bank: "Visit the bank", leave: "Leave port",
+      sell: "Sell goods", buy: "Buy goods", bank: "Visit De Wisselbank", leave: "Leave port",
     }[this.step.kind];
     const i = p.options.indexOf(label);
     if (i < 0 || p.disabled?.includes(i)) {

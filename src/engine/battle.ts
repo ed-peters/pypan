@@ -6,7 +6,7 @@
 // the player's next choice (or the battle's end), so each round takes one tap.
 
 import {
-  ENEMY_DAMAGE_BUMP, ENEMY_DAMAGE_START, ENEMY_HEALTH_BUMP, ENEMY_HEALTH_START,
+  CRITICAL_HIT_CHANCE, ENEMY_DAMAGE_BUMP, ENEMY_DAMAGE_START, ENEMY_HEALTH_BUMP, ENEMY_HEALTH_START,
   GOODS, GUN_SIZE, LI_YUEN_GRUDGE_SHIPS, LI_YUEN_SIGHTING, START_YEAR, VOLLEY_BREAKAGE, good,
 } from "./constants";
 import { money } from "./format";
@@ -122,7 +122,13 @@ export class PirateBattle {
     } else {
       text = `${text}\n\nThey hit us!`;
     }
-    this.h.shipDamage += this.calculateDamage();
+    let damage = this.calculateDamage();
+    // a critical hit does double damage
+    if (this.rng.chanceOf(CRITICAL_HIT_CHANCE)) {
+      damage *= 2;
+      text = `${text}\n\nA broadside raked us from stem to stern, Taipan!!`;
+    }
+    this.h.shipDamage += damage;
     // every volley breaks some of the porcelain aboard
     const broken = breakPorcelain(this.h, this.rng, VOLLEY_BREAKAGE);
     if (broken > 0) {
@@ -167,10 +173,15 @@ export class PirateBattle {
   private *fireCannons(): Flow {
     let text = "Aye, we'll fire our cannons at 'em, Taipan!";
     yield* beat(text);
+    // a critical hit doubles every shot in the volley
+    const critical = this.rng.chanceOf(CRITICAL_HIT_CHANCE);
+    if (critical) {
+      text = `${text}\n\nA lucky shot hit their powder magazine!`;
+    }
     let k = 0;
     // once the last ship sinks, the remaining guns hold their fire
     for (let i = 0; i < this.h.shipGuns && this.pirates > 0; i++) {
-      this.currHealth -= this.rng.randrange(30) + 10;
+      this.currHealth -= (this.rng.randrange(30) + 10) * (critical ? 2 : 1);
       if (this.currHealth < 0) {
         this.removePirates(1);
         k += 1;

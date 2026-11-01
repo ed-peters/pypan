@@ -230,8 +230,8 @@ describe("Terminal", () => {
     const onEnd = vi.fn();
     const term = new Terminal(root, { onNewGame, onEnd });
     // a guns start with a nearly wrecked ship; pirates: 3 ships; no Li Yuen;
-    // run fails, no partial escape; return fire sinks us
-    const rng = new ScriptedRng([0, 0, 0, 0, 0, 0, 2, 0.5, 100, 0, 1, 0, 2, 1, 0.99]);
+    // run fails, no partial escape; return fire sinks us (no critical hit)
+    const rng = new ScriptedRng([0, 0, 0, 0, 0, 0, 2, 0.5, 100, 0, 1, 0, 2, 1, 0.99, 1]);
     const { game, session } = newGame({ rng });
     term.attach(game, session);
     tap("Guns");

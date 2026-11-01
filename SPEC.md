@@ -490,6 +490,9 @@ never interrupts its own battle.
 - **Fire cannons** (if any guns): each gun does `randrange(30)+10` damage to the
   current enemy ship; when a ship's health drops below 0 it sinks and a fresh enemy
   ship rotates in. Once the last ship sinks, the remaining guns hold their fire.
+  1-in-20 volleys (`CRITICAL_HIT_CHANCE`) are a **critical hit**, rolled before the
+  shots: every shot in the volley does double damage, and the report adds "A lucky
+  shot hit their powder magazine!"
 - **Dump cargo** (if carrying goods): throw goods overboard to improve escape odds.
   Dumping n > 0 units adds `max(1, n/10)` to `run_ok`.
 - **Run away**: escape chance grows each attempt (`run_ik`/`run_ok` ratchet up);
@@ -500,7 +503,9 @@ never interrupts its own battle.
 (raising capacity by the gun's size since a gun occupies 10 units) or damage the
 hull. Gun-hit probability rises with existing damage (certain above 80%). Every
 volley also breaks 5–20% of any porcelain aboard: "They smashed ((n)) of our
-porcelain!" (§4.7).
+porcelain!" (§4.7). 1-in-20 of their volleys are also a **critical hit**, rolled after
+the damage: it does double damage (four times a regular volley, from Li Yuen's fleet),
+and the report adds "A broadside raked us from stem to stern, Taipan!!"
 
 ### 7.3 Resolution
 
@@ -743,6 +748,7 @@ after the save's date.
 | `SCORE_DIVISOR` | 330 | The score is the final position per month played, divided by this (§1.1) |
 | `ENEMY_HEALTH_START` / `_BUMP` | 20 / 10 | Pirate health base + per-year growth |
 | `ENEMY_DAMAGE_START` / `_BUMP` | 0.5 / 0.5 | Pirate damage base + per-year growth |
+| `CRITICAL_HIT_CHANCE` | 20 | 1-in-N volleys, ours or theirs, do double damage (§7.2) |
 | `LI_YUEN_MIN_SHIPS` | 5 | Smallest fleet Li Yuen sends |
 | `LI_YUEN_PATIENCE` | 20 | 1-in-N arrivals that advance Li Yuen's counter (§8) |
 | `LI_YUEN_SHARE` | 0.03 | Share of your cash position his demand starts from, after month 12 |

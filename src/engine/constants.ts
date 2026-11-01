@@ -121,6 +121,8 @@ export const ENEMY_HEALTH_START = 20;
 export const ENEMY_HEALTH_BUMP = 10;
 export const ENEMY_DAMAGE_START = 0.5;
 export const ENEMY_DAMAGE_BUMP = 0.5;
+/** 1-in-N volleys, ours or theirs, are critical hits that do double damage. */
+export const CRITICAL_HIT_CHANCE = 20;
 
 // ------------------------------------------------------------------------------------
 // Cities

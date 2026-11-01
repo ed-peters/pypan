@@ -155,8 +155,8 @@ describe("game endings", () => {
   it("ends with 'sunk' when the ship sinks, without saving afterwards", () => {
     const saved = makeHong({ cash: 0, debt: 0, extorted: 1, shipDamage: 59 });
     const saves: Hong[] = [];
-    // pirates: 3 ships; no Li Yuen; run fails, no partial escape; 2 damage sinks us
-    const rng = new ScriptedRng([0, 2, 0.5, 100, 0, 1, 0, 2, 1, 0.5]);
+    // pirates: 3 ships; no Li Yuen; run fails, no partial escape; 2 damage sinks us (no critical hit)
+    const rng = new ScriptedRng([0, 2, 0.5, 100, 0, 1, 0, 2, 1, 0.5, 1]);
     const { game } = newGame({ rng, saved, onSave: (h) => saves.push(h) });
     const seen = drive(game, [2, false, 4, SHANGHAI, 0]);
     expect(seen.slice(-3)).toEqual([

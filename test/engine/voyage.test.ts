@@ -95,8 +95,8 @@ describe("sailAway", () => {
 
   it("ends the voyage if the ship sinks", () => {
     const h = makeHong({ extorted: 1, shipDamage: 59 });
-    // pirates: 3 ships; no Li Yuen; run fails, no partial escape; 2 damage sinks us
-    const rng = new ScriptedRng([0, 2, 0.5, 100, 0, 1, 0, 2, 1, 0.5]);
+    // pirates: 3 ships; no Li Yuen; run fails, no partial escape; 2 damage sinks us (no critical hit)
+    const rng = new ScriptedRng([0, 2, 0.5, 100, 0, 1, 0, 2, 1, 0.5, 1]);
     const p = play(sailAway(h, rng), [SHANGHAI, 0]);
     expect(texts(p).at(-1)).toBe("It's all over now!!");
     expect(p.game.result).toBe("sunk");

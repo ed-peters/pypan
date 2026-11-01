@@ -79,6 +79,9 @@ export interface Ledger {
   /** Ventures' dividends and rich veins; and what was lost to them: failed jade stakes, calls for funds, and share value seized or taken for refusing. */
   ventureGain: number;
   ventureLost: number;
+  /** The longest run of voyages after month 12 with two goods or fewer on the market (pypan-96), and the run under way. */
+  thinVoyages: number;
+  thinRun: number;
   /** The month the bank invited us and we opened an account (pypan-94). */
   bankMonth: number | null;
   /** The porcelain share: when it was bought (month), its fee, and what was paid for porcelain broken. */
@@ -93,7 +96,7 @@ export function newLedger(): Ledger {
     robbery: 0, fines: 0, seized: 0, repairs: 0, ships: 0, guns: 0, bailouts: 0,
     shockGain: 0, shocksUp: 0, shocksUpSold: 0, shocksDown: 0, shocksDownBought: 0,
     biggestWindfall: 0, biggestLateWindfall: 0, jadeOffers: 0, jadeStake: 0, jadeStakeShare: 0, jadeOutcome: null, jadeBacked: 0, jadeWins: 0,
-    ventureGain: 0, ventureLost: 0, bankMonth: null, porcelainMonth: null, porcelainFee: 0, porcelainBroken: 0,
+    ventureGain: 0, ventureLost: 0, thinVoyages: 0, thinRun: 0, bankMonth: null, porcelainMonth: null, porcelainFee: 0, porcelainBroken: 0,
   };
 }
 
@@ -188,6 +191,10 @@ export class Bot {
       // what accrueInterest will add on arrival (unless we sink)
       this.ledger.bankInterest += Math.trunc(h.bank * BANK_RATE);
       this.ledger.debtInterest += Math.trunc(h.debt * LOAN_RATE);
+      // how long we've traded with two goods or fewer
+      const thin = currentTime(h) > 12 && marketGoods(h).length <= 2;
+      this.ledger.thinRun = thin ? this.ledger.thinRun + 1 : 0;
+      this.ledger.thinVoyages = Math.max(this.ledger.thinVoyages, this.ledger.thinRun);
       return to;
     }
 

@@ -12,13 +12,13 @@ const rich = (overrides = {}) => makeHong({ time: 49, debt: 0, bank: 5000000, ..
 const OFFER = "Taipan, a merchant house from Jingdezhen offers us a share in the porcelain trade for 3,750,000. With it we may buy and sell porcelain in every port. Shall we buy in?";
 
 describe("porcelainOdds", () => {
-  it("starts at 1-in-20 after month 48 and gets better every three months, to 1-in-3", () => {
+  it("starts at 1-in-10 after month 36 and gets better every three months, to 1-in-3", () => {
     const odds = (time: number) => porcelainOdds(rich({ time }));
-    expect([49, 51, 52, 55, 76, 99, 100, 150].map(odds)).toEqual([20, 20, 19, 18, 11, 4, 3, 3]);
+    expect([37, 39, 40, 43, 49, 57, 58, 150].map(odds)).toEqual([10, 10, 9, 8, 6, 4, 3, 3]);
   });
 
   it.each([
-    ["before month 49", { time: 48 }],
+    ["before month 37", { time: 36 }],
     ["outside Hong Kong", { location: SHANGHAI }],
     ["to a player worth 2,000,000 or less", { bank: 1999600 }],
     ["counting debt against worth", { debt: 3000401 }],

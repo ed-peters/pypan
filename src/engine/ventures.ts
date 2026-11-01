@@ -168,7 +168,7 @@ interface Offer {
   port: number | null;
   months: number;
   chance: number;
-  /** Whether it can be offered yet (the arms smuggling needs godowns first). */
+  /** Whether it can be offered yet (the arms smuggling needs godowns and porcelain first). */
   ready: (h: Hong) => boolean;
   /** The good it replaces. */
   good: number;
@@ -199,7 +199,8 @@ const ARMS_VENTURE: Offer = {
   port: null,
   months: ARMS_MIN_MONTHS,
   chance: ARMS_OFFER_CHANCE,
-  ready: (h) => h.godownsBought,
+  // not until we're in the porcelain trade, so we always have three goods (pypan-96)
+  ready: (h) => h.godownsBought && h.porcelain,
   good: ARMS,
   pitch: (kind, fee) => ({
     first: `Taipan, the Red Wind gang offers us a share in their arms smuggling for ${fee}. We would leave the arms trade to them. Shall we join them?`,

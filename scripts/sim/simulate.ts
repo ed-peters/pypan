@@ -188,6 +188,11 @@ function summarize(results: Run[], runs: number, start: string): Summary {
         incomeP10: percentile(shares, 10), incomeP50: percentile(shares, 50), incomeP90: percentile(shares, 90),
       };
     })(),
+    thin: {
+      any: frac(ledgers.filter((l) => l.thinVoyages > 0)),
+      median: med(ledgers.map((l) => l.thinVoyages)),
+      p90: percentile(ledgers.map((l) => l.thinVoyages).sort((a, b) => a - b), 90),
+    },
     bank: {
       opened: frac(ledgers.filter((l) => l.bankMonth !== null)),
       p25: percentile(ledgers.flatMap((l) => (l.bankMonth === null ? [] : [l.bankMonth])).sort((a, b) => a - b), 25),
@@ -391,6 +396,12 @@ function main(): void {
   out.push(table(
     ["Sunk by 10 years", "Median worst drawdown", "Games with a drawdown >= 25%", ">= 50%", "After year 5: median worst", ">= 25%"],
     [[pct(1 - sum.afloat[LAST]!), pct(sum.risk.drawdown), pct(sum.risk.over25), pct(sum.risk.over50), pct(sum.risk.late), pct(sum.risk.lateOver25)]],
+  ));
+  out.push("");
+  out.push("Two goods or fewer on the market after month 12 (pypan-96), among ships afloat at 10 years:\n");
+  out.push(table(
+    ["Games with any such voyage", "Longest run in voyages: median", "P90"],
+    [[pct(sum.thin.any), fmt(sum.thin.median), fmt(sum.thin.p90)]],
   ));
   out.push("");
   out.push("The bank account (pypan-94), among ships afloat at 10 years:\n");

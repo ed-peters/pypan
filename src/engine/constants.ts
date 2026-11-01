@@ -6,8 +6,8 @@ import type { Rng } from "./rng";
 // Tuning
 
 export const BASED_PRICES = true;
-/** The score is the final position per month played, divided by this (100 in pypan.py). */
-export const SCORE_DIVISOR = 200;
+/** The score is the final position per month played, divided by this (100 in pypan.py; 330 since porcelain came earlier, pypan-96). */
+export const SCORE_DIVISOR = 330;
 export const START_CASH = 400;
 export const START_DEBT = 5000;
 export const START_YEAR = 1860;
@@ -84,19 +84,19 @@ export const GODOWN_MIN_MONTHS = 12;
 export const GODOWN_OFFER_CHANCE = 3;
 export const GODOWN_RETURN = [-0.05, 0.1] as const;
 export const GODOWN_SEIZURE_CHANCE = 60;
-/** The Red Wind gang's arms smuggling, offered 1-in-6 arrivals in any port but Hong Kong after this many months (once you've had godowns): volatile, and shut down 1-in-N quarters with a fine. */
+/** The Red Wind gang's arms smuggling, offered 1-in-6 arrivals in any port but Hong Kong after this many months (once you've had godowns, and are in the porcelain trade: pypan-96): volatile, and shut down 1-in-N quarters with a fine. */
 export const ARMS_MIN_MONTHS = 24;
 export const ARMS_OFFER_CHANCE = 6;
 export const ARMS_RETURN = [-0.15, 0.3] as const;
 export const ARMS_SHUTDOWN_CHANCE = 30;
 /** A share in the porcelain trade is offered in Hong Kong only after this many months (pypan-87) ... */
-export const PORCELAIN_MIN_MONTHS = 48;
+export const PORCELAIN_MIN_MONTHS = 36;
 /** ... to a player whose cash position (cash + bank - debt) is over this ... */
 export const PORCELAIN_WORTH_LEVEL = 2000000;
 /** ... for this share of the cash position. */
 export const PORCELAIN_FEE_SHARE = 0.75;
-/** The offer comes 1-in-N arrivals in Hong Kong: 1-in-20 at first, one better every few months, to 1-in-3. */
-export const PORCELAIN_ODDS_START = 20;
+/** The offer comes 1-in-N arrivals in Hong Kong: 1-in-10 at first, one better every few months, to 1-in-3. */
+export const PORCELAIN_ODDS_START = 10;
 export const PORCELAIN_ODDS_MIN = 3;
 export const PORCELAIN_RAMP_MONTHS = 3;
 /** Percent of the porcelain aboard broken by a storm, rough seas and each enemy volley. */

@@ -174,11 +174,11 @@ describe("the Nanking godowns", () => {
 });
 
 describe("the Red Wind gang's arms smuggling", () => {
-  // month 25 in Manila, having had godowns, out of debt and worth 140,000
+  // month 25 in Manila, having had godowns, in the porcelain trade, out of debt and worth 140,000
   const smuggler = (overrides = {}) =>
-    makeHong({ time: 25, location: MANILA, cash: 40000, bank: 100000, debt: 0, godownsBought: true, ...overrides });
+    makeHong({ time: 25, location: MANILA, cash: 40000, bank: 100000, debt: 0, godownsBought: true, porcelain: true, ...overrides });
 
-  it("is offered in any port but Hong Kong once we've had godowns, and ends our arms trade", () => {
+  it("is offered in any port but Hong Kong once we've had godowns and porcelain, and ends our arms trade", () => {
     const h = smuggler({ shipGoods: [0, 2, 0, 0, 0] });
     const p = play(checkVentures(h, new ScriptedRng([0])), [true]);
     // our 2 arms go in at Hong Kong's usual price, 120
@@ -197,6 +197,7 @@ describe("the Red Wind gang's arms smuggling", () => {
 
   it.each([
     ["before we've had godowns", { godownsBought: false }],
+    ["before we're in the porcelain trade, so we always have three goods", { porcelain: false }],
     ["before month 25", { time: 24 }],
     ["in Hong Kong", { location: HONG_KONG }],
   ])("isn't offered %s", (_, overrides) => {

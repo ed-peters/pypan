@@ -19,17 +19,17 @@ describe("finalPosition", () => {
 
 describe("score", () => {
   it("counts a share in the jade mine", () => {
-    expect(score(makeHong({ cash: 0, debt: 0, time: 12, mine: { value: 2400000, due: 15 } }))).toBe(1000);
+    expect(score(makeHong({ cash: 0, debt: 0, time: 12, mine: { value: 3960000, due: 15 } }))).toBe(1000);
   });
 
-  it("is cash position per month played, divided by 200", () => {
-    // 2,400,000 over 12 months
-    expect(score(makeHong({ cash: 2400000, debt: 0, time: 12 }))).toBe(1000);
+  it("is cash position per month played, divided by 330", () => {
+    // 3,960,000 over 12 months
+    expect(score(makeHong({ cash: 3960000, debt: 0, time: 12 }))).toBe(1000);
   });
 
   it("rounds down, including below zero", () => {
-    expect(score(makeHong({ cash: 3999, debt: 0, time: 1 }))).toBe(19);
-    expect(score(makeHong({ cash: 0, debt: 300, time: 1 }))).toBe(-2);
+    expect(score(makeHong({ cash: 3999, debt: 0, time: 1 }))).toBe(12);
+    expect(score(makeHong({ cash: 0, debt: 300, time: 1 }))).toBe(-1);
   });
 });
 

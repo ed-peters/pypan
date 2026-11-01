@@ -59,6 +59,7 @@ export function toSave(h: Hong): Record<string, unknown> {
     // pypan.py's bank is always open
     ...(h.bankOpen ? {} : { bank_closed: true }),
     ...(h.bankStreak ? { bank_streak: h.bankStreak } : {}),
+    ...(h.warehouseOfferDue ? { warehouse_offer_due: h.warehouseOfferDue } : {}),
   };
 }
 
@@ -93,6 +94,7 @@ export function fromSave(data: unknown): Hong {
     pirateChance: int(d, "pirate_chance", 1),
     warehouseSize: int(d, "warehouse_size", 0),
     warehouseGoods,
+    warehouseOfferDue: d.warehouse_offer_due === undefined ? 0 : int(d, "warehouse_offer_due", 0),
     threatened: bool(d, "threatened"),
     extorted: int(d, "extorted"),
     bailout: int(d, "bailout"),

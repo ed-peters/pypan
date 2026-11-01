@@ -192,7 +192,8 @@ with, so the middling guns player is a little richer at 2 years than before.
 - The bot is disciplined, knows the price table from the start, and replans every
   port. A real "middling" player probably sits between this bot's low and middling
   columns, especially in the first year.
-- It never uses the warehouse (where porcelain is safe) and never borrows to trade,
+- It never buys a warehouse from Senhor Remedios (where porcelain would be safe) and
+  never borrows to trade,
   so it leaves some money on the table. It backs every expedition and buys every
   share it can, which a cautious player wouldn't.
 - It ignores the opium police in its plans. Fines and seized opium cost it about 2%

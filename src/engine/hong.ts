@@ -3,7 +3,7 @@
 
 import {
   ARMS, GENERAL, GOODS, HONG_KONG, NUM_GOODS, PORCELAIN, START_CASH, START_DEBT, START_GUNS,
-  START_MONTH, START_SHIP_SIZE, START_WAREHOUSE_SIZE, START_YEAR,
+  START_MONTH, START_SHIP_SIZE, START_YEAR,
 } from "./constants";
 import { setPrices } from "./prices";
 import type { Rng } from "./rng";
@@ -51,8 +51,11 @@ export interface Hong {
   shipCargo: Cargo | null;
   /** 1-in-N chance of a pirate encounter per voyage. */
   pirateChance: number;
+  /** Warehouse capacity; 0 until we've bought one from Senhor Remedios (pypan-95). */
   warehouseSize: number;
   warehouseGoods: number[];
+  /** The month (as currentTime) from which Senhor Remedios may offer a first warehouse again, after we declined. */
+  warehouseOfferDue: number;
   /** Whether Elder Brother Wu has delivered his debt threat. */
   threatened: boolean;
   /** Li Yuen extortion counter, 0..3. */
@@ -100,8 +103,9 @@ export function newHong(rng: Rng, guns: boolean, name: string = "Rising Sun"): H
     shipDamage: 0,
     shipCargo: null,
     pirateChance: guns ? 7 : 10,
-    warehouseSize: START_WAREHOUSE_SIZE,
+    warehouseSize: 0,
     warehouseGoods: new Array<number>(NUM_GOODS).fill(0),
+    warehouseOfferDue: 0,
     threatened: false,
     extorted: 0,
     grudge: 0,
@@ -168,6 +172,11 @@ export function shipAvailable(h: Hong): number {
 
 export function isOverloaded(h: Hong): boolean {
   return shipAvailable(h) < 0;
+}
+
+/** Whether we own a warehouse. */
+export function hasWarehouse(h: Hong): boolean {
+  return h.warehouseSize > 0;
 }
 
 export function warehouseHas(h: Hong, good: number): boolean {

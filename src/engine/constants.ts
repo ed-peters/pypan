@@ -14,6 +14,7 @@ export const START_YEAR = 1860;
 export const START_MONTH = 1;
 export const START_GUNS = 5;
 export const START_SHIP_SIZE = 60;
+/** A new player has no warehouse; the first one Senhor Remedios sells has this capacity (pypan-95). */
 export const START_WAREHOUSE_SIZE = 10000;
 export const GUN_SIZE = 10;
 export const LOAN_RATE = 0.1;
@@ -28,6 +29,12 @@ export const WAREHOUSE_SIZE_INCREMENT = 5000;
 export const DEBT_THREAT_LEVEL = 10000;
 export const DEBT_MULTIPLIER = 2;
 export const ROBBERY_CASH_LIMIT = 20000;
+/** The first warehouse is offered in Hong Kong once our ship is bigger than START_SHIP_SIZE, for this share of the cash position ... */
+export const WAREHOUSE_FEE_SHARE = 0.1;
+/** ... but at least this, rounded to the thousand ... */
+export const WAREHOUSE_MIN_FEE = 5000;
+/** ... and offered again this many months after we decline. */
+export const WAREHOUSE_REOFFER_MONTHS = 6;
 /** A consignment filling the whole hold pays this share of your money (pypan-48). */
 export const CONSIGNMENT_RATE = 0.15;
 /** No consignments are offered once your money is over this. */

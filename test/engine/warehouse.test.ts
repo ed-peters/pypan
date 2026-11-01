@@ -17,7 +17,7 @@ describe("checkWarehouse", () => {
     // cost = randrange(3000) * trunc(10000 / 500) + 1000
     const p = play(checkWarehouse(h, new ScriptedRng([0, 100])), [true]);
     expect(texts(p)).toEqual([
-      "A new warehouse with an additional 5000 capacity is available for 3,000. Would like to upgrade, Taipan?",
+      "Senhor Remedios has a new warehouse with an additional 5000 capacity for 3,000. Would you like to upgrade, Taipan?",
     ]);
     expect([h.cash, h.warehouseSize]).toEqual([2000, 15000]);
   });
@@ -25,6 +25,51 @@ describe("checkWarehouse", () => {
   it("doesn't offer a warehouse you can't afford", () => {
     const p = play(checkWarehouse(makeHong({ time: 13, cash: 2999 }), new ScriptedRng([0, 100])));
     expect(p.transcript).toEqual([]);
+  });
+});
+
+describe("the first warehouse", () => {
+  const PITCH = (fee: string) => `Taipan, Senhor Jacinto Remedios, who owns much of the Hong Kong waterfront, offers to sell us a warehouse with room for 10,000 goods for ${fee}. We could keep there what our new ship can't sell. Shall we buy it?`;
+  // a player with no warehouse and a bigger ship, home in Hong Kong
+  const owner = (overrides = {}) => makeHong({ warehouseSize: 0, shipSize: 110, cash: 80000, debt: 0, time: 8, ...overrides });
+
+  it("is offered once our ship is bigger than the first, for a tenth of our cash position", () => {
+    const h = owner();
+    // an empty script: the offer takes no rolls
+    const p = play(checkWarehouse(h, new ScriptedRng()), [true]);
+    expect(texts(p)).toEqual([PITCH("8,000"), "Very well, Taipan. Senhor Remedios has given us the keys to our warehouse."]);
+    expect([h.cash, h.warehouseSize]).toEqual([72000, 10000]);
+  });
+
+  it("costs at least 5,000, and can be paid from the bank", () => {
+    const h = owner({ cash: 1000, bank: 10000 });
+    expect(texts(play(checkWarehouse(h, new ScriptedRng()), [true]))[0]).toBe(PITCH("5,000"));
+    expect([h.cash, h.bank, h.warehouseSize]).toEqual([0, 6000, 10000]);
+  });
+
+  it.each([
+    ["with the first ship", { shipSize: 60 }],
+    ["away from Hong Kong", { location: SHANGHAI }],
+    ["when we can't pay", { cash: 4999 }],
+  ])("isn't offered %s", (_, overrides) => {
+    expect(play(checkWarehouse(owner(overrides), new ScriptedRng())).transcript).toEqual([]);
+  });
+
+  it("is offered again six months after we decline", () => {
+    const h = owner();
+    expect(texts(play(checkWarehouse(h, new ScriptedRng()), [false]))).toEqual([
+      PITCH("8,000"), "Very well, Taipan. Senhor Remedios says the offer will keep.",
+    ]);
+    expect([h.warehouseSize, h.warehouseOfferDue]).toEqual([0, 14]);
+    Object.assign(h, { year: 1861, month: 1 }); // month 13
+    expect(play(checkWarehouse(h, new ScriptedRng())).transcript).toEqual([]);
+    h.month = 2; // month 14
+    expect(texts(play(checkWarehouse(h, new ScriptedRng()), [true]))[0]).toBe(PITCH("8,000"));
+  });
+
+  it("comes before any bigger warehouse", () => {
+    // no upgrade roll is made without a warehouse, even after a year
+    expect(play(checkWarehouse(owner({ time: 13, shipSize: 60 }), new ScriptedRng())).transcript).toEqual([]);
   });
 });
 

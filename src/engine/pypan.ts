@@ -5,7 +5,7 @@ import { bankAvailable, visitBank } from "./bank";
 import { HONG_KONG } from "./constants";
 import { checkExtortion } from "./extortion";
 import { Game } from "./game";
-import { newHong, type Hong } from "./hong";
+import { hasWarehouse, newHong, type Hong } from "./hong";
 import { checkLender } from "./lender";
 import { askOpt, askYn, checkpoint, pick, say, type Flow } from "./prompts";
 import type { Rng } from "./rng";
@@ -88,7 +88,7 @@ export function establishOpts(h: Hong, rng: Rng): Option[] {
     ["Sell goods", () => sellGoods(h), goodsAboard(h).length > 0],
   ];
   // transfers and the bank are only at home, and the bank only once it has invited us
-  if (h.location === HONG_KONG) {
+  if (h.location === HONG_KONG && hasWarehouse(h)) {
     opts.push(["Transfer goods", () => transfer(h), goodsToTransfer(h).length > 0]);
   }
   if (bankAvailable(h)) {

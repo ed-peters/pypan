@@ -54,7 +54,9 @@ describe("Terminal", () => {
     expect($(".art").textContent).toBe("");
     expect($(".message").textContent).toMatch(/What shall I do, Taipan\?$/);
     expect($(".strip").textContent).toContain("Guns 5");
-    expect(buttons().map((b) => b.textContent)).toEqual(expect.arrayContaining(["[4] Leave port", "[5] Retire"]));
+    expect(buttons().map((b) => b.textContent)).toEqual(expect.arrayContaining(["[3] Leave port", "[4] Retire"]));
+    // no warehouse yet, so no warehouse pane
+    expect($(".warehouse").closest("section")!.hidden).toBe(true);
   });
 
   it("answers from the keyboard too", () => {

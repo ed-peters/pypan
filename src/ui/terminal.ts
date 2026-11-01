@@ -2,6 +2,7 @@
 // input dock, and turns taps and key presses into answers for the Game.
 
 import type { Game } from "../engine/game";
+import { hasWarehouse } from "../engine/hong";
 import type { GameOver, Session } from "../engine/pypan";
 import { isEnabled, type Prompt } from "../engine/prompts";
 import { ART, TITLE } from "./art";
@@ -214,6 +215,8 @@ export class Terminal {
     const h = this.session?.hong ?? null;
     renderRows(this.status, statusRows(h));
     renderRows(this.warehouse, warehouseRows(h));
+    // no warehouse pane until we've bought one (pypan-95)
+    this.warehouse.closest("section")!.hidden = h !== null && !hasWarehouse(h);
     renderRows(this.hold, holdRows(h));
     this.cargo.replaceChildren(...cargoLines(h).map((l) => el("div", l)));
     this.cargoToggle.textContent = cargoSummary(h);

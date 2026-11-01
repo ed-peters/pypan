@@ -244,7 +244,8 @@ export class Bot {
       if (buy) this.ledger.guns += cost;
       return buy;
     }
-    if (/^A new warehouse with an additional/.test(text)) {
+    // it never uses a warehouse, so it never buys one
+    if (/^Senhor Remedios has a new warehouse with an additional|^Taipan, Senhor Jacinto Remedios, .* offers to sell us a warehouse/.test(text)) {
       return false;
     }
     if (/^Taipan, Hendrik Brouwer of De Wisselbank, .* invites us to open an account\./.test(text)) {

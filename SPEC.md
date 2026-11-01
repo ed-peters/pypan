@@ -77,8 +77,9 @@ house). It is fully serializable to JSON for save/load. Key fields:
 | `ship_damage` | Accumulated hull damage | 0 |
 | `ship_cargo` | Optional special consignment (`Cargo`) | none |
 | `pirate_chance` | 1-in-N chance of pirate encounter per voyage | 10 (or 7 with guns) |
-| `warehouse_size` | Hong Kong warehouse capacity | 10000 |
+| `warehouse_size` | Hong Kong warehouse capacity; 0 until the first warehouse is bought (§10) | 0 |
 | `warehouse_goods[5]` | Goods stored in warehouse | all 0 |
+| `warehouse_offer_due` | The month from which the first warehouse may be offered again after declining (ours; written only when set) | 0 |
 | `threatened` | Whether Wu has issued his debt threat | false |
 | `extorted` | Li Yuen extortion counter (0–3) | 0 |
 | `grudge` | Times you've refused Li Yuen since you last paid him (0–3, §8); saved only when not 0 | 0 |
@@ -580,14 +581,37 @@ Since it starts at 0, Li Yuen asks at the very start of a game that begins with 
 
 ## 10. Warehouse (Canton/Hong Kong) (`check_warehouse`, `transfer`)
 
-The player has a warehouse in Hong Kong (10000 capacity) used to stockpile goods.
+A new player has **no warehouse** (pypan-95). Warehouses are sold by **Senhor Jacinto
+Remedios**, a Portuguese real estate magnate who owns much of the Hong Kong waterfront;
+he is named in full when he first appears, and "Senhor Remedios" after that.
+
+- **The first warehouse** (Hong Kong only, on arrival, before any upgrade): once the
+  ship is bigger than the one the game starts with (`START_SHIP_SIZE`), and you can
+  pay from cash and the bank, he offers one with 10000 capacity
+  (`START_WAREHOUSE_SIZE`) for a tenth of your cash position (`WAREHOUSE_FEE_SHARE`,
+  rounded to the thousand), but at least 5000 (`WAREHOUSE_MIN_FEE`). No rolls are
+  made. Ships are offered in Hong Kong, so it usually comes on the arrival you buy
+  one:
+
+  > Taipan, Senhor Jacinto Remedios, who owns much of the Hong Kong waterfront,
+  > offers to sell us a warehouse with room for 10,000 goods for ((fee)). We could
+  > keep there what our new ship can't sell. Shall we buy it?
+
+  Yes pays (cash first, then the bank) and gives you the warehouse ("Senhor Remedios
+  has given us the keys to our warehouse."). No ("Senhor Remedios says the offer
+  will keep.") means it's offered again 6 months later (`WAREHOUSE_REOFFER_MONTHS`).
+- **Until then** there's no "Transfer goods" on the Hong Kong menu, no warehouse pane,
+  and no warehouse fire. Saves from pypan.py, and from before pypan-95, have a
+  warehouse already.
 
 - **Transferring** (Hong Kong only, no fee): move a chosen good between ship's hold
   and warehouse. When only one good is in the hold and the warehouse together, there's
   no menu: it goes straight to the questions for that good. Otherwise goods in neither
   are disabled.
-- **Warehouse upgrade** (home only, after month 12, 1-in-10): buy `+5000` capacity
-  (`WAREHOUSE_SIZE_INCREMENT`) for a time/size-scaled cost.
+- **Warehouse upgrade** (home only, once you have a warehouse, after month 12,
+  1-in-10): Senhor Remedios offers `+5000` capacity (`WAREHOUSE_SIZE_INCREMENT`) for
+  a time/size-scaled cost ("Senhor Remedios has a new warehouse with an additional
+  5000 capacity for ((cost)). Would you like to upgrade, Taipan?").
 
 ---
 
@@ -666,7 +690,10 @@ after the save's date.
 | `START_YEAR` / `START_MONTH` | 1860 / 1 | Starting date |
 | `START_GUNS` | 5 | Starting guns (guns start) |
 | `START_SHIP_SIZE` | 60 | Starting cargo capacity |
-| `START_WAREHOUSE_SIZE` | 10000 | Warehouse capacity |
+| `START_WAREHOUSE_SIZE` | 10000 | Capacity of the first warehouse (§10) |
+| `WAREHOUSE_FEE_SHARE` | 0.1 | The first warehouse's price, as a share of the cash position |
+| `WAREHOUSE_MIN_FEE` | 5000 | The first warehouse's lowest price |
+| `WAREHOUSE_REOFFER_MONTHS` | 6 | Months after declining before it's offered again |
 | `GUN_SIZE` | 10 | Hold space a gun occupies |
 | `LOAN_RATE` | 0.10 | Debt interest per voyage |
 | `BANK_RATE` | 0.005 | Bank interest per voyage (§4.4) |
@@ -736,7 +763,8 @@ etc.). It is built for touch on iPhone and iPad, and also works with a keyboard.
   `PIRATES`, `BOAT`). Messages type out and can be skipped with a tap.
 - **Current Status**: location, cash, debt, bank, any shares in ventures (§4.8), guns,
   repair %.
-- **Canton Warehouse**: stored goods and remaining capacity.
+- **Canton Warehouse**: stored goods and remaining capacity; hidden until you have a
+  warehouse (§10).
 - **Ship's Hold**: carried goods, remaining capacity, and any special cargo.
 
 Layouts: on iPad landscape and desktop, the report is on the left with the three

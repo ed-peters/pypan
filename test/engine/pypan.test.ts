@@ -85,6 +85,12 @@ describe("the port menu", () => {
     ]);
   });
 
+  it("doesn't offer transfers until we've bought a warehouse", () => {
+    expect(labels(makeHong({ debt: 0, warehouseSize: 0 }))).toEqual([
+      "Buy goods", "Sell goods", "Visit De Wisselbank", "Leave port", "Retire",
+    ]);
+  });
+
   it("won't let you retire while in debt", () => {
     expect(labels(makeHong({ debt: 1 }))).not.toContain("Retire");
   });
@@ -182,7 +188,7 @@ describe("a whole game", () => {
     const seen = drive(game, [
       1, false, false, //          debt start; refuse Li Yuen; no business with Wu
       0, GENERAL, 60, //           buy 60 general for 300
-      3, SHANGHAI, //              leave port for Shanghai (no bank yet)
+      2, SHANGHAI, //              leave port for Shanghai (no warehouse or bank yet)
       1, true, //                  sell all 60 general for 900
       2, HONG_KONG, //             leave port for Hong Kong
       false, true, //              no business with Wu; pay Li Yuen

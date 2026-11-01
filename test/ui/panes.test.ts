@@ -44,6 +44,10 @@ describe("panes", () => {
     expect(cargoSummary(h)).toBe("HOLD 48 free · WAREHOUSE 8,500 free");
   });
 
+  it("leaves the warehouse out of the summary until we've bought one", () => {
+    expect(cargoSummary(makeHong({ warehouseSize: 0 }))).toBe("HOLD 60 free");
+  });
+
   it("shows porcelain once we're in the porcelain trade", () => {
     const h = makeHong({ porcelain: true, shipGoods: [0, 0, 0, 0, 4] });
     expect(holdRows(h).at(-2)).toEqual(["Porcelain", "4"]);

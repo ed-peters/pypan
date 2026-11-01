@@ -3,7 +3,7 @@
 import { AT_SEA, GOODS, city } from "../engine/constants";
 import { gameDate, money } from "../engine/format";
 import {
-  marketGoods, repairPercent, shipAvailable, warehouseAvailable, type Hong,
+  hasWarehouse, marketGoods, repairPercent, shipAvailable, warehouseAvailable, type Hong,
 } from "../engine/hong";
 
 export type Row = [label: string, value: string];
@@ -66,5 +66,5 @@ export function cargoSummary(h: Hong | null): string {
     return "HOLD - · WAREHOUSE -";
   }
   const hold = shipAvailable(h) < 0 ? "OVERLOADED" : `${money(shipAvailable(h))} free`;
-  return `HOLD ${hold} · WAREHOUSE ${money(warehouseAvailable(h))} free`;
+  return hasWarehouse(h) ? `HOLD ${hold} · WAREHOUSE ${money(warehouseAvailable(h))} free` : `HOLD ${hold}`;
 }

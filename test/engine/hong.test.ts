@@ -13,7 +13,7 @@ describe("newHong", () => {
     const h = newHong(rng(), false);
     expect(h).toMatchObject({
       name: "Rising Sun", year: 1860, month: 1, cash: 400, debt: 5000, bank: 0,
-      shipSize: 60, shipGuns: 0, pirateChance: 10, warehouseSize: 10000,
+      shipSize: 60, shipGuns: 0, pirateChance: 10, warehouseSize: 0,
       location: HONG_KONG, shipCargo: null,
     });
     expect(h.shipGoods).toEqual([0, 0, 0, 0, 0]);
@@ -66,6 +66,7 @@ describe("ship and warehouse", () => {
 
   it("computes warehouse usage", () => {
     const h = newHong(rng(), false);
+    h.warehouseSize = 10000;
     h.warehouseGoods[SILK] = 300;
     expect(warehouseUsed(h)).toBe(300);
     expect(warehouseAvailable(h)).toBe(9700);

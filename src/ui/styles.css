@@ -115,6 +115,11 @@ button:active {
   padding: 0.3rem 0.6rem;
 }
 
+/* the warehouse pane is hidden until we've bought one; the layouts below set display */
+.pane[hidden] {
+  display: none !important;
+}
+
 .pane h2,
 .pane h3 {
   font-size: 1em;

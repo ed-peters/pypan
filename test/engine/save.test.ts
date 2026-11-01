@@ -129,6 +129,15 @@ describe("save format", () => {
     expect(() => fromSave({ ...toSave(h), bank_streak: 4 })).toThrow(SaveFormatError);
   });
 
+  it("round-trips when the first warehouse may be offered again, written only once declined", () => {
+    const h = newHong(new SeededRng(4), false);
+    expect(toSave(h)).toMatchObject({ warehouse_size: 0 });
+    expect(toSave(h)).not.toHaveProperty("warehouse_offer_due");
+    h.warehouseOfferDue = 14;
+    expect(fromSaveString(toSaveString(h)).warehouseOfferDue).toBe(14);
+    expect(fromSave(pythonSave)).toMatchObject({ warehouseSize: 10000, warehouseOfferDue: 0 });
+  });
+
   it("copies arrays rather than sharing them", () => {
     const h = newHong(new SeededRng(4), false);
     const back = fromSave(toSave(h));

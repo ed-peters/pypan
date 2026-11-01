@@ -46,6 +46,8 @@ export function* visitWu(h: Hong, rng: Rng): Flow {
       if (yield* askYn(`Elder Brother is aware of your plight, Taipan. He is willing to loan you an additional ${money(loan)} if you will pay back ${money(cost)}. Are you willing, Taipan?`)) {
         h.cash += loan;
         h.debt += cost;
+        // each rescue makes the next one dearer (pypan-39)
+        h.bailout += 1;
       }
     } else {
       // otherwise, he's not interested

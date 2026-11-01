@@ -155,16 +155,20 @@ describe("visitWu", () => {
     expect([h.cash, h.debt]).toEqual([1600, 2000]);
   });
 
-  it("never raises the bailout multiplier (faithful quirk)", () => {
+  it("makes each bailout dearer than the last", () => {
     const h = makeHong({ time: 2, cash: 0, debt: 100 });
     play(visitWu(h, new ScriptedRng([100, 200])), [true]);
-    expect(h.bailout).toBe(1);
+    expect([h.debt, h.bailout]).toEqual([1800, 2]);
+    h.cash = 0;
+    // the same rolls: 200 x 2 + 1500 = 1900 to pay back
+    play(visitWu(h, new ScriptedRng([100, 200])), [true]);
+    expect([h.debt, h.bailout]).toEqual([3700, 3]);
   });
 
   it("does nothing if you decline the bailout", () => {
     const h = makeHong({ time: 2, cash: 0, debt: 100 });
     play(visitWu(h, new ScriptedRng([100, 200])), [false]);
-    expect([h.cash, h.debt]).toEqual([0, 100]);
+    expect([h.cash, h.debt, h.bailout]).toEqual([0, 100, 1]);
   });
 });
 

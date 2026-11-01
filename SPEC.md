@@ -274,8 +274,9 @@ Visiting Wu (`visit_wu`):
 
 - **If broke** (no cash and no goods anywhere, after month 1): Wu offers an
   emergency loan of 1500–2999 cash in exchange for a larger repayment obligation
-  (`randrange(2000) * bailout + 1500`). The `bailout` multiplier was meant to make each
-  successive rescue more expensive, but nothing increases it yet (pypan-39).
+  (`randrange(2000) * bailout + 1500`). The `bailout` multiplier starts at 1 and goes
+  up by 1 each time you accept, so each rescue costs more than the last (pypan-39;
+  pypan.py never raised it). Declining leaves it as it is.
 - **If you have no cash but aren't fully broke**: Wu just gives a warning.
 - **Otherwise**: you may repay up to `min(cash, debt)`, and may borrow up to
   `2 * cash - debt` (i.e. he lends against your liquid position).
@@ -798,7 +799,6 @@ table (§1.1), with a button to start a new game.
 
 ## 16. Known Incomplete / TODO Items
 
-- **Escalating bailouts** — the `bailout` multiplier is never increased (pypan-39).
 - **Resuming mid-event** — reloading during a battle resumes from the last port menu.
 
 ---

@@ -35,6 +35,22 @@ export function* checkBankInvite(h: Hong): Flow {
   yield* say("Very well, Taipan. Our account at De Wisselbank is open: we may call on Mijnheer Brouwer whenever we are in Hong Kong.");
 }
 
+/**
+ * Game-expanding offers come by Mijnheer Brouwer's introduction (pypan-100), so none
+ * comes before we have an account with him (pypan-99).
+ */
+export function canIntroduce(h: Hong): boolean {
+  return h.bankOpen;
+}
+
+/**
+ * The opening of a game-expanding offer: Mijnheer Brouwer introduces us to someone
+ * (named in full, with who they are), and the offer follows in the caller's words.
+ */
+export function introduction(name: string, who: string, offer: string): string {
+  return `Taipan, Mijnheer Brouwer of De Wisselbank has introduced us to ${name}, ${who}. ${offer}`;
+}
+
 export function* visitBank(h: Hong, rng: Rng): Flow {
   if (h.cash === 0 && h.bank === 0) {
     yield* say("You have no reason to call on Mijnheer Brouwer, Taipan.");

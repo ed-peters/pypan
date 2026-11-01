@@ -1,8 +1,9 @@
 // The Hong Kong warehouse and transfers (SPEC.md section 10). Senhor Jacinto Remedios,
 // who owns much of the Hong Kong waterfront, sells us the first warehouse once our
-// ship has outgrown the first one, and bigger ones after (pypan-95).
+// ship has outgrown the first one, and bigger ones after (pypan-95). Mijnheer Brouwer
+// introduces him, so that comes only once we bank with De Wisselbank (pypan-99, -100).
 
-import { pay, spendable } from "./bank";
+import { canIntroduce, introduction, pay, spendable } from "./bank";
 import {
   GOODS, HONG_KONG, START_SHIP_SIZE, START_WAREHOUSE_SIZE, WAREHOUSE_FEE_SHARE, WAREHOUSE_MIN_FEE,
   WAREHOUSE_REOFFER_MONTHS, WAREHOUSE_SIZE_INCREMENT, good,
@@ -33,17 +34,23 @@ export function* checkWarehouse(h: Hong, rng: Rng): Flow {
 }
 
 /**
- * Once our ship is bigger than the one we started with, and we can pay, Senhor
- * Remedios offers a first warehouse for a tenth of our cash position (at least
- * WAREHOUSE_MIN_FEE); if we decline, he asks again WAREHOUSE_REOFFER_MONTHS later.
+ * Once we bank with De Wisselbank, our ship is bigger than the one we started with,
+ * and we can pay, Mijnheer Brouwer introduces Senhor Remedios, who offers a first
+ * warehouse for a tenth of our cash position (at least WAREHOUSE_MIN_FEE); if we
+ * decline, he asks again himself WAREHOUSE_REOFFER_MONTHS later.
  */
 function* offerFirstWarehouse(h: Hong): Flow {
   const t = currentTime(h);
   const fee = firstWarehouseFee(h);
-  if (h.shipSize <= START_SHIP_SIZE || t < h.warehouseOfferDue || spendable(h) < fee) {
+  if (!canIntroduce(h) || h.shipSize <= START_SHIP_SIZE || t < h.warehouseOfferDue || spendable(h) < fee) {
     return;
   }
-  if (!(yield* askYn(`Taipan, Senhor Jacinto Remedios, who owns much of the Hong Kong waterfront, offers to sell us a warehouse with room for ${money(START_WAREHOUSE_SIZE)} goods for ${money(fee)}. We could keep there what our new ship can't sell. Shall we buy it?`))) {
+  const terms = `a warehouse with room for ${money(START_WAREHOUSE_SIZE)} goods for ${money(fee)}`;
+  // only a declined offer has set warehouseOfferDue, so 0 means we haven't met him
+  const pitch = h.warehouseOfferDue === 0
+    ? introduction("Senhor Jacinto Remedios", "who owns much of the Hong Kong waterfront", `Senhor Remedios offers to sell us ${terms}. We could keep there what our new ship can't sell. Shall we buy it?`)
+    : `Taipan, Senhor Remedios offers again to sell us ${terms}. Shall we buy it?`;
+  if (!(yield* askYn(pitch))) {
     h.warehouseOfferDue = t + WAREHOUSE_REOFFER_MONTHS;
     yield* say("Very well, Taipan. Senhor Remedios says the offer will keep.");
     return;

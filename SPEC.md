@@ -265,6 +265,20 @@ Deposit cash into or withdraw from the bank, in Hong Kong. The bank balance **ea
 Leaving the bank carries the same mugging risk as arriving at a foreign harbor
 (§11): after month 12, a 1-in-20 chance if cash on hand exceeds 20000.
 
+#### 4.4.1 Introductions (pypan-100)
+
+Parts of the game that open up as you prosper ("game-expanding" changes) come by
+**Mijnheer Brouwer's introduction**, so none comes before the bank account is open
+(pypan-99). An introduction names the newcomer in full, says who they are, and then
+gives their offer:
+
+> Taipan, Mijnheer Brouwer of De Wisselbank has introduced us to ((name)), ((who they
+> are)). ((The offer.))
+
+Later offers from the same person name them briefly and need no introduction. So far
+this is how the first warehouse comes (§10); new game-expanding features should come
+the same way (`canIntroduce` and `introduction` in `bank.ts`).
+
 ### 4.5 Debt & the Moneylender (Elder Brother Wu, Hong Kong only)
 
 Debt **accrues 10% interest per voyage** (`LOAN_RATE`), applied on arrival and
@@ -592,21 +606,26 @@ A new player has **no warehouse** (pypan-95). Warehouses are sold by **Senhor Ja
 Remedios**, a Portuguese real estate magnate who owns much of the Hong Kong waterfront;
 he is named in full when he first appears, and "Senhor Remedios" after that.
 
-- **The first warehouse** (Hong Kong only, on arrival, before any upgrade): once the
-  ship is bigger than the one the game starts with (`START_SHIP_SIZE`), and you can
-  pay from cash and the bank, he offers one with 10000 capacity
-  (`START_WAREHOUSE_SIZE`) for a tenth of your cash position (`WAREHOUSE_FEE_SHARE`,
-  rounded to the thousand), but at least 5000 (`WAREHOUSE_MIN_FEE`). No rolls are
-  made. Ships are offered in Hong Kong, so it usually comes on the arrival you buy
-  one:
+- **The first warehouse** (Hong Kong only, on arrival, before any upgrade): Senhor
+  Remedios is introduced by Mijnheer Brouwer (§4.4.1), so there's no offer until the
+  bank account is open (pypan-99). After that, once the ship is bigger than the one
+  the game starts with (`START_SHIP_SIZE`), and you can pay from cash and the bank, he
+  offers one with 10000 capacity (`START_WAREHOUSE_SIZE`) for a tenth of your cash
+  position (`WAREHOUSE_FEE_SHARE`, rounded to the thousand), but at least 5000
+  (`WAREHOUSE_MIN_FEE`). No rolls are made. Ships are offered in Hong Kong, so it
+  usually comes on the arrival you buy one (and it can follow the bank's invitation
+  on the same arrival):
 
-  > Taipan, Senhor Jacinto Remedios, who owns much of the Hong Kong waterfront,
-  > offers to sell us a warehouse with room for 10,000 goods for ((fee)). We could
-  > keep there what our new ship can't sell. Shall we buy it?
+  > Taipan, Mijnheer Brouwer of De Wisselbank has introduced us to Senhor Jacinto
+  > Remedios, who owns much of the Hong Kong waterfront. Senhor Remedios offers to
+  > sell us a warehouse with room for 10,000 goods for ((fee)). We could keep there
+  > what our new ship can't sell. Shall we buy it?
 
   Yes pays (cash first, then the bank) and gives you the warehouse ("Senhor Remedios
   has given us the keys to our warehouse."). No ("Senhor Remedios says the offer
-  will keep.") means it's offered again 6 months later (`WAREHOUSE_REOFFER_MONTHS`).
+  will keep.") means it's offered again 6 months later (`WAREHOUSE_REOFFER_MONTHS`),
+  by Senhor Remedios himself: "Taipan, Senhor Remedios offers again to sell us a
+  warehouse with room for 10,000 goods for ((fee)). Shall we buy it?"
 - **Until then** there's no "Transfer goods" on the Hong Kong menu, no warehouse pane,
   and no warehouse fire. Saves from pypan.py, and from before pypan-95, have a
   warehouse already.

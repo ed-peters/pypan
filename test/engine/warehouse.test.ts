@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { SHANGHAI, SILK } from "../../src/engine/constants";
 import { ScriptedRng } from "../../src/engine/rng";
+import { checkBankInvite } from "../../src/engine/bank";
 import { checkWarehouse, transfer } from "../../src/engine/warehouse";
 import { makeHong } from "../helpers/hong";
 import { play, texts } from "../helpers/play";
@@ -29,7 +30,8 @@ describe("checkWarehouse", () => {
 });
 
 describe("the first warehouse", () => {
-  const PITCH = (fee: string) => `Taipan, Senhor Jacinto Remedios, who owns much of the Hong Kong waterfront, offers to sell us a warehouse with room for 10,000 goods for ${fee}. We could keep there what our new ship can't sell. Shall we buy it?`;
+  const PITCH = (fee: string) => `Taipan, Mijnheer Brouwer of De Wisselbank has introduced us to Senhor Jacinto Remedios, who owns much of the Hong Kong waterfront. Senhor Remedios offers to sell us a warehouse with room for 10,000 goods for ${fee}. We could keep there what our new ship can't sell. Shall we buy it?`;
+  const AGAIN = (fee: string) => `Taipan, Senhor Remedios offers again to sell us a warehouse with room for 10,000 goods for ${fee}. Shall we buy it?`;
   // a player with no warehouse and a bigger ship, home in Hong Kong
   const owner = (overrides = {}) => makeHong({ warehouseSize: 0, shipSize: 110, cash: 80000, debt: 0, time: 8, ...overrides });
 
@@ -51,11 +53,26 @@ describe("the first warehouse", () => {
     ["with the first ship", { shipSize: 60 }],
     ["away from Hong Kong", { location: SHANGHAI }],
     ["when we can't pay", { cash: 4999 }],
+    ["before we bank with De Wisselbank", { bankOpen: false }],
   ])("isn't offered %s", (_, overrides) => {
     expect(play(checkWarehouse(owner(overrides), new ScriptedRng())).transcript).toEqual([]);
   });
 
-  it("is offered again six months after we decline", () => {
+  it("comes only after the bank's invitation, on the same arrival if we accept", () => {
+    const h = owner({ bankOpen: false, bankStreak: 2 });
+    const p = play((function* () {
+      yield* checkBankInvite(h);
+      yield* checkWarehouse(h, new ScriptedRng());
+    })(), [true, true]);
+    expect(texts(p)).toEqual([
+      expect.stringMatching(/^Taipan, Hendrik Brouwer of De Wisselbank, /),
+      expect.stringMatching(/^Very well, Taipan\. Our account at De Wisselbank is open/),
+      PITCH("8,000"),
+      "Very well, Taipan. Senhor Remedios has given us the keys to our warehouse.",
+    ]);
+  });
+
+  it("is offered again six months after we decline, by Senhor Remedios himself", () => {
     const h = owner();
     expect(texts(play(checkWarehouse(h, new ScriptedRng()), [false]))).toEqual([
       PITCH("8,000"), "Very well, Taipan. Senhor Remedios says the offer will keep.",
@@ -64,7 +81,7 @@ describe("the first warehouse", () => {
     Object.assign(h, { year: 1861, month: 1 }); // month 13
     expect(play(checkWarehouse(h, new ScriptedRng())).transcript).toEqual([]);
     h.month = 2; // month 14
-    expect(texts(play(checkWarehouse(h, new ScriptedRng()), [true]))[0]).toBe(PITCH("8,000"));
+    expect(texts(play(checkWarehouse(h, new ScriptedRng()), [true]))[0]).toBe(AGAIN("8,000"));
   });
 
   it("comes before any bigger warehouse", () => {

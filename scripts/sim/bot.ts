@@ -252,7 +252,7 @@ export class Bot {
       return buy;
     }
     // it never uses a warehouse, so it never buys one
-    if (/^Senhor Remedios has a new warehouse with an additional|^Taipan, Senhor Jacinto Remedios, .* offers to sell us a warehouse/.test(text)) {
+    if (/^Senhor Remedios has a new warehouse with an additional|^Taipan, Mijnheer Brouwer of De Wisselbank has introduced us to Senhor Jacinto Remedios, |^Taipan, Senhor Remedios offers again to sell us a warehouse/.test(text)) {
       return false;
     }
     if (/^Taipan, Hendrik Brouwer of De Wisselbank, .* invites us to open an account\./.test(text)) {
